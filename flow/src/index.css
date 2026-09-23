@@ -1,0 +1,43 @@
+@import "frappe-ui/src/style.css";
+
+@layer base {
+	html,
+	body {
+		@apply bg-paper font-body text-ink antialiased;
+	}
+	h1,
+	h2,
+	h3 {
+		@apply font-display font-bold;
+		letter-spacing: -0.03em;
+	}
+	:focus-visible {
+		outline: 2px solid theme("colors.acc.DEFAULT");
+		outline-offset: 2px;
+	}
+}
+
+@layer components {
+	.kicker {
+		@apply text-[11.5px] font-semibold uppercase tracking-[0.12em] text-mut;
+	}
+	.btn {
+		@apply inline-flex h-9 items-center gap-2 whitespace-nowrap rounded-lg border px-3 text-[13.5px] font-semibold transition-colors;
+	}
+	.btn-ghost {
+		@apply btn border-line bg-surf text-ink hover:bg-side;
+	}
+	.btn-ink {
+		@apply btn border-ink bg-ink text-surf hover:bg-ink-nav;
+	}
+	.chip {
+		@apply inline-flex items-center whitespace-nowrap rounded-[5px] px-2 py-0.5 text-xs font-semibold;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	* {
+		animation: none !important;
+		transition: none !important;
+	}
+}

@@ -1,0 +1,89 @@
+<template>
+	<div class="flex h-screen overflow-hidden bg-paper font-body text-ink">
+		<Rail :active="area?.key" />
+		<ContextSidebar v-if="area && !collapsed" :area="area" @collapse="collapsed = true" />
+		<div class="flex min-w-0 flex-grow flex-col">
+			<TopBar
+				:crumbs="crumbs"
+				:collapsed="!!area && collapsed"
+				@search="paletteOpen = true"
+				@expand="collapsed = false"
+			/>
+			<main class="relative min-h-0 flex-grow overflow-y-auto">
+				<router-view :key="$route.fullPath" />
+			</main>
+		</div>
+		<CommandPalette v-model="paletteOpen" />
+	</div>
+</template>
+
+<script setup>
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { useRoute } from "vue-router";
+import Rail from "@/components/Rail.vue";
+import ContextSidebar from "@/components/ContextSidebar.vue";
+import TopBar from "@/components/TopBar.vue";
+import CommandPalette from "@/components/CommandPalette.vue";
+import { areas, areaForDoctype } from "@/nav";
+import { brand } from "@/brand";
+
+const route = useRoute();
+const paletteOpen = ref(false);
+const collapsed = ref(localPref("flow.sidebarCollapsed") === "1");
+
+watch(collapsed, (v) => savePref("flow.sidebarCollapsed", v ? "1" : "0"));
+
+const area = computed(() => {
+	if (route.name === "Home") return areas[0];
+	if (route.params.doctype) return areaForDoctype(route.params.doctype) || null;
+	return null;
+});
+
+const crumbs = computed(() => {
+	const out = [];
+	if (area.value) out.push({ label: area.value.label });
+	if (route.name === "List") out.push({ label: route.params.doctype });
+	if (route.name === "Form") {
+		out.push({
+			label: route.params.doctype,
+			to: { name: "List", params: { doctype: route.params.doctype } },
+		});
+		out.push({ label: route.params.name });
+	}
+	if (route.name === "About") out.push({ label: "About" });
+	return out;
+});
+
+watch(
+	() => route.fullPath,
+	() => {
+		const last = crumbs.value[crumbs.value.length - 1];
+		document.title = last ? `${last.label} · ${brand.name}` : brand.name;
+	},
+	{ immediate: true },
+);
+
+function onKey(e) {
+	if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+		e.preventDefault();
+		paletteOpen.value = !paletteOpen.value;
+	}
+}
+onMounted(() => window.addEventListener("keydown", onKey));
+onBeforeUnmount(() => window.removeEventListener("keydown", onKey));
+
+function localPref(key) {
+	try {
+		return localStorage.getItem(key);
+	} catch {
+		return null;
+	}
+}
+function savePref(key, value) {
+	try {
+		localStorage.setItem(key, value);
+	} catch {
+		/* storage unavailable: preference just isn't remembered */
+	}
+}
+</script>

@@ -1,0 +1,25 @@
+{
+	"name": "flow-ui",
+	"private": true,
+	"version": "0.0.0",
+	"type": "module",
+	"scripts": {
+		"dev": "vite",
+		"serve": "vite preview",
+		"build": "vite build --base=/assets/hrms/flow/ && yarn copy-html-entry",
+		"copy-html-entry": "cp ../hrms/public/flow/index.html ../hrms/www/flow.html",
+		"inventory": "python3 scripts/inventory.py"
+	},
+	"dependencies": {
+		"@vitejs/plugin-vue": "^4.4.0",
+		"autoprefixer": "^10.4.19",
+		"dayjs": "^1.11.11",
+		"feather-icons": "^4.29.1",
+		"frappe-ui": "0.1.105",
+		"postcss": "^8.4.5",
+		"tailwindcss": "^3.4.3",
+		"vite": "^5.4.10",
+		"vue": "^3.5.12",
+		"vue-router": "^4.3.2"
+	}
+}
