@@ -57,6 +57,8 @@ def seed(company: str | None = None) -> dict:
 		),
 		_leave(team[3], leave_type, add_days(next_monday, 14), add_days(next_monday, 28), "Long holiday."),
 		_attendance(team[4], _last_workday(today), "On Duty"),
+		# Something happening this week, so the Today screen isn't empty.
+		_leave(team[4], leave_type, today, add_days(today, 1), "Moving house."),
 	]
 	_payroll_setup(company, [lead, *team])
 	_expense_setup(company)
