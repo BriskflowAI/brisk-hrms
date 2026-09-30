@@ -17,6 +17,7 @@ Served at `/flow` on any site with this app installed.
 - `src/components/CommandPalette.vue`: ⌘K search over people, record types and reports.
 - `src/brand.js`: the product name and mark. Renaming the product only touches this file.
 - `inventory/`: the feature checklist the new UI must cover, generated from the source.
+- `SETUP.md`: how to run briskrew on a test server.
 
 ## Inbox
 
