@@ -1312,6 +1312,12 @@ function buildFrappe() {
 
 function buildErpnext() {
 	const erpnext = {
+		// Same as ERPNext: show the naming series only while the record is new.
+		toggle_naming_series: () => {
+			const frm = current?.frm;
+			if (frm && frm.meta.fields.some((d) => d.fieldname === "naming_series"))
+				frm.toggle_display("naming_series", !!frm.doc.__islocal);
+		},
 		get_currency: (company) =>
 			booted?.companies?.[company]?.currency || booted?.sysdefaults?.currency,
 		queries: lenient(
