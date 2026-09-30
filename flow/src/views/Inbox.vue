@@ -775,7 +775,9 @@ async function bulkApprove() {
 		const left = res.skipped.length + res.failed.length;
 		showToast(
 			`Approved ${res.approved.length}. ${
-				left ? `${left} ${left === 1 ? "needs" : "need"} a closer look.` : "Nothing left over."
+				left
+					? `${left} ${left === 1 ? "needs" : "need"} a closer look.`
+					: "Nothing left over."
 			}`,
 		);
 		confirmBulk.value = false;

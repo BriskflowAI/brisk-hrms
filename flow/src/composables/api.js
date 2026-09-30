@@ -15,6 +15,11 @@ export async function getMeta(doctype) {
 	return metaCache.get(doctype);
 }
 
+// Synchronous access for code that can't await (desk scripts); undefined if not loaded yet.
+export function metaFromCache(doctype) {
+	return metaCache.get(doctype)?.meta;
+}
+
 export function listFields(meta) {
 	const fields = (meta.fields || []).filter(
 		(f) => f.in_list_view && !isLayout(f) && !isTable(f),

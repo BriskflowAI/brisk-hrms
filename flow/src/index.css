@@ -41,3 +41,49 @@
 		transition: none !important;
 	}
 }
+
+/* HTML produced by desk templates and form scripts uses Bootstrap-style classes. */
+.desk-html table,
+.desk-html .table {
+	@apply w-full border-collapse text-[13px];
+}
+.desk-html th,
+.desk-html td {
+	@apply border-b border-line-2 px-2.5 py-1.5 text-left;
+}
+.desk-html thead th,
+.desk-html th {
+	@apply font-semibold text-mut;
+}
+.desk-html .text-muted {
+	@apply text-mut;
+}
+.desk-html .indicator-pill,
+.desk-html .badge {
+	@apply inline-flex rounded px-2 py-0.5 text-[12px] font-semibold;
+}
+.desk-html .green {
+	@apply bg-pos-tint text-pos;
+}
+.desk-html .red {
+	@apply bg-neg-tint text-neg;
+}
+.desk-html .orange,
+.desk-html .yellow {
+	@apply bg-warn-tint text-warn;
+}
+.desk-html .blue {
+	@apply bg-acc-tint text-acc;
+}
+.desk-html a {
+	@apply font-semibold text-acc;
+}
+.desk-html .row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 1rem;
+}
+.desk-html .col,
+.desk-html [class*="col-"] {
+	@apply min-w-0 flex-1;
+}

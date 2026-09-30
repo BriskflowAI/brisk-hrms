@@ -14,8 +14,6 @@ LEAVE_TYPE = "_Test Leave Type"
 class TestInbox(HRMSTestSuite):
 	def setUp(self):
 		frappe.set_user("Administrator")
-		for doctype in ("Leave Application", "Leave Allocation", "Leave Ledger Entry"):
-			frappe.db.delete(doctype)
 
 		self.manager_user = "inbox_manager@example.com"
 		self.manager = make_employee(self.manager_user, "_Test Company")
@@ -23,6 +21,10 @@ class TestInbox(HRMSTestSuite):
 		self.member = make_employee(self.member_user, "_Test Company")
 		self.other_user = "inbox_other_approver@example.com"
 		make_employee(self.other_user, "_Test Company")
+
+		# Start clean for this suite's own employees only; never touch other data on the site.
+		for doctype in ("Leave Application", "Leave Allocation", "Leave Ledger Entry"):
+			frappe.db.delete(doctype, {"employee": ("in", [self.manager, self.member])})
 
 		emp = frappe.get_doc("Employee", self.member)
 		emp.reports_to = self.manager

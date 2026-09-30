@@ -9,10 +9,14 @@
 				<Icon name="ext" :size="15" />
 				Open in classic desk
 			</a>
-			<a v-if="canCreate" :href="`${classicUrl(doctype)}/new`" class="btn-ink">
+			<router-link
+				v-if="canCreate"
+				:to="{ name: 'Form', params: { doctype, name: 'new' }, query: $route.query }"
+				class="btn-ink"
+			>
 				<Icon name="plus" :size="15" />
 				New {{ singular }}
-			</a>
+			</router-link>
 		</header>
 
 		<div class="flex items-center gap-3">
