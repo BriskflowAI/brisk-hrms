@@ -45,6 +45,7 @@ const area = computed(() => {
 				a.sections.some((sec) => sec.items.some((i) => i.report === route.params.name)),
 			) || areas.find((a) => a.key === "reports")
 		);
+	if (route.name === "PayrollReview") return areas.find((a) => a.key === "pay");
 	if (route.name === "People") return areas.find((a) => a.key === "people");
 	if (route.name === "Inbox") return areas.find((a) => a.key === "inbox");
 	if (route.params.doctype) return areaForDoctype(route.params.doctype) || null;
@@ -64,6 +65,7 @@ const crumbs = computed(() => {
 	}
 	if (route.name === "About") out.push({ label: "About" });
 	if (route.name === "Inbox") out.push({ label: "Decide" });
+	if (route.name === "PayrollReview") out.push({ label: "Runs" }, { label: route.params.name });
 	return out;
 });
 

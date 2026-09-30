@@ -61,6 +61,8 @@ def seed(company: str | None = None) -> dict:
 		_leave(team[4], leave_type, today, add_days(today, 1), "Moving house."),
 	]
 	_payroll_setup(company, [lead, *team])
+	_previous_month_slips(company, [lead, *team])
+	_bonus(company, _draft_slip_employee(team, today) or team[3], today)
 	_expense_setup(company)
 
 	shift = _shift_request(team[4], lead_user, add_days(next_monday, 7))
@@ -350,3 +352,69 @@ def _expense_setup(company):
 			"accounts": [{"company": company, "default_account": expense_account}] if expense_account else [],
 		}
 	).insert(ignore_permissions=True)
+
+
+def _previous_month_slips(company, employees):
+	"""Submitted slips for last month, so payroll review has something to compare with."""
+	from frappe.utils import get_first_day, get_last_day
+
+	start = get_first_day(add_months(nowdate(), -1))
+	end = get_last_day(start)
+	for emp in employees:
+		if frappe.db.exists("Salary Slip", {"employee": emp, "start_date": start, "docstatus": 1}):
+			continue
+		slip = frappe.get_doc(
+			{
+				"doctype": "Salary Slip",
+				"employee": emp,
+				"company": company,
+				"posting_date": end,
+				"start_date": start,
+				"end_date": end,
+				"payroll_frequency": "Monthly",
+			}
+		)
+		slip.insert(ignore_permissions=True)
+		slip.submit()
+
+
+def _bonus(company, employee, today):
+	"""A one-off bonus this month, applied to any draft slip already made."""
+	from frappe.utils import get_first_day
+
+	component = _component("Demo Bonus", "DBON", "Earning")
+	payroll_date = get_first_day(today)
+	if not frappe.db.exists(
+		"Additional Salary",
+		{"employee": employee, "salary_component": component, "payroll_date": payroll_date, "docstatus": 1},
+	):
+		doc = frappe.get_doc(
+			{
+				"doctype": "Additional Salary",
+				"employee": employee,
+				"company": company,
+				"salary_component": component,
+				"amount": 1200,
+				"payroll_date": payroll_date,
+				"overwrite_salary_structure_amount": 1,
+			}
+		)
+		doc.insert(ignore_permissions=True)
+		doc.submit()
+	for name in frappe.get_all(
+		"Salary Slip",
+		filters={"employee": employee, "start_date": payroll_date, "docstatus": 0},
+		pluck="name",
+	):
+		frappe.get_doc("Salary Slip", name).save(ignore_permissions=True)
+
+
+def _draft_slip_employee(employees, today):
+	"""Someone whose slip this month is still a draft (a bonus can still change it)."""
+	from frappe.utils import get_first_day
+
+	return frappe.db.get_value(
+		"Salary Slip",
+		{"employee": ("in", employees), "start_date": get_first_day(today), "docstatus": 0},
+		"employee",
+	)

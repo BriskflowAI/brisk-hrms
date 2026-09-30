@@ -1944,6 +1944,20 @@ const APPROVER_FIELD = {
 	"Shift Request": "approver",
 };
 function addBriskrewRules(form) {
+	if (form.doctype === "Payroll Entry") {
+		// Runs through the same refresh as the desk script, so it survives button resets.
+		(current.handlers["Payroll Entry"] ||= []).push({
+			refresh(frm) {
+				if (!frm.is_new() && frm.doc.salary_slips_created)
+					frm.add_custom_button("Review vs previous", () =>
+						current.router.push({
+							name: "PayrollReview",
+							params: { name: frm.doc.name },
+						}),
+					);
+			},
+		});
+	}
 	const field = APPROVER_FIELD[form.doctype];
 	if (!field) return;
 	// Default approver = the employee's approver, else their team lead / manager.
