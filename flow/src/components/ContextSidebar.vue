@@ -36,6 +36,19 @@
 					/>
 					<span class="truncate">{{ item.label }}</span>
 				</router-link>
+				<router-link
+					v-else-if="item.report"
+					:to="{ name: 'Report', params: { name: item.report } }"
+					class="flex h-[30px] items-center gap-2 rounded-[7px] px-2 text-[13.5px] transition-colors"
+					:class="
+						$route.params.name === item.report
+							? 'bg-surf font-bold text-ink shadow-[0_0_0_1px] shadow-line'
+							: 'font-medium text-ink-2 hover:bg-surf/70'
+					"
+				>
+					<Icon name="chart" :size="14" class="shrink-0 text-mut" />
+					<span class="truncate">{{ item.label }}</span>
+				</router-link>
 				<a
 					v-else
 					:href="item.href"

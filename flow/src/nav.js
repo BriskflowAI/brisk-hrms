@@ -3,7 +3,7 @@
 // is still reachable from the command palette (⌘K) and the classic desk.
 
 const r = (label, doctype, extra = {}) => ({ label, doctype, ...extra });
-const report = (label) => ({ label, href: `/app/query-report/${encodeURIComponent(label)}` });
+const report = (label) => ({ label, report: label });
 
 export const areas = [
 	{

@@ -2096,3 +2096,122 @@ export function listIndicator(list, doc) {
 export function detachListScript(list) {
 	if (currentList?.list === list) currentList = null;
 }
+
+// ---------------------------------------------------------------------------------------
+// Reports: run a query/script report's JS (frappe.query_reports[name]) for its filters,
+// defaults, formatter and onload, against the report screen's reactive state.
+// ---------------------------------------------------------------------------------------
+
+export async function attachReportScript(report) {
+	await install();
+	const { call } = await import("frappe-ui");
+	const res = await call("frappe.desk.query_report.get_script", { report_name: report.name });
+	report.htmlFormat = res?.html_format || "";
+	delete window.frappe.query_reports[report.name];
+
+	const filterHandle = (fieldname) => {
+		const raw = report.filters.find((f) => f.fieldname === fieldname);
+		if (!raw) return null;
+		// Writes to df (options, hidden, reqd...) must reach the rendered filter.
+		const df = report.dlg ? report.dlg.fieldHandle(raw).df : raw;
+		return {
+			df,
+			get value() {
+				return report.values[fieldname];
+			},
+			get_value: () => report.values[fieldname],
+			set_value: (v) => report.setValue(fieldname, v),
+			set_input: (v) => report.setValue(fieldname, v),
+			refresh: () => {},
+			toggle: (show) => (df.hidden = show ? 0 : 1),
+			toggle_display: (show) => (df.hidden = show ? 0 : 1),
+			$wrapper: jQuery("<div>"),
+		};
+	};
+	window.frappe.query_report = lenient(
+		{
+			report_name: report.name,
+			get filters() {
+				return report.filters.map((f) => filterHandle(f.fieldname));
+			},
+			get_filter: filterHandle,
+			get_filter_value: (f) => report.values[f],
+			get_filter_values: () => ({ ...report.values }),
+			get_values: () => ({ ...report.values }),
+			set_filter_value: (f, v) => {
+				if (typeof f === "object")
+					return Promise.all(Object.entries(f).map(([k, x]) => report.setValue(k, x)));
+				return report.setValue(f, v);
+			},
+			refresh: () => report.run(),
+			get data() {
+				return report.rows;
+			},
+			get columns() {
+				return report.columns;
+			},
+			page: lenient(
+				{
+					add_inner_button: (label, fn) => report.buttons.push({ label, action: fn }),
+					set_title: () => {},
+				},
+				"frappe.query_report.page",
+			),
+			datatable: silent(),
+			chart: silent(),
+			toggle_nothing_to_show: () => {},
+			toggle_message: () => {},
+		},
+		"frappe.query_report",
+	);
+
+	try {
+		// eslint-disable-next-line no-new-func
+		new Function(`${res?.script || ""}\n//# sourceURL=briskrew/report-${report.name}.js`)();
+	} catch (e) {
+		report.unsupported.push(`report script: ${e.message}`);
+	}
+	const settings = window.frappe.query_reports[report.name] || {};
+	report.settings = settings;
+	report.filters = (settings.filters || []).map((f) => ({
+		...f,
+		options: Array.isArray(f.options)
+			? f.options.map((o) => (typeof o === "object" ? o.value : o)).join("\n")
+			: f.options,
+	}));
+	for (const f of report.filters) {
+		let d = typeof f.default === "function" ? f.default() : f.default;
+		if (d === undefined) d = f.fieldtype === "Check" ? 0 : null;
+		report.values[f.fieldname] = d;
+		// Report filters use on_change(query_report); the dialog form calls onchange().
+		if (f.on_change && !f.onchange) f.onchange = () => f.on_change(window.frappe.query_report);
+	}
+	// A dialog-style form so filters render with the same field controls as records.
+	const dlg = new Dialog({ fields: report.filters });
+	Object.assign(dlg.state.values, report.values);
+	report.values = dlg.state.values;
+	report.form = dlg.form;
+	report.dlg = dlg;
+	if (settings.onload) {
+		try {
+			await settings.onload(window.frappe.query_report);
+		} catch (e) {
+			report.unsupported.push(`report onload: ${e.message}`);
+		}
+	}
+	return settings;
+}
+
+// Cell HTML, through the report's own formatter when it has one.
+export function reportCell(report, value, column, row) {
+	const def = (v, col, opts, data) => formatValue(v, col || {}, opts || {}, data);
+	const fmt = report.settings?.formatter;
+	if (typeof fmt === "function") {
+		try {
+			return fmt(value, null, column, row, def);
+		} catch {
+			/* fall through */
+		}
+	}
+	return def(value, column, {}, row);
+}

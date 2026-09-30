@@ -39,6 +39,12 @@ watch(collapsed, (v) => savePref("flow.sidebarCollapsed", v ? "1" : "0"));
 
 const area = computed(() => {
 	if (route.name === "Home") return areas[0];
+	if (route.name === "Report")
+		return (
+			areas.find((a) =>
+				a.sections.some((sec) => sec.items.some((i) => i.report === route.params.name)),
+			) || areas.find((a) => a.key === "reports")
+		);
 	if (route.name === "Inbox") return areas.find((a) => a.key === "inbox");
 	if (route.params.doctype) return areaForDoctype(route.params.doctype) || null;
 	return null;
