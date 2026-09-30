@@ -59,6 +59,7 @@ export const ui = reactive({
 });
 
 let current = null; // { form, router, frm, handlers }
+const permCache = new Map(); // doctype -> { read, write, create, ... } for list screens and frappe.perm
 let booted = null;
 let seq = 0;
 
@@ -80,8 +81,10 @@ const SKIP = new Set([
 	"nodeType",
 ]);
 
+let currentList = null; // { list, router } while a list screen is open
+
 function record(path) {
-	const f = current?.form;
+	const f = current?.form || currentList?.list;
 	if (f && !f.unsupported.includes(path)) f.unsupported.push(path);
 	if (import.meta.env.DEV) console.warn(`[briskrew compat] unsupported: ${path}`);
 }
@@ -450,6 +453,11 @@ export class Dialog {
 			for (const df of list) {
 				const d = { ...df };
 				if (d.fieldtype === "Table" && !d.options) d.options = `__dialog_${d.fieldname}`;
+				// Desk dialogs accept Select options as an array too.
+				if (Array.isArray(d.options))
+					d.options = d.options
+						.map((o) => (typeof o === "object" ? o.value : o))
+						.join("\n");
 				if (d.default !== undefined && this.state.values[d.fieldname] === undefined) {
 					this.state.values[d.fieldname] =
 						d.fieldtype === "Table" ? [...(d.data || [])] : d.default;
@@ -1248,6 +1256,17 @@ function buildFrappe() {
 			},
 			"frappe.dom",
 		),
+		perm: lenient(
+			{
+				has_perm: (doctype, level, ptype = "read") => {
+					if (current?.form?.doctype === doctype && current.form.perms)
+						return !!current.form.perms[ptype];
+					return !!(permCache.get(doctype) || {})[ptype];
+				},
+				get_perm: (doctype) => [permCache.get(doctype) || {}],
+			},
+			"frappe.perm",
+		),
 		realtime: {
 			on: () => {},
 			off: () => {},
@@ -1795,6 +1814,7 @@ async function install() {
 	window.cint = cint;
 	window.cstr = cstr;
 	window.in_list = in_list;
+	window.has_common = (a, b) => [].concat(a || []).some((x) => [].concat(b || []).includes(x));
 	// precision(fieldname, doc): decimals for a field, as the desk computes them.
 	window.precision = (fieldname, doc) => {
 		const dt = doc?.doctype || current?.form?.doctype;
@@ -1949,4 +1969,130 @@ export function detachFormScript(form) {
 		current = null;
 		window.cur_frm = null;
 	}
+}
+
+// ---------------------------------------------------------------------------------------
+// List screens: run the doctype's list script (meta.__list_js, frappe.listview_settings)
+// ---------------------------------------------------------------------------------------
+
+export async function loadPerms(doctype) {
+	if (!permCache.has(doctype)) {
+		const { call } = await import("frappe-ui");
+		permCache.set(
+			doctype,
+			await call("hrms.briskrew.api.doctype_perms", { doctype }).catch(() => ({})),
+		);
+	}
+	return permCache.get(doctype);
+}
+
+// `list` is the reactive state of DocList.vue; this fills in its script-driven parts.
+export async function attachListScript(list, router) {
+	await install();
+	currentList = { list, router };
+	delete window.frappe.listview_settings[list.doctype];
+	runListScript(list.meta.__list_js, `${list.doctype} list`);
+	runListScript(list.meta.__custom_list_js, `${list.doctype} list (client script)`);
+	const settings = window.frappe.listview_settings[list.doctype] || {};
+	list.settings = settings;
+	list.addFields = [].concat(settings.add_fields || []);
+
+	const addButton = (label, action, group = "") => {
+		const existing = list.buttons.find((b) => b.label === label && b.group === group);
+		if (existing) existing.action = action;
+		else list.buttons.push({ label, action, group });
+		return jQuery("<button>");
+	};
+	list.listview = lenient(
+		{
+			doctype: list.doctype,
+			get meta() {
+				return list.meta;
+			},
+			get data() {
+				return list.rows;
+			},
+			get_checked_items: (onlyNames) => {
+				const rows = list.rows.filter((r) => list.selected.includes(r.name));
+				return onlyNames ? rows.map((r) => r.name) : rows;
+			},
+			clear_checked_items: () => (list.selected = []),
+			call_for_selected_items: (method, args = {}) =>
+				window.frappe
+					.call({ method, args: { ...args, names: list.selected }, freeze: true })
+					.then(() => list.reload()),
+			refresh: () => list.reload(),
+			filter_area: lenient(
+				{
+					add: (filters) => list.addFilters(filters),
+					clear: () => list.clearFilters(),
+					get: () => list.filterTuples(),
+				},
+				"listview.filter_area",
+			),
+			get filters() {
+				return list.filterTuples();
+			},
+			page: lenient(
+				{
+					add_inner_button: (label, fn, group) => addButton(label, fn, group || ""),
+					add_action_item: (label, fn) => addButton(label, fn, "Actions"),
+					add_menu_item: (label, fn) => addButton(label, fn, "Menu"),
+					set_primary_action: (label, fn) =>
+						(list.primaryAction = { label, action: fn }),
+					clear_primary_action: () => (list.primaryAction = null),
+					remove_inner_button: (label, group) =>
+						(list.buttons = list.buttons.filter(
+							(b) => !(b.label === label && b.group === (group || "")),
+						)),
+					clear_inner_toolbar: () => (list.buttons = []),
+					set_title: () => {},
+					wrapper: jQuery("<div>"),
+				},
+				"listview.page",
+			),
+			$result: jQuery("<div>"),
+			wrapper: jQuery("<div>"),
+		},
+		"listview",
+	);
+
+	if (settings.primary_action)
+		list.primaryAction = {
+			label: `New ${list.doctype}`,
+			action: () => settings.primary_action(),
+		};
+	try {
+		if (settings.onload) await settings.onload(list.listview);
+	} catch (e) {
+		record(`${list.doctype} list onload: ${e.message}`);
+	}
+}
+
+function runListScript(code, label) {
+	if (!code || !code.trim()) return;
+	try {
+		// eslint-disable-next-line no-new-func
+		new Function(`${code}\n//# sourceURL=briskrew/${label}.js`)();
+	} catch (e) {
+		record(`${label}: ${e.message}`);
+	}
+}
+
+// A row's status from the list script's get_indicator: [label, color, filter].
+export function listIndicator(list, doc) {
+	const s = list.settings || {};
+	if (typeof s.get_indicator === "function") {
+		try {
+			const r = s.get_indicator(doc);
+			if (r) return { label: r[0], color: r[1] };
+		} catch {
+			/* fall back to the status field */
+		}
+	}
+	return null;
+}
+
+export function detachListScript(list) {
+	if (currentList?.list === list) currentList = null;
 }

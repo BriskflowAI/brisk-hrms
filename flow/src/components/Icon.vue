@@ -46,5 +46,7 @@ const paths = {
 	alert: '<path d="M12 3 2 21h20z"/><path d="M12 10v5M12 18v.5"/>',
 	user: '<circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/>',
 	dot: '<circle cx="12" cy="12" r="3"/>',
+	filter: '<path d="M4 5h16M7 12h10M10 19h4"/>',
+	sort: '<path d="M7 4v16M3 16l4 4 4-4M17 20V4M13 8l4-4 4 4"/>',
 };
 </script>

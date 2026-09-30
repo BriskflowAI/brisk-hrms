@@ -38,3 +38,25 @@ def boot() -> dict:
 		},
 		"companies": {c.name: {"currency": c.default_currency, "abbr": c.abbr} for c in companies},
 	}
+
+
+@frappe.whitelist()
+def doctype_perms(doctype: str) -> dict:
+	"""What the current user may do with a doctype, for list screens and desk scripts."""
+	ptypes = (
+		"read",
+		"write",
+		"create",
+		"delete",
+		"submit",
+		"cancel",
+		"amend",
+		"import",
+		"export",
+		"print",
+		"email",
+		"report",
+	)
+	perms = {p: int(bool(frappe.has_permission(doctype, p))) for p in ptypes}
+	perms["bulk_actions"] = int(bool(frappe.get_cached_value("User", frappe.session.user, "bulk_actions")))
+	return perms
