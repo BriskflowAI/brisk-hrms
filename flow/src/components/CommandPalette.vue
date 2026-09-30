@@ -85,6 +85,7 @@ const local = computed(() => {
 			key: `nav:${i.area}:${i.label}`,
 			kind: i.doctype ? "doctype" : "report",
 			report: i.report,
+			route: i.route,
 			label: i.label,
 			hint: `${i.area} · ${i.section}`,
 			doctype: i.doctype,
@@ -153,7 +154,8 @@ function close() {
 function choose(r) {
 	if (!r) return;
 	close();
-	if (r.report) router.push({ name: "Report", params: { name: r.report } });
+	if (r.route) router.push(r.route);
+	else if (r.report) router.push({ name: "Report", params: { name: r.report } });
 	else if (r.href) window.location.href = r.href;
 	else if (r.name) router.push({ name: "Form", params: { doctype: r.doctype, name: r.name } });
 	else router.push({ name: "List", params: { doctype: r.doctype } });

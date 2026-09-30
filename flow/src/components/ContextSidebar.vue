@@ -37,6 +37,22 @@
 					<span class="truncate">{{ item.label }}</span>
 				</router-link>
 				<router-link
+					v-else-if="item.route"
+					:to="item.route"
+					class="flex h-[30px] items-center gap-2 rounded-[7px] px-2 text-[13.5px] transition-colors"
+					:class="
+						$route.path === item.route
+							? 'bg-surf font-bold text-ink shadow-[0_0_0_1px] shadow-line'
+							: 'font-medium text-ink-2 hover:bg-surf/70'
+					"
+				>
+					<span
+						class="h-1.5 w-1.5 shrink-0 rounded-sm"
+						:class="$route.path === item.route ? 'bg-acc' : 'bg-line'"
+					/>
+					<span class="truncate">{{ item.label }}</span>
+				</router-link>
+				<router-link
 					v-else-if="item.report"
 					:to="{ name: 'Report', params: { name: item.report } }"
 					class="flex h-[30px] items-center gap-2 rounded-[7px] px-2 text-[13.5px] transition-colors"

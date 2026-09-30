@@ -29,11 +29,13 @@ export const areas = [
 		key: "people",
 		label: "People",
 		icon: "users",
+		to: "/people",
 		sections: [
 			{
 				label: "Directory",
 				items: [
-					r("Employees", "Employee"),
+					{ label: "People", route: "/people" },
+					r("Employees (table)", "Employee"),
 					r("Departments", "Department"),
 					r("Designations", "Designation"),
 					r("Branches", "Branch"),

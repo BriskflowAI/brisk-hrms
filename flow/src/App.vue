@@ -45,6 +45,7 @@ const area = computed(() => {
 				a.sections.some((sec) => sec.items.some((i) => i.report === route.params.name)),
 			) || areas.find((a) => a.key === "reports")
 		);
+	if (route.name === "People") return areas.find((a) => a.key === "people");
 	if (route.name === "Inbox") return areas.find((a) => a.key === "inbox");
 	if (route.params.doctype) return areaForDoctype(route.params.doctype) || null;
 	return null;
