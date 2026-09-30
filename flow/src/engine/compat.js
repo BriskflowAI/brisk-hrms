@@ -1652,8 +1652,9 @@ function makeFrm(form) {
 		validate_form_action: () => true,
 		set_indicator_formatter: () => {},
 		get_selected: () => ({}),
-		enable_save: () => {},
-		disable_save: () => {},
+		// Scripts hide the standard Save/Submit when the document runs its own flow (e.g. Payroll Entry).
+		enable_save: () => (form.saveDisabled = false),
+		disable_save: () => (form.saveDisabled = true),
 		disable_form: () => {},
 		toggle_comments: () => {},
 		add_web_link: () => {},
@@ -1676,7 +1677,7 @@ function makeFrm(form) {
 					)),
 				set_inner_btn_group_as_primary: (group) =>
 					form.buttons.forEach((b) => b.group === group && (b.primary = true)),
-				clear_primary_action: () => {},
+				clear_primary_action: () => (form.saveDisabled = true),
 				clear_secondary_action: () => {},
 				clear_menu: () => {},
 				clear_actions_menu: () => {},
@@ -1771,6 +1772,7 @@ async function runRefresh(form) {
 		form.dashboard = [];
 		form.sections = [];
 		form.indicator = null;
+		form.saveDisabled = false;
 		await dispatch(form, form.doctype, "refresh");
 		await dispatch(form, form.doctype, "onload_post_render");
 	} finally {
@@ -1793,6 +1795,18 @@ async function install() {
 	window.cint = cint;
 	window.cstr = cstr;
 	window.in_list = in_list;
+	// precision(fieldname, doc): decimals for a field, as the desk computes them.
+	window.precision = (fieldname, doc) => {
+		const dt = doc?.doctype || current?.form?.doctype;
+		const df =
+			current?.form?.df(fieldname, doc?.parentfield || "") ||
+			metaFromCache(dt)?.fields.find((d) => d.fieldname === fieldname);
+		if (df?.precision) return cint(df.precision);
+		const sys = booted?.sysdefaults || {};
+		if (df?.fieldtype === "Currency")
+			return cint(sys.currency_precision || sys.number_format?.split(".")[1]?.length || 2);
+		return cint(sys.float_precision || 3);
+	};
 	window.format_currency = formatCurrency;
 	window.frappe = buildFrappe();
 	window.erpnext = buildErpnext();
@@ -1896,9 +1910,38 @@ export async function attachFormScript(form, router) {
 		form.on(ev, () => dispatch(form, form.doctype, ev));
 	form.on("refresh", () => runRefresh(form));
 
+	addBriskrewRules(form);
+
 	await dispatch(form, form.doctype, "setup");
 	await dispatch(form, form.doctype, "onload");
 	await runRefresh(form);
+}
+
+// briskrew's own rules on top of the desk scripts.
+const APPROVER_FIELD = {
+	"Leave Application": "leave_approver",
+	"Expense Claim": "expense_approver",
+	"Shift Request": "approver",
+};
+function addBriskrewRules(form) {
+	const field = APPROVER_FIELD[form.doctype];
+	if (!field) return;
+	// Default approver = the employee's approver, else their team lead / manager.
+	form.on("change", async (fieldname, row) => {
+		if (row || fieldname !== "employee" || !form.doc.employee || form.doc[field]) return;
+		try {
+			const approver = await window.frappe.xcall(
+				"hrms.briskrew.approvers.get_request_approver",
+				{
+					doctype: form.doctype,
+					employee: form.doc.employee,
+				},
+			);
+			if (approver && !form.doc[field]) await form.setValue(field, approver);
+		} catch {
+			/* the server fills it on save */
+		}
+	});
 }
 
 export function detachFormScript(form) {

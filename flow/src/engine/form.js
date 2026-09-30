@@ -47,6 +47,7 @@ export function createForm(doctype, name) {
 		headline: null,
 		dashboard: [], // { label, color }
 		sections: [], // { title, html } from frm.dashboard.add_section
+		saveDisabled: false, // frm.disable_save(): the form drives its own primary actions
 		transitions: [],
 		unsupported: [], // form-script APIs we couldn't run (see compat.js)
 		listeners: {}, // event -> [fn]
@@ -194,6 +195,14 @@ export function createForm(doctype, name) {
 					f.docinfo = res.docinfo || null;
 					f.perms = res.docinfo?.permissions || null;
 				}
+				if (f.isNew) {
+					// Defaults that are links fill their dependent fields, as the desk does.
+					for (const d of f.meta.fields.filter(
+						(x) => x.fieldtype === "Link" && f.doc[x.fieldname],
+					)) {
+						await f.fetchFrom(d, f.doc[d.fieldname]);
+					}
+				}
 				await f.loadTransitions();
 				f.dirty = false;
 				f.ready = true;
@@ -268,7 +277,8 @@ export function createForm(doctype, name) {
 				});
 				for (const d of targets) {
 					if (d.fetch_if_empty && target[d.fieldname]) continue;
-					target[d.fieldname] = res?.[d.fetch_from.split(".")[1]] ?? null;
+					// Through setValue so fetched links fetch in turn (employee -> company -> account).
+					await f.setValue(d.fieldname, res?.[d.fetch_from.split(".")[1]] ?? null, row);
 				}
 			} catch {
 				/* the server fills these on save anyway */

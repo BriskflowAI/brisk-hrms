@@ -458,6 +458,7 @@ watch(
 const primary = computed(() => {
 	const p = form.perms || {};
 	const submittable = !!form.meta?.is_submittable;
+	if (form.saveDisabled && !form.isNew) return null;
 	if (form.isNew || form.dirty)
 		return form.canWrite
 			? { label: form.docstatus === 1 ? "Update" : "Save", run: save }

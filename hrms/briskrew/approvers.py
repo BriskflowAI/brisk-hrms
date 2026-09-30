@@ -45,6 +45,18 @@ def backfill_default_approvers() -> int:
 	return changed
 
 
+@frappe.whitelist()
+def get_request_approver(doctype: str, employee: str) -> str | None:
+	"""The approver a new request from `employee` would get (see set_request_approver)."""
+	if doctype not in REQUEST_APPROVERS:
+		return None
+	frappe.has_permission("Employee", "read", employee, throw=True)
+	doc = frappe._dict(doctype=doctype, employee=employee)
+	doc.set = doc.__setitem__  # set_request_approver writes through doc.set()
+	set_request_approver(doc)
+	return doc.get(REQUEST_APPROVERS[doctype][0])
+
+
 def set_request_approver(doc, method=None):
 	"""Fill a request's approver when it arrives without one.
 

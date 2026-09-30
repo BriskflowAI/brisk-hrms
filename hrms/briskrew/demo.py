@@ -58,6 +58,9 @@ def seed(company: str | None = None) -> dict:
 		_leave(team[3], leave_type, add_days(next_monday, 14), add_days(next_monday, 28), "Long holiday."),
 		_attendance(team[4], _last_workday(today), "On Duty"),
 	]
+	_payroll_setup(company, [lead, *team])
+	_expense_setup(company)
+
 	shift = _shift_request(team[4], lead_user, add_days(next_monday, 7))
 	if shift:
 		requests.append(shift)
@@ -265,3 +268,83 @@ def _last_workday(today):
 	while getdate(day).weekday() == 6:  # Sunday is the demo weekly off
 		day = add_days(day, -1)
 	return day
+
+
+def _component(name, abbr, kind):
+	if not frappe.db.exists("Salary Component", name):
+		frappe.get_doc(
+			{
+				"doctype": "Salary Component",
+				"salary_component": name,
+				"salary_component_abbr": abbr,
+				"type": kind,
+			}
+		).insert(ignore_permissions=True)
+	return name
+
+
+def _payroll_setup(company, employees):
+	"""A simple monthly structure (basic = base, flat professional tax) assigned to the demo team."""
+	currency = frappe.db.get_value("Company", company, "default_currency")
+	basic = _component("Demo Basic", "DB", "Earning")
+	tax = _component("Demo Professional Tax", "DPT", "Deduction")
+	structure = "briskrew Demo Structure"
+	if not frappe.db.exists("Salary Structure", structure):
+		doc = frappe.get_doc(
+			{
+				"doctype": "Salary Structure",
+				"name": structure,
+				"company": company,
+				"currency": currency,
+				"payroll_frequency": "Monthly",
+				"earnings": [
+					{"salary_component": basic, "abbr": "DB", "amount_based_on_formula": 1, "formula": "base"}
+				],
+				"deductions": [{"salary_component": tax, "abbr": "DPT", "amount": 200}],
+			}
+		)
+		doc.insert(ignore_permissions=True)
+		doc.submit()
+
+	payable = frappe.db.get_value("Company", company, "default_payroll_payable_account")
+	if payable and frappe.db.get_value("Account", payable, "account_type") != "Payable":
+		frappe.db.set_value("Account", payable, "account_type", "Payable")
+	for i, emp in enumerate(employees):
+		if frappe.db.exists("Salary Structure Assignment", {"employee": emp, "docstatus": 1}):
+			continue
+		doc = frappe.get_doc(
+			{
+				"doctype": "Salary Structure Assignment",
+				"employee": emp,
+				"salary_structure": structure,
+				"company": company,
+				"currency": currency,
+				"from_date": f"{getdate().year}-01-01",
+				"base": 6000 + i * 750,
+				"payroll_payable_account": payable,
+			}
+		)
+		doc.insert(ignore_permissions=True)
+		doc.submit()
+
+
+def _expense_setup(company):
+	payable = frappe.db.get_value(
+		"Account", {"company": company, "account_type": "Payable", "is_group": 0}, "name"
+	)
+	if payable and not frappe.db.get_value("Company", company, "default_expense_claim_payable_account"):
+		frappe.db.set_value("Company", company, "default_expense_claim_payable_account", payable)
+
+	name = "Demo Travel"
+	if frappe.db.exists("Expense Claim Type", name):
+		return
+	expense_account = frappe.db.get_value(
+		"Account", {"company": company, "root_type": "Expense", "is_group": 0}, "name"
+	)
+	frappe.get_doc(
+		{
+			"doctype": "Expense Claim Type",
+			"expense_type": name,
+			"accounts": [{"company": company, "default_account": expense_account}] if expense_account else [],
+		}
+	).insert(ignore_permissions=True)
