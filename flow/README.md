@@ -1,4 +1,4 @@
-# briskCrew: the new HR interface
+# briskrew: the new HR interface
 
 A new interface for this app, built alongside the classic desk. The Python
 server code (every rule, calculation, permission and workflow) is unchanged.

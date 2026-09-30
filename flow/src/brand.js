@@ -2,6 +2,6 @@
 // Frappe HR, ERPNext and the Frappe Framework keep their copyright and licence
 // notices on the About page (see views/About.vue).
 export const brand = {
-	name: "briskCrew",
+	name: "briskrew",
 	mark: "b",
 };
