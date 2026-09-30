@@ -16,7 +16,7 @@
 			:key="area.key"
 			:to="entryFor(area)"
 			:aria-current="area.key === active ? 'page' : undefined"
-			class="flex w-14 flex-col items-center gap-[3px] rounded-[10px] pb-1.5 pt-[7px] text-[10.5px] transition-colors"
+			class="relative flex w-14 flex-col items-center gap-[3px] rounded-[10px] pb-1.5 pt-[7px] text-[10.5px] transition-colors"
 			:class="
 				area.key === active
 					? 'bg-ink-nav font-bold text-surf'
@@ -25,6 +25,12 @@
 		>
 			<Icon :name="area.icon" :size="20" :class="area.key === active ? 'text-lime' : ''" />
 			{{ area.label }}
+			<span
+				v-if="area.key === 'inbox' && inboxCount"
+				class="absolute right-2 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-lime px-1 text-[10px] font-extrabold text-ink"
+			>
+				{{ inboxCount > 99 ? "99+" : inboxCount }}
+			</span>
 		</router-link>
 
 		<div class="mt-auto flex flex-col items-center gap-2.5">
@@ -52,10 +58,14 @@ import Avatar from "./Avatar.vue";
 import { areas } from "@/nav";
 import { brand } from "@/brand";
 import { useSession } from "@/composables/session";
+import { inboxCount, fetchInbox } from "@/composables/inbox";
+import { onMounted } from "vue";
 
 defineProps({ active: { type: String, default: null } });
 
 const { fullName } = useSession();
+
+onMounted(() => fetchInbox().catch(() => {}));
 
 function entryFor(area) {
 	if (area.to) return area.to;

@@ -24,6 +24,7 @@ export const areas = [
 			},
 		],
 	},
+	{ key: "inbox", label: "Inbox", icon: "inbox", to: "/inbox", sections: [] },
 	{
 		key: "people",
 		label: "People",

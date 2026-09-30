@@ -1,11 +1,15 @@
 <template>
 	<div class="flex h-screen overflow-hidden bg-paper font-body text-ink">
 		<Rail :active="area?.key" />
-		<ContextSidebar v-if="area && !collapsed" :area="area" @collapse="collapsed = true" />
+		<ContextSidebar
+			v-if="area?.sections.length && !collapsed"
+			:area="area"
+			@collapse="collapsed = true"
+		/>
 		<div class="flex min-w-0 flex-grow flex-col">
 			<TopBar
 				:crumbs="crumbs"
-				:collapsed="!!area && collapsed"
+				:collapsed="!!area?.sections.length && collapsed"
 				@search="paletteOpen = true"
 				@expand="collapsed = false"
 			/>
@@ -35,6 +39,7 @@ watch(collapsed, (v) => savePref("flow.sidebarCollapsed", v ? "1" : "0"));
 
 const area = computed(() => {
 	if (route.name === "Home") return areas[0];
+	if (route.name === "Inbox") return areas.find((a) => a.key === "inbox");
 	if (route.params.doctype) return areaForDoctype(route.params.doctype) || null;
 	return null;
 });
@@ -51,6 +56,7 @@ const crumbs = computed(() => {
 		out.push({ label: route.params.name });
 	}
 	if (route.name === "About") out.push({ label: "About" });
+	if (route.name === "Inbox") out.push({ label: "Decide" });
 	return out;
 });
 

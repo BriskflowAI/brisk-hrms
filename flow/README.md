@@ -18,6 +18,42 @@ Served at `/flow` on any site with this app installed.
 - `src/brand.js`: the product name and mark. Renaming the product only touches this file.
 - `inventory/`: the feature checklist the new UI must cover, generated from the source.
 
+## Inbox
+
+`/flow/inbox`: every leave, expense, shift, attendance and comp-off request waiting on the
+current user, with the context to decide it (balance, who else in the team is away, holidays,
+policy checks). Server side: `hrms/briskrew/inbox.py`.
+
+- Decisions go through each document's own submit, or its workflow if one is set up,
+  so validations, balances and notifications are unchanged.
+- Nobody can decide their own request. Only the named approver (or an HR Manager) can decide
+  a request that has an approver field.
+- "Approve the clear ones" re-checks every request on the server and approves only those
+  with no warnings.
+- Approvals wait 5 seconds before being sent, so they can be undone.
+- Keyboard: `J`/`K` move, `A` approve, `R` reject (asks for a reason), `C` comment.
+
+## Default approvers
+
+`hrms/briskrew/approvers.py`. Any empty leave, expense or shift approver on an employee
+defaults to their reporting manager (`reports_to`). Explicit approvers always win.
+Requests that arrive without an approver (API, mobile app, imports) get one on save:
+the employee's approver, then the department's first approver, then the reporting manager.
+To apply the default to existing employees once:
+
+```sh
+bench --site <site> execute hrms.briskrew.approvers.backfill_default_approvers
+```
+
+## Demo data (test sites only)
+
+```sh
+bench --site <site> set-config developer_mode 1
+bench --site <site> execute hrms.briskrew.demo.seed --kwargs "{'company': '<Company>'}"
+```
+
+Creates a team lead (`lead@briskrew.demo`) with five reports and pending requests.
+
 ## Develop
 
 ```sh
