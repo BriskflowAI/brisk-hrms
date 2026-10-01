@@ -80,7 +80,7 @@ ssh -T git@github.com
 bench init --frappe-branch develop --python "$(uv python find 3.14)" briskrew-bench
 cd briskrew-bench
 bench get-app --branch develop erpnext
-bench get-app --branch claude/access-verification-6ziezi git@github.com:BriskflowAI/brisk-hrms.git
+bench get-app --branch feature/briskrew-ui git@github.com:BriskflowAI/brisk-hrms.git
 
 bench new-site test.localhost --mariadb-root-password choose-a-db-password --admin-password choose-an-admin-password --install-app erpnext
 bench --site test.localhost install-app hrms
