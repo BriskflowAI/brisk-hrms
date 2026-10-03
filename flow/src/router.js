@@ -9,6 +9,11 @@ const routes = [
 		component: () => import("@/views/PayrollReview.vue"),
 		props: true,
 	},
+	{
+		path: "/leave-policies",
+		name: "LeavePolicies",
+		component: () => import("@/views/LeavePolicies.vue"),
+	},
 	{ path: "/inbox", name: "Inbox", component: () => import("@/views/Inbox.vue") },
 	{
 		path: "/report/:name",

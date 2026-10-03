@@ -66,6 +66,7 @@ export const areas = [
 				label: "Leave",
 				items: [
 					r("Requests", "Leave Application"),
+					{ label: "Policy builder", route: "/leave-policies" },
 					r("Allocations", "Leave Allocation"),
 					r("Policies", "Leave Policy"),
 					r("Policy assignments", "Leave Policy Assignment"),
