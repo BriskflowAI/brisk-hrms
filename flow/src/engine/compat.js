@@ -12,7 +12,7 @@
 // form.unsupported (shown to the user with a link to the classic desk) instead of
 // failing silently.
 
-import { reactive } from "vue";
+import { markRaw, reactive } from "vue";
 import dayjs from "dayjs";
 import isBetween from "dayjs/plugin/isBetween";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
@@ -942,11 +942,9 @@ function buildFrappe() {
 		},
 		get_doc: (doctype, name) => findLocal(doctype, name),
 		get_meta: (doctype) => metaFromCache(doctype),
-		run_serially: async (tasks) => {
-			let last;
-			for (const t of tasks) last = await (typeof t === "function" ? t() : t);
-			return last;
-		},
+		// Each task gets the previous one's result, as in the desk.
+		run_serially: (tasks) =>
+			tasks.reduce((result, task) => (task ? result.then(task) : result), Promise.resolve()),
 		render_template: (name, data) =>
 			microtemplate(window.frappe.templates[name] ?? name, data),
 		templates: {},
@@ -1333,13 +1331,20 @@ function buildFrappe() {
 		treeview_settings: {},
 		views: lenient({ calendar: {}, ListView: class {}, KanbanView: class {} }, "frappe.views"),
 		query_reports: {},
+		// Loads the app's built desk bundles (e.g. performance.bundle.js) the way the desk does;
+		// stylesheets are skipped, briskrew styles the result itself.
 		require: (assets, cb) => {
-			record(`frappe.require(${[].concat(assets).join(", ")})`);
-			try {
-				cb && cb();
-			} catch {
-				/* the asset isn't available outside the desk */
-			}
+			const p = Promise.all(
+				[]
+					.concat(assets)
+					.filter((a) => !/\.css$/.test(a))
+					.map(loadDeskAsset),
+			)
+				.then(() => cb && cb())
+				.catch((e) =>
+					record(`frappe.require(${[].concat(assets).join(", ")}): ${e.message}`),
+				);
+			return p;
 		},
 		get_route: () => ["Form", current?.form?.doctype, current?.form?.doc?.name],
 		get_route_str: () => `Form/${current?.form?.doctype}/${current?.form?.doc?.name}`,
@@ -1468,7 +1473,20 @@ function fieldHandle(form, fieldname, table = "") {
 			return htmlWrapper(form, fieldname, el);
 		},
 		$input: jQuery("<input>"),
-		wrapper: el,
+		// A script holding the raw element (e.g. $(frm.fields_dict.x.wrapper)) changes it directly,
+		// so an HTML field shows that element itself rather than a copy of its markup.
+		get wrapper() {
+			const key = `${table}|${fieldname}`;
+			// Keep it in the document from the start: scripts bind handlers with page-wide
+			// selectors right after rendering, before the field moves it into place.
+			if (!el.isConnected) detachedHolder().appendChild(el);
+			if (
+				form.df(fieldname, table)?.fieldtype === "HTML" &&
+				form.overrides[key]?.__el !== el
+			)
+				form.overrides[key] = { ...(form.overrides[key] || {}), __el: markRaw(el) };
+			return el;
+		},
 		set get_query(fn) {
 			form.queries[`${table}|${fieldname}`] = fn;
 		},
@@ -1479,6 +1497,17 @@ function fieldHandle(form, fieldname, table = "") {
 		frm: current?.frm,
 	};
 	return handle;
+}
+
+function detachedHolder() {
+	let holder = document.getElementById("briskrew-detached");
+	if (!holder) {
+		holder = document.createElement("div");
+		holder.id = "briskrew-detached";
+		holder.hidden = true;
+		document.body.appendChild(holder);
+	}
+	return holder;
 }
 
 function htmlWrapper(form, fieldname, el) {
@@ -1863,11 +1892,38 @@ async function runRefresh(form) {
 // Runtime install (once) and per-form attach
 // ---------------------------------------------------------------------------------------
 
+let assetMap = null;
+const loadedAssets = {};
+function loadDeskAsset(name) {
+	if (loadedAssets[name]) return loadedAssets[name];
+	loadedAssets[name] = (async () => {
+		let src = name;
+		if (!name.startsWith("/") && !/^https?:/.test(name)) {
+			assetMap ||= await fetch("/assets/assets.json").then((r) => (r.ok ? r.json() : {}));
+			src = assetMap[name];
+			if (!src) throw new Error(`${name} isn't built on this site`);
+		}
+		await new Promise((resolve, reject) => {
+			const el = document.createElement("script");
+			el.src = src;
+			el.onload = resolve;
+			el.onerror = () => reject(new Error(`couldn't load ${name}`));
+			document.head.appendChild(el);
+		});
+	})();
+	return loadedAssets[name];
+}
+
 async function install() {
 	if (booted) return;
 	const { call } = await import("frappe-ui");
 	booted = await call("hrms.briskrew.api.boot").catch(() => ({}));
 	window.jQuery = window.$ = jQuery;
+	// Bootstrap's jQuery plugins, which desk scripts call for looks only.
+	for (const plugin of ["tooltip", "popover", "dropdown", "collapse"])
+		jQuery.fn[plugin] ||= function () {
+			return this;
+		};
 	window.moment = Object.assign((...a) => dayjs(...a), dayjs, { duration: dayjs.duration });
 	window.__ = translate;
 	window.flt = flt;

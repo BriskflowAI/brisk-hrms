@@ -1,7 +1,12 @@
 <template>
 	<!-- Layout-ish types that render content, not an input -->
+	<LiveElement
+		v-if="df.fieldtype === 'HTML' && df.__el"
+		:el="df.__el"
+		class="desk-html min-w-0 text-[14px]"
+	/>
 	<div
-		v-if="df.fieldtype === 'HTML'"
+		v-else-if="df.fieldtype === 'HTML'"
 		class="desk-html min-w-0 text-[14px]"
 		v-html="df.__html ?? df.options ?? ''"
 	/>
@@ -250,6 +255,7 @@
 import { computed } from "vue";
 import { TextEditor } from "frappe-ui";
 import FieldValue from "@/components/FieldValue.vue";
+import LiveElement from "@/components/LiveElement.vue";
 import LinkInput from "./LinkInput.vue";
 import TableField from "./TableField.vue";
 import TableMultiSelect from "./TableMultiSelect.vue";
