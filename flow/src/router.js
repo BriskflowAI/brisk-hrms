@@ -1,4 +1,4 @@
-import { createRouter, createWebHashHistory, createWebHistory } from "vue-router";
+import { createRouter, createWebHistory } from "vue-router";
 
 const routes = [
 	{ path: "/", name: "Home", component: () => import("@/views/Home.vue") },
@@ -37,14 +37,11 @@ const routes = [
 ];
 
 const router = createRouter({
-	history: import.meta.env.VITE_BRISKREW_DEMO
-		? createWebHashHistory()
-		: createWebHistory("/flow"),
+	history: createWebHistory("/flow"),
 	routes,
 });
 
 router.beforeEach((to) => {
-	if (import.meta.env.VITE_BRISKREW_DEMO) return;
 	// Guests go to Frappe's login page and come back here afterwards.
 	const loggedIn = document.cookie
 		.split("; ")

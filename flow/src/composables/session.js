@@ -4,11 +4,6 @@ function cookie(name) {
 }
 
 export function useSession() {
-	if (window.__briskrewDemoUser)
-		return {
-			user: window.__briskrewDemoUser.user,
-			fullName: window.__briskrewDemoUser.full_name,
-		};
 	return {
 		user: cookie("user_id"),
 		fullName: cookie("full_name") || cookie("user_id"),
