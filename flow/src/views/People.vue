@@ -2,28 +2,34 @@
 	<div class="relative flex h-full min-h-0 flex-col px-4 md:px-7 pt-6">
 		<header class="flex flex-wrap items-end gap-3">
 			<div class="mr-auto">
-				<h1 class="text-[40px] leading-none">People</h1>
+				<h1 class="text-[40px] leading-none">{{ __("People") }}</h1>
 				<p class="mt-1.5 text-[14px] text-mut">
 					{{
 						loading
 							? "Loading…"
 							: view === "everyone"
-								? peopleSummary
-								: `${rows.length} ${viewLabel.toLowerCase()}`
+							  ? peopleSummary
+							  : `${rows.length} ${viewLabel.toLowerCase()}`
 					}}
 				</p>
 			</div>
-			<router-link :to="{ name: 'List', params: { doctype: 'Employee' } }" class="btn-ghost"
-				>Table view</router-link
+			<router-link
+				:to="{ name: 'List', params: { doctype: 'Employee' } }"
+				class="btn-ghost"
+				>{{ __("Table view") }}</router-link
 			>
 			<router-link
 				:to="{ name: 'Form', params: { doctype: 'Employee', name: 'new' } }"
 				class="btn-ink"
-				><Icon name="plus" :size="15" /> Add person</router-link
+				><Icon name="plus" :size="15" /> {{ __("Add person") }}</router-link
 			>
 		</header>
 
-		<div class="mt-4 flex flex-wrap items-center gap-1" role="tablist" aria-label="Views">
+		<div
+			class="mt-4 flex flex-wrap items-center gap-1"
+			role="tablist"
+			:aria-label="__('Views')"
+		>
 			<button
 				v-for="v in views"
 				:key="v.key"
@@ -47,8 +53,8 @@
 				<input
 					v-model="search"
 					type="text"
-					aria-label="Search people"
-					placeholder="Name, ID or role…"
+					:aria-label="__('Search people')"
+					:placeholder="__('Name, ID or role…')"
 					class="h-full flex-grow border-0 bg-transparent p-0 text-[13.5px] focus:ring-0"
 				/>
 			</label>
@@ -66,12 +72,12 @@
 			<table class="w-full border-collapse">
 				<thead class="sticky top-0 z-10 bg-paper">
 					<tr>
-						<th :class="th">Person</th>
-						<th :class="th">Role</th>
-						<th :class="th">Manager</th>
-						<th :class="th">Today</th>
-						<th :class="th">Tenure</th>
-						<th :class="th">Coming up</th>
+						<th :class="th">{{ __("Person") }}</th>
+						<th :class="th">{{ __("Role") }}</th>
+						<th :class="th">{{ __("Manager") }}</th>
+						<th :class="th">{{ __("Today") }}</th>
+						<th :class="th">{{ __("Tenure") }}</th>
+						<th :class="th">{{ __("Coming up") }}</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -123,7 +129,9 @@
 								<span
 									v-else
 									class="inline-flex items-center gap-1.5 text-[12.5px] text-ink-2"
-									><span class="h-1.5 w-1.5 rounded-full bg-pos" />In</span
+									><span class="h-1.5 w-1.5 rounded-full bg-pos" />{{
+										__("In")
+									}}</span
 								>
 							</td>
 							<td :class="[td, 'tabular-nums text-ink-2']">
@@ -165,7 +173,7 @@
 		>
 			<div class="flex items-center gap-1.5 border-b border-line-2 px-3.5 py-3">
 				<span class="flex-grow text-[12.5px] text-mut"
-					>People / {{ dept(profile?.employee.department) || "…" }}</span
+					>{{ __("People /") }} {{ dept(profile?.employee.department) || "…" }}</span
 				>
 				<router-link
 					:to="{ name: 'Form', params: { doctype: 'Employee', name: peek } }"
@@ -175,14 +183,14 @@
 				/></router-link>
 				<button
 					type="button"
-					aria-label="Close"
+					:aria-label="__('Close')"
 					class="flex h-8 w-8 items-center justify-center rounded-md text-ink-2 hover:bg-side"
 					@click="peek = null"
 				>
 					✕
 				</button>
 			</div>
-			<div v-if="!profile" class="p-6 text-[13.5px] text-mut">Loading…</div>
+			<div v-if="!profile" class="p-6 text-[13.5px] text-mut">{{ __("Loading…") }}</div>
 			<div v-else class="flex flex-col gap-5 overflow-y-auto px-6 py-5">
 				<div class="flex items-end gap-4">
 					<img
@@ -238,7 +246,7 @@
 				</dl>
 
 				<section v-if="profile.balances.length">
-					<div class="kicker mb-2">Time off left</div>
+					<div class="kicker mb-2">{{ __("Time off left") }}</div>
 					<div
 						class="flex flex-wrap overflow-hidden rounded-xl border-[1.5px] border-dashed border-line"
 					>
@@ -254,17 +262,17 @@
 							</div>
 							<div class="mt-1 text-[12px] text-ink-2">
 								{{ b.leave_type }}
-								<span class="text-mut">of {{ num(b.total) }}</span>
+								<span class="text-mut">{{ __("of") }} {{ num(b.total) }}</span>
 							</div>
 							<div v-if="b.pending" class="mt-0.5 text-[11.5px] text-warn">
-								{{ num(b.pending) }} pending
+								{{ num(b.pending) }} {{ __("pending") }}{{ " " }}
 							</div>
 						</div>
 					</div>
 				</section>
 
 				<section v-if="profile.reports.length">
-					<div class="kicker mb-2">Team ({{ profile.reports.length }})</div>
+					<div class="kicker mb-2">{{ __("Team (") }}{{ profile.reports.length }})</div>
 					<ul class="flex flex-col gap-1.5">
 						<li v-for="r in profile.reports" :key="r.name">
 							<button
@@ -290,7 +298,7 @@
 							query: { employee: peek },
 						}"
 						class="btn-ghost h-8 text-[13px]"
-						>Request leave</router-link
+						>{{ __("Request leave") }}</router-link
 					>
 					<router-link
 						:to="{
@@ -299,7 +307,7 @@
 							query: { employee: peek },
 						}"
 						class="btn-ghost h-8 text-[13px]"
-						>Leave history</router-link
+						>{{ __("Leave history") }}</router-link
 					>
 					<router-link
 						:to="{
@@ -308,7 +316,7 @@
 							query: { employee: peek },
 						}"
 						class="btn-ghost h-8 text-[13px]"
-						>Payslips</router-link
+						>{{ __("Payslips") }}</router-link
 					>
 					<router-link
 						:to="{
@@ -317,7 +325,7 @@
 							query: { employee: peek },
 						}"
 						class="btn-ghost h-8 text-[13px]"
-						>Attendance</router-link
+						>{{ __("Attendance") }}</router-link
 					>
 				</section>
 			</div>
@@ -409,8 +417,8 @@ const todayTone = (t) =>
 	t.kind === "remote"
 		? "bg-line-2 text-ink-2"
 		: t.kind === "half"
-			? "bg-warn-tint text-warn"
-			: "bg-neg-tint text-neg";
+		  ? "bg-warn-tint text-warn"
+		  : "bg-neg-tint text-neg";
 
 const facts = computed(() => {
 	const e = profile.value?.employee || {};
@@ -423,7 +431,7 @@ const facts = computed(() => {
 				? {
 						name: "Form",
 						params: { doctype: "Employee", name: profile.value.manager.name },
-					}
+				  }
 				: null,
 		],
 		["Joined", d(e.date_of_joining)],

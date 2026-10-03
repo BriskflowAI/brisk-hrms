@@ -1,7 +1,7 @@
 <template>
 	<!-- Phones: tabs along the bottom, and everything else in a menu that slides in. -->
 	<nav
-		aria-label="Areas"
+		:aria-label="__('Areas')"
 		class="fixed inset-x-0 bottom-0 z-30 flex h-[60px] border-t border-ink-nav bg-ink pb-[env(safe-area-inset-bottom)] md:hidden"
 	>
 		<router-link
@@ -27,7 +27,7 @@
 			@click="open = true"
 		>
 			<Icon name="menu" :size="20" />
-			More
+			{{ __("More") }}{{ " " }}
 		</button>
 	</nav>
 
@@ -36,7 +36,7 @@
 		v-if="open"
 		role="dialog"
 		aria-modal="true"
-		aria-label="Menu"
+		:aria-label="__('Menu')"
 		class="fixed inset-y-0 left-0 z-50 flex w-[86vw] max-w-[340px] flex-col overflow-y-auto bg-side shadow-2xl md:hidden"
 		@keydown.esc="open = false"
 	>
@@ -48,7 +48,7 @@
 			</div>
 			<button
 				type="button"
-				aria-label="Close menu"
+				:aria-label="__('Close menu')"
 				class="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-ink-nav"
 				@click="open = false"
 			>
@@ -81,16 +81,18 @@
 			<router-link
 				:to="{ name: 'Form', params: { doctype: 'User', name: user } }"
 				class="px-4 py-2.5"
-				>My settings</router-link
+				>{{ __("My settings") }}</router-link
 			>
-			<router-link to="/about" class="px-4 py-2.5">About and licences</router-link>
-			<a href="/app" class="px-4 py-2.5">Classic desk</a>
+			<router-link to="/about" class="px-4 py-2.5">{{
+				__("About and licences")
+			}}</router-link>
+			<a href="/app" class="px-4 py-2.5">{{ __("Classic desk") }}</a>
 			<button
 				type="button"
 				class="px-4 py-2.5 text-left font-semibold text-neg"
 				@click="logout"
 			>
-				Log out
+				{{ __("Log out") }}
 			</button>
 		</div>
 	</div>

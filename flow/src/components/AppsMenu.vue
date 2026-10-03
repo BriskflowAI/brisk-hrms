@@ -4,7 +4,7 @@
 	<div class="relative" @keydown.esc="open = false">
 		<button
 			type="button"
-			aria-label="Apps"
+			:aria-label="__('Apps')"
 			aria-haspopup="dialog"
 			:aria-expanded="open"
 			class="flex h-8 w-8 items-center justify-center rounded-lg text-ink-2 hover:bg-side"
@@ -16,7 +16,7 @@
 		<div
 			v-if="open"
 			role="dialog"
-			aria-label="Apps"
+			:aria-label="__('Apps')"
 			class="fixed inset-x-2 top-14 z-50 flex max-h-[calc(100dvh-72px)] flex-col overflow-hidden rounded-xl border border-line bg-surf text-ink shadow-xl md:absolute md:inset-x-auto md:right-0 md:top-full md:mt-2 md:max-h-[min(640px,80vh)] md:w-[520px]"
 		>
 			<div class="flex items-center gap-2 border-b border-line-2 px-4 py-3">
@@ -46,18 +46,18 @@
 							>
 							<span class="min-w-0">
 								<span class="block text-[13.5px] font-bold">{{ brand.name }}</span>
-								<span class="block text-[12px] text-mut"
-									>People, time, pay, expenses, hiring and growth</span
-								>
+								<span class="block text-[12px] text-mut">{{
+									__("People, time, pay, expenses, hiring and growth")
+								}}</span>
 							</span>
 						</router-link>
 					</section>
 					<section v-for="g in data.groups" :key="g.app" class="pt-4">
 						<div class="flex items-baseline gap-2 px-1 pb-2">
 							<span class="kicker">{{ g.title }}</span>
-							<span v-if="g.app === 'hrms'" class="text-[11.5px] text-mut"
-								>classic desk · briskrew covers these</span
-							>
+							<span v-if="g.app === 'hrms'" class="text-[11.5px] text-mut">{{
+								__("classic desk · briskrew covers these")
+							}}</span>
 						</div>
 						<ul class="grid grid-cols-3 gap-1 sm:grid-cols-4">
 							<li v-for="i in g.items" :key="i.route">

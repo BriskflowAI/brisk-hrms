@@ -14,6 +14,7 @@ LEAVE_TYPE = "_Test Leave Type"
 class TestInbox(HRMSTestSuite):
 	def setUp(self):
 		frappe.set_user("Administrator")
+		self.addCleanup(frappe.set_user, "Administrator")
 
 		self.manager_user = "inbox_manager@example.com"
 		self.manager = make_employee(self.manager_user, "_Test Company")
@@ -42,9 +43,6 @@ class TestInbox(HRMSTestSuite):
 			to_date=add_months(start, 11),
 			leaves=10,
 		)
-
-	def tearDown(self):
-		frappe.set_user("Administrator")
 
 	def _leave(self, employee=None, approver=None, days=2, offset=7):
 		from_date = add_days(nowdate(), offset)
@@ -114,6 +112,14 @@ class TestInbox(HRMSTestSuite):
 		self.assertNotIn(not_mine.name, names)
 
 	def test_own_request_never_in_inbox_and_cannot_be_decided(self):
+		start = add_months(nowdate(), -1)
+		make_allocation_record(
+			employee=self.manager,
+			leave_type=LEAVE_TYPE,
+			from_date=start,
+			to_date=add_months(start, 11),
+			leaves=10,
+		)
 		own = self._leave(employee=self.manager, approver=self.manager_user)
 
 		frappe.set_user(self.manager_user)

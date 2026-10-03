@@ -23,7 +23,7 @@
 				<h2 class="flex-grow text-[20px]">{{ d.title }}</h2>
 				<button
 					type="button"
-					aria-label="Close"
+					:aria-label="__('Close')"
 					class="text-mut hover:text-ink"
 					@click="d.hide()"
 				>
@@ -106,7 +106,7 @@
 				</h2>
 				<button
 					type="button"
-					aria-label="Close"
+					:aria-label="__('Close')"
 					class="text-mut hover:text-ink"
 					@click="close(m)"
 				>

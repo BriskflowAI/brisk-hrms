@@ -1,0 +1,63 @@
+name: Upstream sync
+
+# Once a week, merge frappe/hrms develop into a branch and open a pull request, so the fork never
+# drifts far behind. The pull request runs the briskrew checks; a person merges it. If the merge
+# conflicts, the run fails and lists the files to resolve by hand (see flow/UPSTREAM.md).
+on:
+  schedule:
+    - cron: "41 3 * * 1" # Mondays 03:41 UTC
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: develop
+          fetch-depth: 0
+
+      - name: Merge upstream develop
+        id: merge
+        run: |
+          git config user.name "briskrew sync"
+          git config user.email "actions@users.noreply.github.com"
+          git remote add upstream https://github.com/frappe/hrms
+          git fetch upstream develop
+          behind=$(git rev-list --count HEAD..upstream/develop)
+          echo "behind=$behind" >> "$GITHUB_OUTPUT"
+          if [ "$behind" = "0" ]; then echo "Already up to date."; exit 0; fi
+          branch="sync/upstream-$(date -u +%Y-%m-%d)"
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+          git checkout -b "$branch"
+          if ! git merge --no-edit upstream/develop; then
+            echo "::error::Merging upstream conflicts in: $(git diff --name-only --diff-filter=U | tr '\n' ' ')"
+            echo "Resolve by hand following flow/UPSTREAM.md."
+            exit 1
+          fi
+          git push -u origin "$branch"
+
+      - name: Open the pull request
+        if: steps.merge.outputs.behind != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          branch="${{ steps.merge.outputs.branch }}"
+          # If the organization doesn't let Actions open pull requests, the branch is still pushed:
+          # leave a link to open it by hand.
+          gh pr create --base develop --head "$branch" \
+            --title "Sync with upstream Frappe HR (${{ steps.merge.outputs.behind }} commits)" \
+            --body "Merges frappe/hrms develop into the fork. Before merging: the briskrew checks pass, and run the screen audit on a codespace (flow/UPSTREAM.md)." \
+          || {
+            url="${{ github.server_url }}/${{ github.repository }}/compare/develop...$branch?expand=1"
+            echo "::warning::Couldn't open the pull request. Open it here: $url"
+            echo "Upstream merged into \`$branch\`. [Open the pull request]($url)" >> "$GITHUB_STEP_SUMMARY"
+          }
+          # Pull requests opened with the workflow token don't start other workflows, so start the
+          # briskrew checks on the branch by hand; they show on the pull request.
+          gh workflow run briskrew.yml --ref "$branch"

@@ -1,0 +1,86 @@
+name: briskrew
+
+# Guards the fork's own work on every pull request and push to develop: the three front ends
+# build, and briskrew's server tests pass on the Frappe and ERPNext develop branches. The weekly
+# run catches upstream Frappe/ERPNext changes that break briskrew before anyone notices.
+on:
+  pull_request:
+  push:
+    branches: [develop]
+  schedule:
+    - cron: "17 2 * * 1" # Mondays 02:17 UTC
+  workflow_dispatch:
+
+concurrency:
+  group: briskrew-${{ github.event.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Front ends build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      # The root install also installs frontend/, roster/ and flow/ (postinstall).
+      - name: Install
+        run: yarn install
+
+      - name: Build employee app, roster and briskrew
+        run: yarn build
+
+      - name: briskrew page was produced
+        run: test -s hrms/www/flow.html && test -n "$(ls hrms/public/flow/assets/*.js)"
+
+  server:
+    name: briskrew server tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    services:
+      mysql:
+        image: mariadb:11.8
+        env:
+          MARIADB_ROOT_PASSWORD: "root"
+        ports:
+          - 3306:3306
+        options: --health-cmd="mariadb-admin ping" --health-interval=5s --health-timeout=2s --health-retries=3
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Add to hosts
+        run: echo "127.0.0.1 test_site" | sudo tee -a /etc/hosts
+
+      # The same bench the upstream CI builds: Frappe, ERPNext, Payments and Lending (develop),
+      # with this checkout as hrms.
+      - name: Install
+        run: bash ${GITHUB_WORKSPACE}/.github/helper/install.sh
+        env:
+          FRAPPE_BRANCH: develop
+          ERPNEXT_BRANCH: develop
+          PAYMENTS_BRANCH: develop
+          GITHUB_BASE_REF: develop
+
+      - name: Run briskrew tests
+        working-directory: /home/runner/frappe-bench
+        run: |
+          failed=""
+          for t in ${GITHUB_WORKSPACE}/hrms/briskrew/test_*.py; do
+            module="hrms.briskrew.$(basename "$t" .py)"
+            echo "::group::$module"
+            bench --site test_site run-tests --module "$module" || failed="$failed $module"
+            echo "::endgroup::"
+          done
+          if [ -n "$failed" ]; then echo "::error::Failing:$failed"; exit 1; fi

@@ -7,7 +7,7 @@
 		<div
 			role="dialog"
 			aria-modal="true"
-			aria-label="Search"
+			:aria-label="__('Search')"
 			class="w-[640px] overflow-hidden rounded-2xl border border-line bg-surf shadow-2xl"
 		>
 			<label class="flex items-center gap-3 border-b border-line-2 px-4">
@@ -16,8 +16,8 @@
 					ref="input"
 					v-model="query"
 					type="text"
-					aria-label="Search"
-					placeholder="Jump to a person, record type or report…"
+					:aria-label="__('Search')"
+					:placeholder="__('Jump to a person, record type or report…')"
 					class="h-14 flex-grow border-0 bg-transparent p-0 text-[16px] text-ink placeholder:text-mut focus:ring-0"
 					@keydown.down.prevent="move(1)"
 					@keydown.up.prevent="move(-1)"
@@ -27,8 +27,9 @@
 			</label>
 			<ul class="max-h-[420px] overflow-y-auto p-2" role="listbox">
 				<li v-if="!results.length" class="px-3 py-6 text-center text-[13.5px] text-mut">
-					Nothing matches “{{ query }}”. Try a person's name or a record type such as
-					“Salary Slip”.
+					{{ " " }}{{ __("Nothing matches “") }}{{ query
+					}}{{ __("”. Try a person's name or a record type such as “Salary Slip”.")
+					}}{{ " " }}
 				</li>
 				<li
 					v-for="(r, i) in results"

@@ -1,6 +1,6 @@
 <template>
-	<Dropdown label="Columns" icon="columns" align="right" width="w-[260px]">
-		<div class="kicker px-3 pb-1 pt-1.5">Show in the list</div>
+	<Dropdown :label="__('Columns')" icon="columns" align="right" width="w-[260px]">
+		<div class="kicker px-3 pb-1 pt-1.5">{{ __("Show in the list") }}</div>
 		<label
 			v-for="f in fields"
 			:key="f.fieldname"
@@ -20,7 +20,7 @@
 			class="mt-1 block w-full border-t border-line-2 px-3 py-2 text-left text-[12.5px] font-semibold text-mut hover:text-ink"
 			@click="$emit('update:modelValue', null)"
 		>
-			Reset to the default columns
+			{{ __("Reset to the default columns") }}
 		</button>
 	</Dropdown>
 </template>

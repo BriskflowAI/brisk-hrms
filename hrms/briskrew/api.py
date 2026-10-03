@@ -203,6 +203,7 @@ def doctype_perms(doctype: str) -> dict:
 		"email",
 		"report",
 	)
-	perms = {p: int(bool(frappe.has_permission(doctype, p))) for p in ptypes}
+	# Only decides which buttons to show; every action is checked again on the server.
+	perms = {p: int(bool(frappe.has_permission(doctype, p))) for p in ptypes}  # nosemgrep
 	perms["bulk_actions"] = int(bool(frappe.get_cached_value("User", frappe.session.user, "bulk_actions")))
 	return perms

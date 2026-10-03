@@ -13,10 +13,12 @@
 			@submit.prevent="save"
 		>
 			<div class="flex items-center gap-3 border-b border-line-2 px-6 py-4">
-				<h2 id="session-defaults-title" class="flex-grow text-[20px]">Session defaults</h2>
+				<h2 id="session-defaults-title" class="flex-grow text-[20px]">
+					{{ __("Session defaults") }}
+				</h2>
 				<button
 					type="button"
-					aria-label="Close"
+					:aria-label="__('Close')"
 					class="text-mut hover:text-ink"
 					@click="open = false"
 				>
@@ -25,12 +27,15 @@
 			</div>
 			<div class="flex flex-col gap-3.5 px-6 py-5">
 				<p class="text-[13px] text-mut">
-					New records start with these values until you log out.
+					{{ __("New records start with these values until you log out.") }}
 				</p>
-				<div v-if="loading" class="py-4 text-[13px] text-mut">Loading…</div>
+				<div v-if="loading" class="py-4 text-[13px] text-mut">{{ __("Loading…") }}</div>
 				<p v-else-if="!fields.length" class="text-[13px] text-mut">
-					No session defaults are set up. An administrator can add them in Session
-					Default Settings.
+					{{
+						__(
+							"No session defaults are set up. An administrator can add them in Session Default Settings.",
+						)
+					}}
 				</p>
 				<div v-for="f in fields" :key="f.fieldname" class="flex flex-col gap-1">
 					<label
@@ -55,7 +60,9 @@
 				</p>
 			</div>
 			<div class="flex justify-end gap-2 border-t border-line-2 px-6 py-3.5">
-				<button type="button" class="btn-ghost" @click="open = false">Cancel</button>
+				<button type="button" class="btn-ghost" @click="open = false">
+					{{ __("Cancel") }}
+				</button>
 				<button type="submit" class="btn-ink" :disabled="saving || !fields.length">
 					{{ saving ? "Saving…" : "Save" }}
 				</button>

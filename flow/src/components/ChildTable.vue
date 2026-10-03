@@ -1,5 +1,5 @@
 <template>
-	<div v-if="!rows.length" class="text-[13px] text-mut">No rows</div>
+	<div v-if="!rows.length" class="text-[13px] text-mut">{{ __("No rows") }}</div>
 	<div v-else class="overflow-x-auto rounded-lg border border-line-2">
 		<table class="w-full border-collapse text-[13px]">
 			<thead>

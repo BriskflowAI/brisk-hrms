@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_import": 1,
  "allow_rename": 1,
  "autoname": "naming_series:",
  "creation": "2022-08-29 19:00:53.358248",
@@ -47,6 +48,7 @@
    "fieldtype": "Int",
    "in_list_view": 1,
    "label": "No of. Positions",
+   "non_negative": 1,
    "reqd": 1
   },
   {
@@ -54,6 +56,7 @@
    "fieldtype": "Currency",
    "in_list_view": 1,
    "label": "Expected Compensation",
+   "non_negative": 1,
    "options": "Company:company:default_currency",
    "reqd": 1
   },
@@ -202,7 +205,7 @@
    "link_fieldname": "job_requisition"
   }
  ],
- "modified": "2026-04-09 18:15:35.113740",
+ "modified": "2026-09-01 18:39:51.520758",
  "modified_by": "Administrator",
  "module": "HR",
  "name": "Job Requisition",

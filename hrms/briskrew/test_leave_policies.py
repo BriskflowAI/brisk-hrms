@@ -10,6 +10,7 @@ from hrms.tests.utils import HRMSTestSuite
 class TestBriskrewLeavePolicies(HRMSTestSuite):
 	def setUp(self):
 		frappe.set_user("Administrator")
+		self.addCleanup(frappe.set_user, "Administrator")
 		self.employees = [
 			make_employee(f"policy_member_{i}@example.com", "_Test Company", date_of_joining="2020-01-01")
 			for i in range(2)
@@ -27,9 +28,6 @@ class TestBriskrewLeavePolicies(HRMSTestSuite):
 			},
 			name=existing,
 		)["name"]
-
-	def tearDown(self):
-		frappe.set_user("Administrator")
 
 	def test_leave_type_rules_save(self):
 		saved = save_leave_type({"max_continuous_days_allowed": 3, "not_a_field": 1}, name=self.leave_type)

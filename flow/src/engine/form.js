@@ -10,6 +10,7 @@ import { reactive } from "vue";
 import { call } from "frappe-ui";
 import { getMeta, isLayout, isTable } from "@/composables/api";
 import { useSession } from "@/composables/session";
+import { __ } from "@/composables/i18n";
 
 const LOCAL_PREFIX = "new-";
 let localCounter = 0;
@@ -174,6 +175,8 @@ export function createForm(doctype, name) {
 		// ---- loading ----------------------------------------------------------------------
 
 		async load() {
+			f.undoStack = [];
+			f.redoStack = [];
 			f.error = "";
 			f.ready = false;
 			try {
@@ -241,13 +244,55 @@ export function createForm(doctype, name) {
 		async setValue(fieldname, value, row = null) {
 			const target = row || f.doc;
 			if (!target || target[fieldname] === value) return;
+			// Only the outermost change is undoable: values that scripts and linked fields fill in
+			// as a result follow from it, so undoing it re-runs them, as in the desk.
+			const outer = f.setDepth === 0 && !f.replaying;
+			if (outer) {
+				f.undoStack.push({
+					fieldname,
+					row: row?.name || null,
+					table: row?.parentfield || "",
+					before: target[fieldname],
+					after: value,
+				});
+				if (f.undoStack.length > 100) f.undoStack.shift();
+				f.redoStack = [];
+			}
 			target[fieldname] = value;
 			f.dirty = true;
-			const table = row ? row.parentfield : "";
-			const df = f.df(fieldname, table);
-			if (df?.fieldtype === "Link") await f.fetchFrom(df, value, row);
-			await f.trigger("change", fieldname, row);
+			f.setDepth++;
+			try {
+				const table = row ? row.parentfield : "";
+				const df = f.df(fieldname, table);
+				if (df?.fieldtype === "Link") await f.fetchFrom(df, value, row);
+				await f.trigger("change", fieldname, row);
+			} finally {
+				f.setDepth--;
+			}
 		},
+		// ---- undo / redo (Ctrl/⌘ Z, Ctrl/⌘ Shift Z) ----
+		undoStack: [],
+		redoStack: [],
+		setDepth: 0,
+		replaying: false,
+		async replay(from, to, key) {
+			const step = from.pop();
+			if (!step) return null;
+			const row = step.row
+				? (f.doc[step.table] || []).find((r) => r.name === step.row)
+				: null;
+			if (step.row && !row) return f.replay(from, to, key); // that row has since been removed
+			f.replaying = true;
+			try {
+				await f.setValue(step.fieldname, step[key], row);
+			} finally {
+				f.replaying = false;
+			}
+			to.push(step);
+			return step;
+		},
+		undo: () => f.replay(f.undoStack, f.redoStack, "before"),
+		redo: () => f.replay(f.redoStack, f.undoStack, "after"),
 		// Fields with "fetch_from: link.field" fill in when the link changes, as in the desk.
 		extraFetches: [], // from frm.add_fetch(link, source, target, table)
 		async fetchFrom(linkDf, value, row = null) {
@@ -434,6 +479,9 @@ export function createForm(doctype, name) {
 			return src;
 		},
 		async reloadDoc() {
+			// The record now matches the server; earlier edits can't be stepped back through.
+			f.undoStack = [];
+			f.redoStack = [];
 			const res = await call("frappe.desk.form.load.getdoc", {
 				doctype: f.doctype,
 				name: f.doc.name,
@@ -722,8 +770,11 @@ function docPerms(docinfo) {
 }
 
 export function messageOf(e, fallback) {
-	const text = e?.messages?.filter(Boolean).join(" ") || e?.message || fallback;
-	return humanError(String(text).replace(/<[^>]+>/g, ""), fallback);
+	// Server messages arrive in the user's language already; briskrew's own fallbacks go through
+	// the same catalogue (and the site's Translation records).
+	const own = fallback ? __(fallback) : fallback;
+	const text = e?.messages?.filter(Boolean).join(" ") || e?.message || own;
+	return humanError(String(text).replace(/<[^>]+>/g, ""), own);
 }
 
 // Server errors arrive as "frappe.exceptions.ValidationError: …" or with a Python traceback;

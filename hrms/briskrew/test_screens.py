@@ -13,10 +13,8 @@ from hrms.tests.utils import HRMSTestSuite
 class TestBriskrewScreens(HRMSTestSuite):
 	def setUp(self):
 		frappe.set_user("Administrator")
+		self.addCleanup(frappe.set_user, "Administrator")
 		self.employee = make_employee("screens_member@example.com", "_Test Company")
-
-	def tearDown(self):
-		frappe.set_user("Administrator")
 
 	def test_new_doc_has_server_defaults(self):
 		doc = new_doc("Leave Application")
