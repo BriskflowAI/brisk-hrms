@@ -99,8 +99,11 @@ the Report view, and the Org chart.
 Actions must be on for any of this to run (**Settings → Actions → General**):
 
 - **Allow all actions and reusable workflows.**
-- Under **Workflow permissions**, tick **Allow GitHub Actions to create and approve pull requests**.
-  The sync workflow needs this to open its pull request.
+- Under **Workflow permissions**, tick **Allow GitHub Actions to create and approve pull requests**,
+  so the sync workflow can open its pull request. If the box is greyed out, the organization
+  decides: an owner turns it on under **Organization settings → Actions → General → Workflow
+  permissions**. Until then the sync still pushes its branch, and the run's summary links to open
+  the pull request by hand.
 
 The fork also carries upstream's own workflows. Turn these off in the **Actions** tab (select the
 workflow, then **••• → Disable workflow**), because they release, publish or tidy up frappe/hrms and

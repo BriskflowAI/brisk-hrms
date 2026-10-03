@@ -47,9 +47,17 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh pr create --base develop --head "${{ steps.merge.outputs.branch }}" \
+          branch="${{ steps.merge.outputs.branch }}"
+          # If the organization doesn't let Actions open pull requests, the branch is still pushed:
+          # leave a link to open it by hand.
+          gh pr create --base develop --head "$branch" \
             --title "Sync with upstream Frappe HR (${{ steps.merge.outputs.behind }} commits)" \
-            --body "Merges frappe/hrms develop into the fork. Before merging: the briskrew checks pass, and run the screen audit on a codespace (flow/UPSTREAM.md)."
+            --body "Merges frappe/hrms develop into the fork. Before merging: the briskrew checks pass, and run the screen audit on a codespace (flow/UPSTREAM.md)." \
+          || {
+            url="${{ github.server_url }}/${{ github.repository }}/compare/develop...$branch?expand=1"
+            echo "::warning::Couldn't open the pull request. Open it here: $url"
+            echo "Upstream merged into \`$branch\`. [Open the pull request]($url)" >> "$GITHUB_STEP_SUMMARY"
+          }
           # Pull requests opened with the workflow token don't start other workflows, so start the
           # briskrew checks on the branch by hand; they show on the pull request.
-          gh workflow run briskrew.yml --ref "${{ steps.merge.outputs.branch }}"
+          gh workflow run briskrew.yml --ref "$branch"
