@@ -676,6 +676,7 @@ import CalendarView from "@/components/list/CalendarView.vue";
 import TreeView from "@/components/list/TreeView.vue";
 import BoardView from "@/components/list/BoardView.vue";
 import { useLiveCheck } from "@/composables/live";
+import { onListUpdate } from "@/composables/realtime";
 import { getMeta, isLayout, isTable, listFields, titleField } from "@/composables/api";
 import {
 	attachListScript,
@@ -1249,6 +1250,21 @@ useLiveCheck(async () => {
 	lastStamp = stamp;
 	if (changed && !list.selected.length && !menu.value && !bulkMode.value && !bulkEditOpen.value)
 		await load();
+});
+
+// Realtime: refresh as soon as a record of this type changes, with the same courtesy as above.
+let listTimer;
+const stopListUpdates = onListUpdate(props.doctype, () => {
+	clearTimeout(listTimer);
+	listTimer = setTimeout(() => {
+		if (!list.meta || list.loading || view.value !== "list") return;
+		if (list.selected.length || menu.value || bulkMode.value || bulkEditOpen.value) return;
+		load();
+	}, 400);
+});
+onBeforeUnmount(() => {
+	stopListUpdates();
+	clearTimeout(listTimer);
 });
 
 // ---- the user's columns, saved with their other list settings for this record type ----

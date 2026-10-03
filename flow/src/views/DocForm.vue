@@ -468,6 +468,7 @@
 import { modKey } from "@/composables/platform";
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
 import { useLiveCheck } from "@/composables/live";
+import { onDocUpdate } from "@/composables/realtime";
 import { call } from "frappe-ui";
 import { useSession } from "@/composables/session";
 import RemindMe from "@/components/doc/RemindMe.vue";
@@ -741,7 +742,7 @@ async function copyJson() {
 
 // ---- live: pick up changes others make while this record is open ----
 const changedBy = ref("");
-useLiveCheck(async () => {
+const checkLatest = useLiveCheck(async () => {
 	if (!form.ready || form.isNew || !form.doc?.modified) return;
 	const latest = await call("frappe.client.get_value", {
 		doctype: props.doctype,
@@ -763,6 +764,17 @@ useLiveCheck(async () => {
 		await form.reloadDoc();
 	}
 });
+// Realtime: hear about saves the moment they happen.
+let stopDocUpdates = () => {};
+watch(
+	() => form.ready && !form.isNew && form.doc?.name,
+	(name) => {
+		stopDocUpdates();
+		stopDocUpdates = name ? onDocUpdate(props.doctype, name, () => checkLatest()) : () => {};
+	},
+	{ immediate: true },
+);
+onBeforeUnmount(() => stopDocUpdates());
 async function reloadLatest() {
 	changedBy.value = "";
 	document.activeElement?.blur?.();

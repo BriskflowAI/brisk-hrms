@@ -99,6 +99,7 @@ import Icon from "./Icon.vue";
 import Avatar from "./Avatar.vue";
 import { ago, plainText } from "@/composables/format";
 import { useSession } from "@/composables/session";
+import { onNotification } from "@/composables/realtime";
 
 const router = useRouter();
 const { user } = useSession();
@@ -162,12 +163,18 @@ async function openItem(n) {
 // New notifications show up within a minute, and as soon as the tab is looked at again.
 let timer;
 const onFocus = () => document.visibilityState === "visible" && refreshCount();
+let stopRealtime = () => {};
 onMounted(() => {
 	refreshCount();
+	stopRealtime = onNotification(() => {
+		refreshCount();
+		if (open.value) load();
+	});
 	timer = setInterval(() => document.visibilityState === "visible" && refreshCount(), 60_000);
 	document.addEventListener("visibilitychange", onFocus);
 });
 onBeforeUnmount(() => {
+	stopRealtime();
 	clearInterval(timer);
 	document.removeEventListener("visibilitychange", onFocus);
 });
