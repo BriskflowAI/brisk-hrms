@@ -76,10 +76,11 @@ jobs:
       - name: Run briskrew tests
         working-directory: /home/runner/frappe-bench
         run: |
-          set -e
+          failed=""
           for t in ${GITHUB_WORKSPACE}/hrms/briskrew/test_*.py; do
             module="hrms.briskrew.$(basename "$t" .py)"
             echo "::group::$module"
-            bench --site test_site run-tests --module "$module"
+            bench --site test_site run-tests --module "$module" || failed="$failed $module"
             echo "::endgroup::"
           done
+          if [ -n "$failed" ]; then echo "::error::Failing:$failed"; exit 1; fi

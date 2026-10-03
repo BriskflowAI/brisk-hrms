@@ -112,6 +112,14 @@ class TestInbox(HRMSTestSuite):
 		self.assertNotIn(not_mine.name, names)
 
 	def test_own_request_never_in_inbox_and_cannot_be_decided(self):
+		start = add_months(nowdate(), -1)
+		make_allocation_record(
+			employee=self.manager,
+			leave_type=LEAVE_TYPE,
+			from_date=start,
+			to_date=add_months(start, 11),
+			leaves=10,
+		)
 		own = self._leave(employee=self.manager, approver=self.manager_user)
 
 		frappe.set_user(self.manager_user)
