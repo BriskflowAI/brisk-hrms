@@ -231,8 +231,10 @@ export const areas = [
 	},
 ];
 
+// The area a record type belongs to. Home only lists shortcuts, so a record type's own area wins.
 export function areaForDoctype(doctype) {
-	return areas.find((a) => a.sections.some((s) => s.items.some((i) => i.doctype === doctype)));
+	const has = (a) => a.sections.some((s) => s.items.some((i) => i.doctype === doctype));
+	return areas.find((a) => a.key !== "home" && has(a)) || areas.find(has);
 }
 
 export function allNavItems() {

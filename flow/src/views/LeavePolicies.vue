@@ -41,7 +41,7 @@
 					class="flex items-center gap-2 rounded-lg px-2.5 py-2 text-left"
 					:class="
 						isSelected(p)
-							? 'bg-surf shadow-[0_0_0_1px] shadow-line'
+							? 'bg-surf shadow-[inset_0_0_0_1px] shadow-line'
 							: 'hover:bg-surf/70'
 					"
 					@click="select(p)"
@@ -75,7 +75,9 @@
 					:key="t.name"
 					type="button"
 					class="rounded-lg px-2.5 py-1.5 text-left text-[13px] hover:bg-surf/70"
-					:class="typeEdit?.name === t.name && 'bg-surf shadow-[0_0_0_1px] shadow-line'"
+					:class="
+						typeEdit?.name === t.name && 'bg-surf shadow-[inset_0_0_0_1px] shadow-line'
+					"
 					@click="openType(t)"
 				>
 					<span class="block truncate font-semibold">{{ t.name }}</span>

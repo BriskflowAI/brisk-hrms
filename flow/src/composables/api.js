@@ -67,7 +67,13 @@ export function saveDoc(doc) {
 export function searchDoctypes(txt) {
 	return call("frappe.client.get_list", {
 		doctype: "DocType",
-		filters: { istable: 0, name: ["like", `%${txt}%`] },
+		// HR and payroll record types, plus the shared basics they use (Company, User, Holiday…);
+		// ERPNext's stock, selling and accounting types aren't what people look for here.
+		filters: {
+			istable: 0,
+			name: ["like", `%${txt}%`],
+			module: ["in", ["HR", "Payroll", "Setup", "Core", "Desk", "Contacts", "Projects"]],
+		},
 		fields: ["name", "module"],
 		limit_page_length: 8,
 		order_by: "name asc",

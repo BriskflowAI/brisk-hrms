@@ -133,7 +133,11 @@ const series = computed(() =>
 );
 const max = computed(() => Math.max(0, ...series.value.flatMap((s) => s.values)));
 const ticks = computed(() =>
-	niceTicks(max.value, 4, series.value.every((s) => s.values.every((v) => Number.isInteger(v)))),
+	niceTicks(
+		max.value,
+		4,
+		series.value.every((s) => s.values.every((v) => Number.isInteger(v))),
+	),
 );
 const top = computed(() => ticks.value[ticks.value.length - 1] || 1);
 const n = computed(() => Math.max(props.labels.length, 1));

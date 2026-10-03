@@ -27,7 +27,7 @@
 		>
 			<Icon name="search" :size="15" />
 			<span class="flex-grow">Search people, records, reports…</span>
-			<kbd class="rounded border border-current px-1 text-[11px] font-semibold">⌘K</kbd>
+			<kbd class="kbd">{{ modKey }}K</kbd>
 		</button>
 		<div class="flex flex-1 items-center justify-end gap-2">
 			<a href="/app" class="btn-ghost h-8 px-3 text-[13px]">
@@ -39,6 +39,7 @@
 </template>
 
 <script setup>
+import { modKey } from "@/composables/platform";
 import Icon from "./Icon.vue";
 
 defineProps({

@@ -707,5 +707,18 @@ function serverMessage(data) {
 
 export function messageOf(e, fallback) {
 	const text = e?.messages?.filter(Boolean).join(" ") || e?.message || fallback;
-	return String(text).replace(/<[^>]+>/g, "");
+	return humanError(String(text).replace(/<[^>]+>/g, ""), fallback);
+}
+
+// Server errors arrive as "frappe.exceptions.ValidationError: …" or with a Python traceback;
+// people only need the sentence.
+export function humanError(text, fallback = "Something went wrong.") {
+	let t = String(text || "").trim();
+	if (/Traceback \(most recent call last\)/.test(t))
+		t = t.split("\n").filter(Boolean).pop() || "";
+	t = t.replace(/^(?:[\w.]+\.)?(?:exceptions\.)?\w*(?:Error|Exception)\s*:\s*/, "");
+	// Developer-facing type errors ("Argument 'x' in 'module.fn' should be of type…")
+	if (/should be of type '\w+' but got/.test(t))
+		t = "Some required information is missing. Fill in the required fields and try again.";
+	return t || fallback;
 }

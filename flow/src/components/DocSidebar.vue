@@ -200,7 +200,7 @@
 				<div class="min-w-0 flex-grow">
 					<div>
 						<span class="font-semibold">{{ item.by }}</span>
-						<span class="text-mut">{{ item.what }}</span>
+						{{ " " }}<span class="text-mut">{{ item.what }}</span>
 					</div>
 					<div
 						v-if="item.body"

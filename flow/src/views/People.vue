@@ -7,11 +7,9 @@
 					{{
 						loading
 							? "Loading…"
-							: `${rows.length} ${
-									view === "everyone"
-										? `across ${Object.keys(departments).length} teams`
-										: viewLabel.toLowerCase()
-							  }`
+							: view === "everyone"
+							  ? peopleSummary
+							  : `${rows.length} ${viewLabel.toLowerCase()}`
 					}}
 				</p>
 			</div>
@@ -35,7 +33,7 @@
 				class="h-[30px] rounded-[7px] px-3 text-[13.5px]"
 				:class="
 					view === v.key
-						? 'bg-surf font-bold text-ink shadow-[0_0_0_1px] shadow-line'
+						? 'bg-surf font-bold text-ink shadow-[inset_0_0_0_1px] shadow-line'
 						: 'font-medium text-ink-2 hover:bg-surf/60'
 				"
 				@click="setView(v.key)"
@@ -81,7 +79,7 @@
 						<tr>
 							<td colspan="6" class="border-b border-line-2 px-3 pb-1.5 pt-4">
 								<span class="chip bg-acc-tint text-acc">{{
-									g.department || "No department"
+									dept(g.department) || "No department"
 								}}</span>
 								<span class="ml-2 text-[12.5px] text-mut">{{
 									g.rows.length
@@ -167,7 +165,7 @@
 		>
 			<div class="flex items-center gap-1.5 border-b border-line-2 px-3.5 py-3">
 				<span class="flex-grow text-[12.5px] text-mut"
-					>People / {{ profile?.employee.department || "…" }}</span
+					>People / {{ dept(profile?.employee.department) || "…" }}</span
 				>
 				<router-link
 					:to="{ name: 'Form', params: { doctype: 'Employee', name: peek } }"
@@ -205,7 +203,7 @@
 				</div>
 				<div class="flex flex-wrap gap-1.5">
 					<span v-if="profile.employee.department" class="chip bg-acc-tint text-acc">{{
-						profile.employee.department
+						dept(profile.employee.department)
 					}}</span>
 					<span v-if="profile.today" class="chip" :class="todayTone(profile.today)">{{
 						todayLabel(profile.today)
@@ -328,6 +326,7 @@
 </template>
 
 <script setup>
+import { dept } from "@/composables/format";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { call } from "frappe-ui";
@@ -354,6 +353,11 @@ const view = ref(route.query.view || "everyone");
 const search = ref("");
 const rows = ref([]);
 const departments = ref({});
+const peopleSummary = computed(() => {
+	const n = rows.value.length;
+	const teams = Object.keys(departments.value).length;
+	return `${n} ${n === 1 ? "person" : "people"} in ${teams} ${teams === 1 ? "team" : "teams"}`;
+});
 const loading = ref(true);
 const error = ref("");
 const peek = ref(route.query.peek || null);

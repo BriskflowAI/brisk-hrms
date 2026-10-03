@@ -40,10 +40,14 @@ const formatted = computed(() => {
 	const v = props.value;
 	switch (props.field.fieldtype) {
 		case "Currency":
-		case "Float":
 			return Number(v).toLocaleString(undefined, {
 				minimumFractionDigits: 2,
 				maximumFractionDigits: 2,
+			});
+		case "Float":
+			// 1 rather than 1.00; keeps real decimals (0.5 days, 7.25 hours).
+			return Number(v).toLocaleString(undefined, {
+				maximumFractionDigits: Number(props.field.precision) || 3,
 			});
 		case "Percent":
 			return `${Number(v)}%`;

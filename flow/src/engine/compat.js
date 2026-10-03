@@ -23,7 +23,7 @@ import duration from "dayjs/plugin/duration";
 import weekday from "dayjs/plugin/weekday";
 import jQuery from "jquery";
 import { getMeta, metaFromCache } from "@/composables/api";
-import { localDocs, localName, messageOf } from "./form";
+import { humanError, localDocs, localName, messageOf } from "./form";
 
 import hrmsUtils from "../../../hrms/public/js/utils/index.js?raw";
 import hrmsLeaveUtils from "../../../hrms/public/js/utils/leave_utils.js?raw";
@@ -221,7 +221,9 @@ async function rawCall(method, args = {}) {
 	const messages = serverMessages(data);
 	if (!res.ok) {
 		const err = new Error(
-			messages.map((m) => m.message).join(" ") || data.exception || `${method} failed`,
+			humanError(
+				messages.map((m) => m.message).join(" ") || data.exception || `${method} failed`,
+			),
 		);
 		err.messages = messages.map((m) => m.message);
 		err.response = data;
@@ -307,7 +309,15 @@ function frappeCall(opts, args, callback) {
 				r = await rawCall(o.method, o.args);
 				if (r.docs) syncDocs(r.docs);
 			}
-			if (o.callback) await o.callback(r);
+			if (o.callback) {
+				// A bug inside the script's own callback is the script's, not the server's:
+				// like the desk, log it rather than interrupt the user.
+				try {
+					await o.callback(r);
+				} catch (scriptError) {
+					console.error(`[briskrew] ${o.method} callback:`, scriptError);
+				}
+			}
 			return r;
 		} catch (e) {
 			if (o.error) o.error(e.response || e);
@@ -980,8 +990,13 @@ function buildFrappe() {
 		defaults: lenient(
 			{
 				get_default: (k) => (b.defaults || {})[k] ?? (b.sysdefaults || {})[k] ?? null,
-				get_user_default: (k) => (b.defaults || {})[k] ?? null,
-				get_user_defaults: (k) => [].concat((b.defaults || {})[k] ?? []),
+				// Keys are stored lower-case ("company"); scripts ask for "Company".
+				get_user_default: (k) =>
+					(b.defaults || {})[k] ?? (b.defaults || {})[String(k).toLowerCase()] ?? null,
+				get_user_defaults: (k) =>
+					[].concat(
+						(b.defaults || {})[k] ?? (b.defaults || {})[String(k).toLowerCase()] ?? [],
+					),
 				get_global_default: (k) => (b.sysdefaults || {})[k] ?? null,
 			},
 			"frappe.defaults",

@@ -17,13 +17,22 @@ def boot() -> dict:
 	"""Session context the classic desk keeps in `frappe.boot`, needed to run desk form scripts."""
 	user = frappe.session.user
 	defaults = frappe.defaults.get_defaults() or {}
+	employee = frappe.db.get_value("Employee", {"user_id": user}, ["name", "company"], as_dict=True)
+	if not defaults.get("company"):
+		# Desk scripts and report filters start from the user's company; fall back sensibly.
+		companies = frappe.get_all("Company", pluck="name", limit=2)
+		defaults["company"] = (
+			(employee and employee.company)
+			or frappe.db.get_single_value("Global Defaults", "default_company")
+			or (companies[0] if len(companies) == 1 else None)
+		)
 	companies = frappe.get_all("Company", fields=["name", "default_currency", "abbr"])
 	return {
 		"user": user,
 		"user_fullname": frappe.utils.get_fullname(user),
 		"user_email": frappe.db.get_value("User", user, "email") or user,
 		"roles": frappe.get_roles(user),
-		"employee": frappe.db.get_value("Employee", {"user_id": user}, "name"),
+		"employee": employee and employee.name,
 		"defaults": defaults,
 		"sysdefaults": {
 			"currency": frappe.db.get_default("currency"),

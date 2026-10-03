@@ -56,6 +56,7 @@
 </template>
 
 <script setup>
+import { dept } from "@/composables/format";
 import { computed, nextTick, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import Icon from "./Icon.vue";
@@ -120,7 +121,7 @@ watch(query, (q) => {
 				key: `emp:${p.name}`,
 				kind: "person",
 				label: p.employee_name || p.name,
-				hint: [p.designation, p.department].filter(Boolean).join(" · "),
+				hint: [p.designation, dept(p.department)].filter(Boolean).join(" · "),
 				doctype: "Employee",
 				name: p.name,
 			})),

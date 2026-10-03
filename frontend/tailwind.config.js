@@ -38,8 +38,8 @@ export default {
 				lime: "#C9F24B",
 			},
 			fontFamily: {
-				sans: ["Figtree", "system-ui", "sans-serif"],
-				display: ["Bricolage Grotesque", "Figtree", "system-ui", "sans-serif"],
+				sans: ["Geist", "system-ui", "sans-serif"],
+				display: ["Geist", "system-ui", "sans-serif"],
 			},
 			screens: {
 				standalone: {

@@ -30,19 +30,19 @@
 		<TableField :form="form" :df="df" />
 	</div>
 
-	<div v-else class="grid grid-cols-[minmax(120px,38%)_minmax(0,1fr)] items-start gap-3">
-		<label :for="id" class="pt-1.5 text-[13px] text-mut">
+	<!-- Label above the input, as in the desk, so inputs keep their width in narrow columns. -->
+	<div v-else class="flex min-w-0 flex-col gap-1">
+		<label
+			v-if="df.fieldtype !== 'Check' || readOnly"
+			:for="id"
+			class="text-[12.5px] font-semibold text-ink-2"
+		>
 			{{ df.label }}<span v-if="required" class="text-neg" aria-label="required">*</span>
-			<span
-				v-if="df.description"
-				class="mt-0.5 block text-[11.5px] leading-snug text-mut/80"
-				v-html="df.description"
-			/>
 		</label>
 
 		<div class="min-w-0">
 			<!-- Read-only display -->
-			<div v-if="readOnly" class="min-h-[32px] break-words pt-1.5 text-[14px]">
+			<div v-if="readOnly" class="min-h-[24px] break-words text-[14px]">
 				<template v-if="df.fieldtype === 'Geolocation'">
 					<a
 						v-if="coords"
@@ -129,7 +129,10 @@
 					class="h-4 w-4 rounded border-line text-acc focus:ring-acc"
 					@change="set($event.target.checked ? 1 : 0)"
 				/>
-				<span class="text-[13px] text-ink-2">{{ value ? "Yes" : "No" }}</span>
+				<span class="text-[13.5px] font-semibold text-ink-2"
+					>{{ df.label
+					}}<span v-if="required" class="text-neg" aria-label="required">*</span></span
+				>
 			</label>
 			<textarea
 				v-else-if="
@@ -248,6 +251,11 @@
 				@change="onInput($event.target.value)"
 			/>
 		</div>
+		<p
+			v-if="df.description"
+			class="text-[11.5px] leading-snug text-mut"
+			v-html="df.description"
+		/>
 	</div>
 </template>
 

@@ -57,10 +57,10 @@
 				class="mx-2 flex items-center gap-2 rounded-[10px] bg-acc-tint px-3 py-2 text-[12.5px] text-ink"
 			>
 				<Icon name="check" :size="15" :stroke="2.2" class="text-acc" />
-				<span class="flex-grow">Approve the ones that pass every check</span>
+				<span class="min-w-0 flex-grow">Approve all that pass every check</span>
 				<button
 					type="button"
-					class="font-bold text-acc hover:text-acc-hover"
+					class="shrink-0 whitespace-nowrap font-bold text-acc hover:text-acc-hover"
 					@click="confirmBulk = true"
 				>
 					Review {{ visible.length }}
@@ -86,7 +86,7 @@
 						class="flex w-full gap-2.5 rounded-[10px] px-3 py-2.5 text-left"
 						:class="
 							key(item) === key(current)
-								? 'bg-surf shadow-[0_0_0_1.5px] shadow-ink'
+								? 'bg-surf shadow-[inset_0_0_0_1.5px] shadow-ink'
 								: 'hover:bg-surf/70'
 						"
 						@click="select(item)"
@@ -183,7 +183,7 @@
 							</div>
 							<div v-if="ctx.team.members.length">
 								<div class="mb-2.5 text-[13px] font-bold">
-									{{ current.department }} those days
+									{{ dept(current.department) }} those days
 								</div>
 								<div class="overflow-x-auto">
 									<table class="border-separate border-spacing-1 text-[12px]">
@@ -326,7 +326,7 @@
 						@click="openNote('Comment')"
 					>
 						<Icon name="file" :size="15" /> Comment
-						<kbd class="ml-1 text-[11px] opacity-70">C</kbd>
+						<kbd class="kbd">C</kbd>
 					</button>
 					<a
 						:href="classicUrl(current.doctype, current.name)"
@@ -346,7 +346,7 @@
 							@click="act(a.action)"
 						>
 							{{ a.action }}
-							<kbd v-if="isReject(a)" class="ml-1 text-[11px] opacity-70">R</kbd>
+							<kbd v-if="isReject(a)" class="kbd">R</kbd>
 						</button>
 						<button
 							v-if="primaryAction"
@@ -356,7 +356,7 @@
 							@click="act(primaryAction.action)"
 						>
 							{{ primaryAction.action }} &amp; next
-							<kbd class="ml-1 text-[11px] opacity-70">A</kbd>
+							<kbd class="kbd">A</kbd>
 						</button>
 						<span v-if="!ctx.actions.length" class="text-[13px] text-mut"
 							>You can view this request but not decide it.</span
@@ -391,7 +391,7 @@
 			</div>
 			<div class="flex flex-wrap gap-1.5">
 				<span v-if="ctx.employee.department" class="chip bg-acc-tint text-acc">{{
-					ctx.employee.department
+					dept(ctx.employee.department)
 				}}</span>
 				<span v-if="ctx.employee.date_of_joining" class="chip bg-line-2 text-ink-2"
 					>Joined {{ date(ctx.employee.date_of_joining) }}</span
@@ -469,6 +469,7 @@
 </template>
 
 <script setup>
+import { dept } from "@/composables/format";
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import dayjs from "dayjs";
 import Icon from "@/components/Icon.vue";

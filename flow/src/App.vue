@@ -63,7 +63,7 @@ const crumbs = computed(() => {
 			label: route.params.doctype,
 			to: { name: "List", params: { doctype: route.params.doctype } },
 		});
-		out.push({ label: route.params.name });
+		out.push({ label: route.params.name === "new" ? "New" : route.params.name });
 	}
 	if (route.name === "About") out.push({ label: "About" });
 	if (route.name === "LeavePolicies") out.push({ label: "Leave policies" });

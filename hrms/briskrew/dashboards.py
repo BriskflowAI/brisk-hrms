@@ -33,9 +33,11 @@ AREAS = {
 
 
 @frappe.whitelist()
-def get_overview(area: str) -> dict:
+def get_overview(area: str, company: str | None = None) -> dict:
 	if area not in AREAS:
 		frappe.throw(_("Unknown area {0}").format(area))
+	# Every card and chart is scoped to one company, shown and switchable on screen.
+	frappe.local.briskrew_company = company or None
 	conf = AREAS[area]
 	cards, charts = list(conf.get("cards", [])), list(conf.get("charts", []))
 	for name in conf.get("dashboards", []):
@@ -47,6 +49,8 @@ def get_overview(area: str) -> dict:
 	return {
 		"area": area,
 		"title": _(conf["title"]),
+		"company": _default_company(),
+		"companies": frappe.get_list("Company", pluck="name", order_by="name asc", limit=100),
 		"cards": [_card(n) for n in cards if frappe.db.exists("Number Card", n)],
 		"charts": [_chart(n) for n in charts if frappe.db.exists("Dashboard Chart", n)],
 	}
@@ -221,9 +225,13 @@ def _dynamic(expr):
 
 
 def _default_company():
-	"""The user's company; failing that, the one most active employees work for."""
-	company = frappe.defaults.get_user_default("Company") or frappe.db.get_single_value(
-		"Global Defaults", "default_company"
+	"""The company chosen on screen, else the user's default, else their own employee record's,
+	else the site default, else the one most active employees work for."""
+	company = (
+		getattr(frappe.local, "briskrew_company", None)
+		or frappe.defaults.get_user_default("Company")
+		or frappe.db.get_value("Employee", {"user_id": frappe.session.user}, "company")
+		or frappe.db.get_single_value("Global Defaults", "default_company")
 	)
 	if not company:
 		top = frappe.get_all(

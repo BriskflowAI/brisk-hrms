@@ -184,9 +184,7 @@
 						@click="primary.run()"
 					>
 						{{ form.busy || primary.label }}
-						<kbd v-if="primary.label === 'Save'" class="ml-1 text-[11px] opacity-60"
-							>⌘S</kbd
-						>
+						<kbd v-if="primary.label === 'Save'" class="kbd">{{ modKey }}S</kbd>
 					</button>
 				</div>
 
@@ -369,6 +367,7 @@
 </template>
 
 <script setup>
+import { modKey } from "@/composables/platform";
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
 import { onBeforeRouteLeave, useRouter } from "vue-router";
 import Icon from "@/components/Icon.vue";

@@ -64,7 +64,7 @@
 						class="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-left"
 						:class="
 							focus === p.employee
-								? 'bg-surf shadow-[0_0_0_1px] shadow-line'
+								? 'bg-surf shadow-[inset_0_0_0_1px] shadow-line'
 								: 'hover:bg-surf/70'
 						"
 						@click="scrollTo(p.employee)"
@@ -83,6 +83,13 @@
 
 				<!-- diffs -->
 				<div class="min-w-0 flex-grow overflow-y-auto px-6 py-5">
+					<p
+						v-if="!data.totals.slips"
+						class="mb-4 rounded-xl bg-acc-tint px-4 py-3 text-[13.5px] text-ink"
+					>
+						Salary slips for this run haven't been created yet. Create them on the
+						payroll run; this page then compares each one with the previous period.
+					</p>
 					<p
 						v-if="!shown.length"
 						class="rounded-xl border border-line bg-surf px-6 py-10 text-center text-[14px] text-mut"
@@ -110,7 +117,7 @@
 								>{{ p.employee_name }}</router-link
 							>
 							<span v-if="p.department" class="chip bg-acc-tint text-acc">{{
-								p.department
+								dept(p.department)
 							}}</span>
 							<span v-if="p.new" class="chip bg-pos-tint text-pos"
 								>First payslip</span
@@ -135,7 +142,11 @@
 									<th class="w-9 py-1.5"><span class="sr-only">Change</span></th>
 									<th class="py-1.5 text-left font-semibold">Component</th>
 									<th class="px-4 py-1.5 text-right font-semibold">Previous</th>
-									<th class="px-4 py-1.5 text-right font-semibold">This run</th>
+									<th
+										class="whitespace-nowrap px-4 py-1.5 text-right font-semibold"
+									>
+										This run
+									</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -303,6 +314,7 @@
 </template>
 
 <script setup>
+import { dept } from "@/composables/format";
 import { computed, onMounted, reactive, ref } from "vue";
 import { call } from "frappe-ui";
 import dayjs from "dayjs";

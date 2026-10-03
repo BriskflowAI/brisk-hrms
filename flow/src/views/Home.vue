@@ -86,14 +86,19 @@
 
 				<div class="relative flex flex-col gap-0.5 pt-2">
 					<div
-						v-for="(bar, i) in bars"
-						:key="bar.name"
+						v-for="(lane, i) in lanes"
+						:key="i"
 						class="grid h-8 grid-cols-[110px_repeat(7,minmax(0,1fr))] items-center"
 					>
-						<div class="text-[11.5px] font-semibold uppercase tracking-wider text-mut">
+						<div
+							class="text-[11.5px] font-semibold uppercase tracking-wider text-mut"
+							style="grid-column: 1; grid-row: 1"
+						>
 							{{ i === 0 ? "Away" : "" }}
 						</div>
 						<router-link
+							v-for="bar in lane"
+							:key="bar.name"
 							:to="{
 								name: 'Form',
 								params: { doctype: 'Leave Application', name: bar.name },
@@ -104,7 +109,10 @@
 									? 'border-[1.5px] border-dashed border-acc bg-surf text-acc'
 									: 'bg-acc-tint text-acc'
 							"
-							:style="{ gridColumn: `${bar.start + 2} / ${bar.end + 3}` }"
+							:style="{
+								gridColumn: `${bar.start + 2} / ${bar.end + 3}`,
+								gridRow: 1,
+							}"
 							:title="`${bar.employee_name} · ${bar.leave_type}${
 								bar.status === 'Open' ? ' (waiting for approval)' : ''
 							}`"
@@ -280,7 +288,7 @@
 							class="h-2 w-2 rounded-sm"
 							:style="{ background: palette[i % palette.length] }"
 						/>
-						<span class="flex-grow truncate">{{ h.department }}</span>
+						<span class="flex-grow truncate">{{ dept(h.department) }}</span>
 						<span class="tabular-nums text-mut">{{ h.count }}</span>
 					</li>
 				</ul>
@@ -292,6 +300,7 @@
 </template>
 
 <script setup>
+import { dept } from "@/composables/format";
 import { computed, onMounted, ref } from "vue";
 import { call } from "frappe-ui";
 import dayjs from "dayjs";
@@ -351,6 +360,15 @@ const bars = computed(() => {
 		start: Math.max(0, dayjs(a.from_date).diff(start, "day")),
 		end: Math.min(6, dayjs(a.to_date).diff(start, "day")),
 	}));
+});
+// Bars that don't overlap share a row, so the week stays compact.
+const lanes = computed(() => {
+	const out = [];
+	for (const bar of [...bars.value].sort((a, b) => a.start - b.start)) {
+		const lane = out.find((l) => l[l.length - 1].end < bar.start);
+		lane ? lane.push(bar) : out.push([bar]);
+	}
+	return out;
 });
 const awayToday = computed(() =>
 	(data.value?.away || []).filter(

@@ -9,7 +9,7 @@
 	h2,
 	h3 {
 		@apply font-display font-bold;
-		letter-spacing: -0.03em;
+		letter-spacing: -0.02em;
 	}
 	:focus-visible {
 		outline: 2px solid theme("colors.acc.DEFAULT");
@@ -29,6 +29,10 @@
 	}
 	.btn-ink {
 		@apply btn border-ink bg-ink text-surf hover:bg-ink-nav;
+	}
+	/* Keyboard shortcut hint inside a button */
+	.kbd {
+		@apply ml-1.5 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded border border-current px-1 font-body text-[10.5px] font-semibold leading-none opacity-60;
 	}
 	.chip {
 		@apply inline-flex items-center whitespace-nowrap rounded-[5px] px-2 py-0.5 text-xs font-semibold;

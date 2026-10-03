@@ -1,5 +1,5 @@
 /* briskrew look for Frappe's sign-in pages. Styles only: the pages and their logic are Frappe's. */
-@import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&family=Figtree:wght@400..700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@400..800&display=swap");
 
 body[data-path="login"],
 body[data-path="update-password"] {
@@ -15,7 +15,7 @@ body[data-path="update-password"] {
 	--bk-lime: #c9f24b;
 	background: var(--bk-paper);
 	color: var(--bk-ink);
-	font-family: Figtree, system-ui, sans-serif;
+	font-family: Geist, system-ui, sans-serif;
 }
 
 /* The card */
@@ -46,7 +46,7 @@ body[data-path="login"] .page-card .app-logo {
 }
 body[data-path="login"] .page-card h4,
 body[data-path="update-password"] .page-card h4 {
-	font-family: "Bricolage Grotesque", Figtree, system-ui, sans-serif;
+	font-family: Geist, system-ui, sans-serif;
 	font-size: 28px;
 	font-weight: 800;
 	letter-spacing: -0.02em;
@@ -132,10 +132,10 @@ body[data-path="login"] :focus-visible {
 		position: fixed;
 		left: 56px;
 		bottom: 112px;
-		font-family: "Bricolage Grotesque", Figtree, system-ui, sans-serif;
+		font-family: Geist, system-ui, sans-serif;
 		font-size: 76px;
 		font-weight: 800;
-		letter-spacing: -0.04em;
+		letter-spacing: -0.03em;
 		line-height: 1;
 		color: #fff;
 	}

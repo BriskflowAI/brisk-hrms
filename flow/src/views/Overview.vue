@@ -7,6 +7,19 @@
 					{{ data?.title || "Overview" }} at a glance
 				</h1>
 			</div>
+			<label v-if="data?.companies?.length > 1" class="flex items-center gap-2 text-[13px]">
+				<span class="font-semibold text-ink-2">Company</span>
+				<select
+					:value="data.company"
+					class="h-9 rounded-lg border border-line bg-surf py-0 pl-3 pr-8 text-[13.5px] font-semibold text-ink focus:border-acc focus:ring-1 focus:ring-acc"
+					@change="
+						company = $event.target.value;
+						load();
+					"
+				>
+					<option v-for="c in data.companies" :key="c" :value="c">{{ c }}</option>
+				</select>
+			</label>
 			<button type="button" class="btn-ghost" :disabled="loading" @click="load">
 				{{ loading ? "Refreshing…" : "Refresh" }}
 			</button>
@@ -136,7 +149,12 @@
 							:aria-label="ch.label"
 						/>
 						<p
-							v-if="hasData(ch) && !ch.error && !tables[ch.name] && ch.datasets.length > 3"
+							v-if="
+								hasData(ch) &&
+								!ch.error &&
+								!tables[ch.name] &&
+								ch.datasets.length > 3
+							"
 							class="mt-2 text-[12px] text-mut"
 						>
 							Showing 3 of {{ ch.datasets.length }} series. The table has them all.
@@ -161,13 +179,17 @@ const props = defineProps({ area: { type: String, required: true } });
 const data = ref(null);
 const error = ref("");
 const loading = ref(false);
+const company = ref(null); // the company picked on screen; the server picks one when empty
 const tables = reactive({});
 
 async function load() {
 	loading.value = true;
 	error.value = "";
 	try {
-		data.value = await call("hrms.briskrew.dashboards.get_overview", { area: props.area });
+		data.value = await call("hrms.briskrew.dashboards.get_overview", {
+			area: props.area,
+			company: company.value,
+		});
 	} catch (e) {
 		error.value = messageOf(e, "Couldn't load this overview.");
 	} finally {
