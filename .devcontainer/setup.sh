@@ -66,7 +66,8 @@ fi
 step "Front-end packages"
 (cd apps/hrms && yarn install)
 
-if ! bench --site "$SITE" list-apps 2>/dev/null | grep -q hrms; then
+# The marker is written only once the site is fully made.
+if [ ! -f "sites/$SITE/.briskrew-site-ready" ]; then
 	step "Site $SITE"
 	# --force replaces a site left half-made by an earlier attempt.
 	bench new-site "$SITE" --force --db-host "$DB_HOST" --db-port "$DB_PORT" --db-root-username root \
@@ -74,6 +75,7 @@ if ! bench --site "$SITE" list-apps 2>/dev/null | grep -q hrms; then
 		--admin-password "$ADMIN_PASSWORD" --install-app erpnext
 	bench --site "$SITE" install-app hrms
 	bench --site "$SITE" set-config developer_mode 1
+	touch "sites/$SITE/.briskrew-site-ready"
 fi
 bench use "$SITE"
 
