@@ -103,6 +103,9 @@ step "Building the interface"
 bench build
 (cd apps/hrms && yarn build)
 
+step "Starting briskrew"
+bash "$REPO/.devcontainer/start.sh" || true
+
 step "Done"
-echo "Open the Ports tab and the 'briskrew' port (8000)."
+echo "Open the Ports tab and the 'briskrew' port (8000), then go to /flow."
 echo "Sign in as Administrator / $ADMIN_PASSWORD, or the team lead lead@briskrew.demo / briskrew-demo-1."
