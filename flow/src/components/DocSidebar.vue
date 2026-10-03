@@ -181,19 +181,18 @@
 
 	<!-- Activity -->
 	<section class="flex flex-col gap-3">
-		<div class="kicker">Activity</div>
-		<label class="flex flex-col gap-1.5">
-			<span class="sr-only">Add a comment</span>
-			<textarea v-model="comment" rows="2" placeholder="Add a comment" :class="inputCls" />
-		</label>
-		<button
-			v-if="comment.trim()"
-			type="button"
-			class="btn-ghost self-start"
-			@click="postComment"
-		>
-			Comment
-		</button>
+		<div class="kicker flex items-center">
+			<span class="flex-grow">Activity</span>
+			<button
+				v-if="canEmail"
+				type="button"
+				class="flex items-center gap-1 normal-case tracking-normal text-acc"
+				@click="compose()"
+			>
+				<Icon name="mail" :size="13" /> New email
+			</button>
+		</div>
+		<CommentBox @submit="postComment" />
 		<ol class="flex flex-col gap-3">
 			<li v-for="item in timeline" :key="item.key" class="flex gap-2.5 text-[13px]">
 				<Avatar :label="item.by" :size="22" />
@@ -202,17 +201,77 @@
 						<span class="font-semibold">{{ item.by }}</span>
 						{{ " " }}<span class="text-mut">{{ item.what }}</span>
 					</div>
+					<CommentBox
+						v-if="editing === item.key"
+						class="mt-1"
+						:initial="item.html"
+						cta="Save"
+						:rows="3"
+						cancellable
+						@submit="(html) => saveComment(item, html)"
+						@cancel="editing = null"
+					/>
 					<div
-						v-if="item.body"
-						class="mt-1 whitespace-pre-line break-words rounded-lg bg-paper px-2.5 py-1.5 text-ink-2"
+						v-else-if="item.body"
+						class="mt-1 whitespace-pre-line break-words rounded-lg border border-line-2 bg-surf px-2.5 py-1.5 text-ink-2"
+						:class="item.kind === 'email' && !expanded.has(item.key) && 'line-clamp-4'"
+						v-text="item.body"
+					/>
+					<div
+						class="mt-0.5 flex flex-wrap items-center gap-x-2.5 text-[11.5px] text-mut"
 					>
-						{{ item.body }}
+						<span>{{ ago(item.when) }}</span>
+						<template
+							v-if="item.kind === 'comment' && item.mine && editing !== item.key"
+						>
+							<button
+								type="button"
+								class="hover:text-ink"
+								@click="editing = item.key"
+							>
+								Edit
+							</button>
+							<button
+								type="button"
+								class="hover:text-neg"
+								@click="deleteComment(item)"
+							>
+								Delete
+							</button>
+						</template>
+						<template v-if="item.kind === 'email'">
+							<button
+								v-if="item.body.length > 240"
+								type="button"
+								class="hover:text-ink"
+								@click="toggleExpanded(item.key)"
+							>
+								{{ expanded.has(item.key) ? "Less" : "More" }}
+							</button>
+							<button
+								v-if="canEmail"
+								type="button"
+								class="hover:text-ink"
+								@click="reply(item)"
+							>
+								Reply
+							</button>
+							<button
+								v-if="canEmail && item.cc"
+								type="button"
+								class="hover:text-ink"
+								@click="reply(item, true)"
+							>
+								Reply all
+							</button>
+						</template>
 					</div>
-					<div class="mt-0.5 text-[11.5px] text-mut">{{ ago(item.when) }}</div>
 				</div>
 			</li>
 		</ol>
 	</section>
+
+	<EmailComposer v-model="emailOpen" :form="form" :initial="emailInitial" />
 </template>
 
 <script setup>
@@ -221,13 +280,23 @@ import dayjs from "dayjs";
 import Icon from "@/components/Icon.vue";
 import Avatar from "@/components/Avatar.vue";
 import LinkInput from "@/components/fields/LinkInput.vue";
+import CommentBox from "@/components/doc/CommentBox.vue";
+import EmailComposer from "@/components/doc/EmailComposer.vue";
+import { call } from "frappe-ui";
+import { useSession } from "@/composables/session";
+import { messageOf } from "@/engine/form";
 
 const props = defineProps({ form: { type: Object, required: true } });
 
 const inputCls =
 	"w-full rounded-lg border border-line bg-surf px-2.5 py-1.5 text-[13px] focus:border-acc focus:ring-1 focus:ring-acc";
 const adding = reactive({ assign: false, share: false });
-const comment = ref("");
+const { user } = useSession();
+const editing = ref(null);
+const expanded = ref(new Set());
+const emailOpen = ref(false);
+const emailInitial = ref(null);
+const canEmail = computed(() => !!props.form.perms?.email);
 const newTag = ref("");
 const connections = ref([]);
 
@@ -247,22 +316,53 @@ const strip = (html) =>
 const ago = (d) => (d ? dayjs(d).format("D MMM YYYY, HH:mm") : "");
 
 // One feed like the desk timeline: comments, emails, field changes, creation.
+const who = (u) => info.value.user_info?.[u]?.fullname || u;
+
 const timeline = computed(() => {
 	const out = [];
+	// Assignments, attachments, likes, workflow and other logged events, as the desk shows them.
+	for (const key of [
+		"assignment_logs",
+		"attachment_logs",
+		"info_logs",
+		"like_logs",
+		"workflow_logs",
+	])
+		for (const l of info.value[key] || []) {
+			const by = who(l.owner);
+			let what = strip(l.content).trim();
+			if (what.startsWith(by)) what = what.slice(by.length).trim();
+			if (key === "like_logs" && !what) what = "liked this";
+			out.push({ key: `${key}${l.name}`, by, what, when: l.creation });
+		}
 	for (const c of info.value.comments || [])
 		out.push({
 			key: `c${c.name}`,
-			by: c.comment_by || c.owner,
+			kind: "comment",
+			name: c.name,
+			mine: c.owner === user || c.comment_email === user,
+			by: c.comment_by || who(c.owner),
 			what: "commented",
-			body: strip(c.content),
+			html: c.content,
+			body: strip(String(c.content || "").replace(/<br\s*\/?>/gi, "\n")),
 			when: c.creation,
 		});
 	for (const c of info.value.communications || [])
 		out.push({
 			key: `m${c.name}`,
+			kind: "email",
 			by: c.sender_full_name || c.sender,
-			what: `emailed · ${c.subject || ""}`,
-			body: strip(c.content).slice(0, 400),
+			what: `${c.sent_or_received === "Received" ? "wrote" : "emailed"} · ${c.subject || ""}`,
+			body: strip(
+				String(c.content || "")
+					.replace(/<br\s*\/?>/gi, "\n")
+					.replace(/<\/p>/gi, "\n"),
+			).trim(),
+			subject: c.subject || "",
+			sender: c.sender,
+			recipients: c.recipients,
+			cc: c.cc,
+			received: c.sent_or_received === "Received",
 			when: c.creation,
 		});
 	for (const v of info.value.versions || []) {
@@ -276,21 +376,68 @@ const timeline = computed(() => {
 		if (changed.length)
 			out.push({
 				key: `v${v.name}`,
-				by: v.owner,
+				by: who(v.owner),
 				what: `changed ${changed.slice(0, 4).join(", ")}${changed.length > 4 ? "…" : ""}`,
 				when: v.creation,
 			});
 	}
 	const d = props.form.doc;
 	if (d?.creation)
-		out.push({ key: "created", by: d.owner, what: "created this", when: d.creation });
+		out.push({ key: "created", by: who(d.owner), what: "created this", when: d.creation });
 	return out.sort((a, b) => (a.when < b.when ? 1 : -1));
 });
 
-async function postComment() {
-	const text = comment.value.trim();
-	if (!text) return;
-	if (await props.form.addComment(text)) comment.value = "";
+async function postComment(html, clear) {
+	if (await props.form.addComment(html)) clear();
+}
+async function saveComment(item, html) {
+	try {
+		await call("frappe.desk.form.utils.update_comment", { name: item.name, content: html });
+		editing.value = null;
+		await props.form.reloadDoc();
+	} catch (e) {
+		props.form.error = messageOf(e, "Couldn't save the comment.");
+	}
+}
+async function deleteComment(item) {
+	if (!window.confirm("Delete this comment?")) return;
+	try {
+		await call("frappe.client.delete", { doctype: "Comment", name: item.name });
+		await props.form.reloadDoc();
+	} catch (e) {
+		props.form.error = messageOf(e, "Couldn't delete the comment.");
+	}
+}
+function toggleExpanded(key) {
+	const next = new Set(expanded.value);
+	next.has(key) ? next.delete(key) : next.add(key);
+	expanded.value = next;
+}
+function compose(initial = null) {
+	emailInitial.value = initial;
+	emailOpen.value = true;
+}
+function reply(item, all = false) {
+	const quoted = item.body
+		.split("\n")
+		.map((l) => `> ${l}`)
+		.join("\n");
+	const to = item.received ? item.sender : item.recipients;
+	const cc = all
+		? [item.received ? item.recipients : "", item.cc]
+				.filter(Boolean)
+				.join(", ")
+				.split(",")
+				.map((x) => x.trim())
+				.filter((x) => x && x !== user && x !== to)
+				.join(", ")
+		: "";
+	compose({
+		to: to || "",
+		cc,
+		subject: item.subject.startsWith("Re:") ? item.subject : `Re: ${item.subject}`,
+		message: `\n\nOn ${ago(item.when)}, ${item.by} wrote:\n${quoted}`,
+	});
 }
 async function addTag() {
 	const t = newTag.value.trim();

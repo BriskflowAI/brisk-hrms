@@ -9,6 +9,7 @@
 import { reactive } from "vue";
 import { call } from "frappe-ui";
 import { getMeta, isLayout, isTable } from "@/composables/api";
+import { useSession } from "@/composables/session";
 
 const LOCAL_PREFIX = "new-";
 let localCounter = 0;
@@ -494,12 +495,13 @@ export function createForm(doctype, name) {
 
 		addComment(content) {
 			return f.run("Commenting", async () => {
+				const session = useSession();
 				await call("frappe.desk.form.utils.add_comment", {
 					reference_doctype: f.doctype,
 					reference_name: f.doc.name,
 					content,
-					comment_email: window.frappe?.session?.user || "",
-					comment_by: window.frappe?.session?.user_fullname || "",
+					comment_email: window.frappe?.session?.user || session.user,
+					comment_by: window.frappe?.session?.user_fullname || session.fullName,
 				});
 				await f.reloadDoc();
 			});
