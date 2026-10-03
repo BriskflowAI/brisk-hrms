@@ -80,6 +80,14 @@
 					>
 						Session defaults
 					</button>
+					<button
+						type="button"
+						role="menuitem"
+						class="hidden w-full px-3.5 py-2 text-left hover:bg-side md:block"
+						@click="((menuOpen = false), (shortcutsOpen = true))"
+					>
+						Keyboard shortcuts
+					</button>
 					<router-link
 						to="/about"
 						role="menuitem"
@@ -110,6 +118,7 @@
 import Icon from "./Icon.vue";
 import Avatar from "./Avatar.vue";
 import SessionDefaults from "./SessionDefaults.vue";
+import { shortcutsOpen } from "@/composables/ui";
 import { canReadDoctype, visibleAreas } from "@/composables/access";
 import { brand } from "@/brand";
 import { logout as signOut, useSession } from "@/composables/session";

@@ -168,6 +168,29 @@
 									Reload
 								</button>
 								<button
+									v-if="form.undoStack.length"
+									type="button"
+									class="menu-item"
+									@click="((menu = null), form.undo())"
+								>
+									Undo last change
+								</button>
+								<button
+									v-if="form.redoStack.length"
+									type="button"
+									class="menu-item"
+									@click="((menu = null), form.redo())"
+								>
+									Redo
+								</button>
+								<button
+									type="button"
+									class="menu-item"
+									@click="((menu = null), (jumpOpen = true))"
+								>
+									Jump to field
+								</button>
+								<button
 									type="button"
 									class="menu-item"
 									@click="((remindOpen = true), (menu = null))"
@@ -452,6 +475,7 @@
 			</div>
 		</div>
 
+		<JumpToField v-model="jumpOpen" :fields="jumpFields" />
 		<RemindMe
 			v-if="!form.isNew && form.doc"
 			v-model="remindOpen"
@@ -466,12 +490,14 @@
 
 <script setup>
 import { modKey } from "@/composables/platform";
-import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
 import { useLiveCheck } from "@/composables/live";
 import { onDocUpdate } from "@/composables/realtime";
 import { call } from "frappe-ui";
 import { useSession } from "@/composables/session";
 import RemindMe from "@/components/doc/RemindMe.vue";
+import JumpToField from "@/components/doc/JumpToField.vue";
+import { __ } from "@/composables/i18n";
 import { onBeforeRouteLeave, useRouter } from "vue-router";
 import Icon from "@/components/Icon.vue";
 import Avatar from "@/components/Avatar.vue";
@@ -787,11 +813,53 @@ watch(
 );
 
 function onKey(e) {
-	if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
+	if (!(e.metaKey || e.ctrlKey) || e.altKey) return;
+	const key = e.key.toLowerCase();
+	const el = document.activeElement;
+	const typing = el && (el.matches?.("input, textarea, select") || el.isContentEditable);
+	if (key === "s") {
 		e.preventDefault();
 		if (form.canWrite && (form.dirty || form.isNew)) save();
+	} else if (key === "j") {
+		e.preventDefault();
+		jumpOpen.value = true;
+	} else if (key === "b" && form.perms?.create) {
+		e.preventDefault();
+		router.push({ name: "Form", params: { doctype: props.doctype, name: "new" } });
+	} else if (!typing && form.canWrite && (key === "z" || key === "y")) {
+		// In a text field the browser's own undo applies; elsewhere, step through field changes.
+		e.preventDefault();
+		if (key === "y" || e.shiftKey) form.redo();
+		else form.undo();
 	}
 }
+
+// ---- jump to field (Ctrl/⌘ J): every field on the form, across tabs and folded sections ----
+const jumpOpen = ref(false);
+const jumpFields = computed(() =>
+	layout.value.flatMap((t, ti) =>
+		t.sections.flatMap((s) =>
+			s.columns
+				.flat()
+				.filter((df) => df.label && df.fieldname)
+				.map((df) => ({
+					key: `${ti}-${s.key}-${df.fieldname}`,
+					label: __(df.label),
+					where: [layout.value.length > 1 && __(t.label), s.label && __(s.label)]
+						.filter(Boolean)
+						.join(" · "),
+					go: async () => {
+						tab.value = ti;
+						collapsed[s.key] = false;
+						await nextTick();
+						const el = document.getElementById(`f-${df.fieldname}`);
+						el?.scrollIntoView({ block: "center", behavior: "smooth" });
+						el?.focus?.({ preventScroll: true });
+					},
+				})),
+		),
+	),
+);
 
 onBeforeRouteLeave(() => {
 	if (form.dirty && !window.confirm("You have unsaved changes. Leave anyway?")) return false;
