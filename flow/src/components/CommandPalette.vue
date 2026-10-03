@@ -63,6 +63,7 @@ import Icon from "./Icon.vue";
 import Avatar from "./Avatar.vue";
 import { allNavItems } from "@/nav";
 import { searchDoctypes, searchEmployees } from "@/composables/api";
+import { canOpen, canReadDoctype } from "@/composables/access";
 
 const open = defineModel({ type: Boolean, default: false });
 const router = useRouter();
@@ -75,6 +76,7 @@ const nav = allNavItems();
 const local = computed(() => {
 	const q = query.value.trim().toLowerCase();
 	return nav
+		.filter(canOpen)
 		.filter(
 			(i) =>
 				!q ||
@@ -125,13 +127,15 @@ watch(query, (q) => {
 				doctype: "Employee",
 				name: p.name,
 			})),
-			...doctypes.map((d) => ({
-				key: `dt:${d.name}`,
-				kind: "doctype",
-				label: d.name,
-				hint: d.module,
-				doctype: d.name,
-			})),
+			...doctypes
+				.filter((d) => canReadDoctype(d.name))
+				.map((d) => ({
+					key: `dt:${d.name}`,
+					kind: "doctype",
+					label: d.name,
+					hint: d.module,
+					doctype: d.name,
+				})),
 		];
 	}, 180);
 });

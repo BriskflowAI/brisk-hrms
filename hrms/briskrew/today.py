@@ -13,19 +13,25 @@ def get_today() -> dict:
 	week_start = add_days(today, -today.weekday())
 	week_end = add_days(week_start, 6)
 
-	employees = frappe.get_list(
-		"Employee",
-		filters={"status": "Active"},
-		fields=[
-			"name",
-			"employee_name",
-			"department",
-			"date_of_joining",
-			"date_of_birth",
-			"final_confirmation_date",
-			"relieving_date",
-		],
-		limit=1000,
+	# Each part shows only what this user may read; the rest is left out, not an error.
+	can_see_people = bool(frappe.has_permission("Employee", "read"))
+	employees = (
+		frappe.get_list(
+			"Employee",
+			filters={"status": "Active"},
+			fields=[
+				"name",
+				"employee_name",
+				"department",
+				"date_of_joining",
+				"date_of_birth",
+				"final_confirmation_date",
+				"relieving_date",
+			],
+			limit=1000,
+		)
+		if can_see_people
+		else []
 	)
 	names = [e.name for e in employees]
 
@@ -37,13 +43,12 @@ def get_today() -> dict:
 		"moments": _moments(employees, week_start, week_end),
 		"inbox": get_inbox(),
 		"payroll": _payroll(today),
-		"headcount": _headcount(employees),
-		"joining_soon": sum(
-			1
-			for e in frappe.get_list(
-				"Employee", filters={"date_of_joining": (">", today)}, pluck="name", limit=200
-			)
-		),
+		"headcount": _headcount(employees) if can_see_people else None,
+		"joining_soon": len(
+			frappe.get_list("Employee", filters={"date_of_joining": (">", today)}, pluck="name", limit=200)
+		)
+		if can_see_people
+		else 0,
 	}
 
 

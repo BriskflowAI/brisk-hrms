@@ -5,10 +5,15 @@
 <script setup>
 import { computed } from "vue";
 
-const props = defineProps({ doc: { type: Object, required: true } });
+const props = defineProps({
+	doc: { type: Object, required: true },
+	// Draft, Submitted and Cancelled only mean something for record types that are submitted.
+	submittable: { type: Boolean, default: true },
+});
 
 const text = computed(() => {
 	if (props.doc.status) return props.doc.status;
+	if (!props.submittable) return "";
 	return { 0: "Draft", 1: "Submitted", 2: "Cancelled" }[props.doc.docstatus] || "";
 });
 

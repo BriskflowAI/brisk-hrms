@@ -37,7 +37,11 @@
 					<span v-else-if="form.workflowState" class="chip bg-acc-tint text-acc">{{
 						form.workflowState
 					}}</span>
-					<StatusChip v-else-if="!form.isNew" :doc="form.doc" />
+					<StatusChip
+						v-else-if="!form.isNew"
+						:doc="form.doc"
+						:submittable="!!form.meta?.is_submittable"
+					/>
 
 					<!-- Buttons added by the form's own script, grouped like the desk -->
 					<div v-for="g in buttonGroups" :key="g.group" class="relative">

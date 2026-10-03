@@ -50,6 +50,22 @@ def boot() -> dict:
 
 
 @frappe.whitelist()
+def access() -> dict:
+	"""What the current user can open, so menus only offer what will work."""
+	user = frappe.get_user()
+	return {
+		"can_read": sorted(set(user.get_can_read())),
+		"reports": sorted(user.get_all_reports()),
+	}
+
+
+@frappe.whitelist()
+def unread_notifications() -> int:
+	"""Unread notifications for the bell, without loading them."""
+	return frappe.db.count("Notification Log", {"for_user": frappe.session.user, "read": 0})
+
+
+@frappe.whitelist()
 def doctype_perms(doctype: str) -> dict:
 	"""What the current user may do with a doctype, for list screens and desk scripts."""
 	ptypes = (

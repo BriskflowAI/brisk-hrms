@@ -28,7 +28,8 @@ import Rail from "@/components/Rail.vue";
 import ContextSidebar from "@/components/ContextSidebar.vue";
 import TopBar from "@/components/TopBar.vue";
 import CommandPalette from "@/components/CommandPalette.vue";
-import { areas, areaForDoctype } from "@/nav";
+import { areaForDoctype } from "@/nav";
+import { loadAccess, visibleAreas } from "@/composables/access";
 import { brand } from "@/brand";
 
 const route = useRoute();
@@ -37,7 +38,10 @@ const collapsed = ref(localPref("flow.sidebarCollapsed") === "1");
 
 watch(collapsed, (v) => savePref("flow.sidebarCollapsed", v ? "1" : "0"));
 
+loadAccess();
+
 const area = computed(() => {
+	const areas = visibleAreas.value;
 	if (route.name === "Home") return areas[0];
 	if (route.name === "Report")
 		return (
@@ -50,7 +54,10 @@ const area = computed(() => {
 	if (route.name === "LeavePolicies") return areas.find((a) => a.key === "time");
 	if (route.name === "Overview") return areas.find((a) => a.key === route.params.area);
 	if (route.name === "Inbox") return areas.find((a) => a.key === "inbox");
-	if (route.params.doctype) return areaForDoctype(route.params.doctype) || null;
+	if (route.params.doctype) {
+		const key = areaForDoctype(route.params.doctype)?.key;
+		return areas.find((a) => a.key === key) || null;
+	}
 	return null;
 });
 

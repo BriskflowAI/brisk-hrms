@@ -193,7 +193,7 @@ export function createForm(doctype, name) {
 						);
 					f.doc = doc;
 					f.docinfo = res.docinfo || null;
-					f.perms = res.docinfo?.permissions || null;
+					f.perms = docPerms(res.docinfo);
 				}
 				if (f.isNew) {
 					// Defaults that are links fill their dependent fields, as the desk does.
@@ -439,7 +439,7 @@ export function createForm(doctype, name) {
 			});
 			f.doc = res.docs[0];
 			f.docinfo = res.docinfo || null;
-			f.perms = res.docinfo?.permissions || f.perms;
+			f.perms = docPerms(res.docinfo) || f.perms;
 			f.dirty = false;
 			await f.loadTransitions();
 		},
@@ -703,6 +703,20 @@ function serverMessage(data) {
 	} catch {
 		return data?.message || "";
 	}
+}
+
+// The document's permissions, plus what has been shared with this user (the desk does the same,
+// which is how people can edit their own User record).
+function docPerms(docinfo) {
+	if (!docinfo?.permissions) return null;
+	const perms = { ...docinfo.permissions };
+	const me = document.cookie.match(/(?:^|; )user_id=([^;]*)/)?.[1];
+	const user = me ? decodeURIComponent(me) : "";
+	for (const s of docinfo.shared || []) {
+		if (s.user !== user && !s.everyone) continue;
+		for (const right of ["read", "write", "submit", "share"]) perms[right] ||= s[right];
+	}
+	return perms;
 }
 
 export function messageOf(e, fallback) {

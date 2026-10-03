@@ -30,6 +30,7 @@
 			<kbd class="kbd">{{ modKey }}K</kbd>
 		</button>
 		<div class="flex flex-1 items-center justify-end gap-2">
+			<NotificationsMenu />
 			<a href="/app" class="btn-ghost h-8 px-3 text-[13px]">
 				<Icon name="ext" :size="14" />
 				Classic desk
@@ -41,6 +42,7 @@
 <script setup>
 import { modKey } from "@/composables/platform";
 import Icon from "./Icon.vue";
+import NotificationsMenu from "./NotificationsMenu.vue";
 
 defineProps({
 	crumbs: { type: Array, default: () => [] },

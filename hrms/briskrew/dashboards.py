@@ -50,7 +50,10 @@ def get_overview(area: str, company: str | None = None) -> dict:
 		"area": area,
 		"title": _(conf["title"]),
 		"company": _default_company(),
-		"companies": frappe.get_list("Company", pluck="name", order_by="name asc", limit=100),
+		# The picker only offers companies this user may read; without access there's no picker.
+		"companies": frappe.get_list("Company", pluck="name", order_by="name asc", limit=100)
+		if frappe.has_permission("Company", "read")
+		else [],
 		"cards": [_card(n) for n in cards if frappe.db.exists("Number Card", n)],
 		"charts": [_chart(n) for n in charts if frappe.db.exists("Dashboard Chart", n)],
 	}

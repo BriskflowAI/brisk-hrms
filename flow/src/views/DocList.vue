@@ -421,7 +421,11 @@
 								:class="tone(indicator(row).color)"
 								>{{ indicator(row).label }}</span
 							>
-							<StatusChip v-else :doc="row" />
+							<StatusChip
+								v-else
+								:doc="row"
+								:submittable="!!list.meta?.is_submittable"
+							/>
 						</td>
 						<td
 							v-if="list.settings?.button"
@@ -663,7 +667,7 @@ const columns = computed(() =>
 	list.meta
 		? listFields(list.meta).filter(
 				(f) => f.fieldname !== titleKey.value && f.fieldname !== "status",
-		  )
+			)
 		: [],
 );
 const canCreate = computed(
@@ -865,7 +869,7 @@ async function load(more = false) {
 			? [
 					[props.doctype, "name", "like", `%${q}%`],
 					...(titleKey.value ? [[props.doctype, titleKey.value, "like", `%${q}%`]] : []),
-			  ]
+				]
 			: null;
 		const [page, count] = await Promise.all([
 			call("frappe.client.get_list", {
@@ -883,7 +887,7 @@ async function load(more = false) {
 						doctype: props.doctype,
 						filters: serverFilters(),
 						or_filters: orFilters,
-				  }).catch(() => null),
+					}).catch(() => null),
 		]);
 		if (mine !== seq) return;
 		list.rows = more ? [...list.rows, ...page] : page;
@@ -999,7 +1003,7 @@ async function bulkAction(action) {
 				? "Working on it in the background. Refresh in a minute to see the result."
 				: `${done} of ${names.length} done.${
 						failed?.length ? ` Not changed: ${failed.join(", ")}` : ""
-				  }`;
+					}`;
 		list.selected = [];
 		Object.assign(bulk, { field: "", value: "" });
 		await load();

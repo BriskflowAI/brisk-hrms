@@ -12,7 +12,7 @@
 		</router-link>
 
 		<router-link
-			v-for="area in areas"
+			v-for="area in visibleAreas"
 			:key="area.key"
 			:to="entryFor(area)"
 			:aria-current="area.key === active ? 'page' : undefined"
@@ -35,6 +35,7 @@
 
 		<div class="mt-auto flex flex-col items-center gap-2.5">
 			<a
+				v-if="canReadDoctype('HR Settings')"
 				href="/app/hr-settings"
 				class="flex w-14 flex-col items-center gap-[3px] rounded-[10px] pb-1.5 pt-[7px] text-[10.5px] font-medium text-ink-navtext hover:bg-ink-nav/60"
 			>
@@ -65,6 +66,21 @@
 						<div class="truncate text-[12px] text-mut">{{ user }}</div>
 					</div>
 					<router-link
+						:to="{ name: 'Form', params: { doctype: 'User', name: user } }"
+						role="menuitem"
+						class="block px-3.5 py-2 hover:bg-side"
+						@click="menuOpen = false"
+						>My settings</router-link
+					>
+					<button
+						type="button"
+						role="menuitem"
+						class="block w-full px-3.5 py-2 text-left hover:bg-side"
+						@click="openSessionDefaults"
+					>
+						Session defaults
+					</button>
+					<router-link
 						to="/about"
 						role="menuitem"
 						class="block px-3.5 py-2 hover:bg-side"
@@ -86,13 +102,15 @@
 				</div>
 			</div>
 		</div>
+		<SessionDefaults v-model="sessionDefaultsOpen" />
 	</nav>
 </template>
 
 <script setup>
 import Icon from "./Icon.vue";
 import Avatar from "./Avatar.vue";
-import { areas } from "@/nav";
+import SessionDefaults from "./SessionDefaults.vue";
+import { canReadDoctype, visibleAreas } from "@/composables/access";
 import { brand } from "@/brand";
 import { useSession } from "@/composables/session";
 import { inboxCount, fetchInbox } from "@/composables/inbox";
@@ -103,6 +121,12 @@ defineProps({ active: { type: String, default: null } });
 const { fullName, user } = useSession();
 const menuOpen = ref(false);
 const loggingOut = ref(false);
+const sessionDefaultsOpen = ref(false);
+
+function openSessionDefaults() {
+	menuOpen.value = false;
+	sessionDefaultsOpen.value = true;
+}
 
 async function logout() {
 	loggingOut.value = true;

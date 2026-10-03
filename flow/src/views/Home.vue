@@ -14,12 +14,14 @@
 				Good {{ partOfDay }}<span class="text-acc">.</span>
 			</h1>
 			<p v-if="data" class="mt-3.5 max-w-[860px] text-[19px] leading-relaxed text-ink-2">
-				<router-link
-					:to="{ name: 'People', query: { view: 'away' } }"
-					class="sentence-link"
-					>{{ plural(awayToday.length, "person", "people") }}</router-link
-				>
-				{{ awayToday.length === 1 ? "is" : "are" }} away today,
+				<template v-if="data.headcount">
+					<router-link
+						:to="{ name: 'People', query: { view: 'away' } }"
+						class="sentence-link"
+						>{{ plural(awayToday.length, "person", "people") }}</router-link
+					>
+					{{ awayToday.length === 1 ? "is" : "are" }} away today,
+				</template>
 				<router-link to="/inbox" class="sentence-link">{{
 					plural(data.inbox.items.length, "request")
 				}}</router-link>
@@ -78,8 +80,8 @@
 							d.today
 								? 'rounded-lg bg-acc-tint/50'
 								: d.holiday
-								  ? 'bg-[repeating-linear-gradient(90deg,transparent_0_3px,theme(colors.line.2)_3px_4px)] opacity-60'
-								  : ''
+									? 'bg-[repeating-linear-gradient(90deg,transparent_0_3px,theme(colors.line.2)_3px_4px)] opacity-60'
+									: ''
 						"
 					/>
 				</div>
@@ -170,7 +172,7 @@
 						data.inbox.items.length
 							? `${Math.min(4, data.inbox.items.length)} of ${
 									data.inbox.items.length
-							  }`
+								}`
 							: ""
 					}}</span>
 					<router-link to="/inbox" class="ml-auto text-[13px] font-semibold text-acc"
@@ -259,7 +261,7 @@
 				>
 			</section>
 
-			<section aria-label="Headcount">
+			<section v-if="data.headcount" aria-label="Headcount">
 				<div class="mb-2.5 flex flex-col">
 					<span class="font-display text-[22px] font-bold"
 						>{{ totalPeople }} people</span
@@ -382,7 +384,7 @@ const payrollLink = computed(() =>
 		? {
 				name: "Form",
 				params: { doctype: "Payroll Entry", name: data.value.payroll.entry.name },
-		  }
+			}
 		: { name: "Form", params: { doctype: "Payroll Entry", name: "new" } },
 );
 const stageIndex = computed(
