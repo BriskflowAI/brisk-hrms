@@ -32,6 +32,7 @@ import "@ionic/vue/css/core.css"
 import "./theme/variables.css"
 
 import "./main.css"
+import "./theme/briskrew.css"
 
 const app = createApp(App)
 const socket = initSocket()

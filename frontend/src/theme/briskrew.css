@@ -1,0 +1,89 @@
+/* briskrew look for the employee app (Cobalt & Lime). Colours only: screens and features are unchanged.
+   Overrides the colour tokens frappe-ui components and Ionic read. */
+@import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&family=Figtree:wght@400..700&display=swap");
+
+:root {
+	/* Ionic */
+	--ion-background-color: #f2f4f9;
+	--ion-font-family: "Figtree", system-ui, sans-serif;
+	--ion-tab-bar-color-selected: #0e1433;
+	--ion-tab-bar-background-focused: #e2e6ff;
+	--ion-color-primary: #2b3fe0;
+	--ion-color-primary-rgb: 43, 63, 224;
+	--ion-color-primary-contrast: #ffffff;
+	--ion-color-primary-shade: #2637c5;
+	--ion-color-primary-tint: #4052e3;
+
+	/* frappe-ui surfaces, text and outlines */
+	--surface-white: #fdfdff;
+	--surface-cards: #fdfdff;
+	--surface-modal: #fdfdff;
+	--surface-selected: #fdfdff;
+	--surface-menu-bar: #f7f8fc;
+	--surface-gray-1: #f7f8fc;
+	--surface-gray-2: #f2f4f9;
+	--surface-gray-3: #e5e9f2;
+	--surface-gray-4: #d5dbe8;
+	--surface-gray-5: #394264;
+	--surface-gray-6: #1f2750;
+	--surface-gray-7: #0e1433;
+	--surface-blue-1: #e2e6ff;
+	--surface-blue-2: #2b3fe0;
+
+	--text-ink-gray-1: #e5e9f2;
+	--text-ink-gray-2: #d5dbe8;
+	--text-ink-gray-3: #9aa3c7;
+	--text-ink-gray-4: #6b7394;
+	--text-ink-gray-5: #5a6384;
+	--text-ink-gray-6: #4a5274;
+	--text-ink-gray-7: #394264;
+	--text-ink-gray-8: #1f2750;
+	--text-ink-gray-9: #0e1433;
+	--text-ink-blue-1: #e2e6ff;
+	--text-ink-blue-2: #4052e3;
+	--text-ink-blue-3: #2b3fe0;
+	--text-ink-blue-4: #1d2a9e;
+
+	--outline-gray-1: #e5e9f2;
+	--outline-gray-2: #d5dbe8;
+	--outline-gray-3: #9aa3c7;
+	--outline-gray-4: #5a6384;
+	--outline-gray-5: #1f2750;
+	--outline-gray-modals: #e5e9f2;
+	--outline-blue-1: #a9b4f7;
+	--outline-blue-2: #2b3fe0;
+}
+
+body {
+	font-family: "Figtree", system-ui, sans-serif;
+	color: #0e1433;
+}
+
+h1,
+h2,
+.font-display {
+	font-family: "Bricolage Grotesque", "Figtree", system-ui, sans-serif;
+	letter-spacing: -0.01em;
+}
+
+/* Bottom tabs: the selected tab gets a lime marker, like the rail in briskrew. */
+ion-tab-bar {
+	--background: #fdfdff;
+	border-top: 1px solid #e5e9f2;
+}
+ion-tab-button {
+	--color: #5a6384;
+	--color-selected: #0e1433;
+	--background: #fdfdff;
+	position: relative;
+}
+ion-tab-button.tab-selected::before {
+	content: "";
+	position: absolute;
+	top: 0;
+	left: 30%;
+	right: 30%;
+	height: 3px;
+	border-radius: 0 0 3px 3px;
+	background: #c9f24b;
+}

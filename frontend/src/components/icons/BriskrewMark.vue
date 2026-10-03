@@ -1,0 +1,7 @@
+<template>
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="briskrew">
+		<rect width="64" height="64" rx="15" fill="#C9F24B" />
+		<rect x="17" y="12" width="8" height="38" rx="4" fill="#0E1433" />
+		<circle cx="33.5" cy="38" r="10" fill="none" stroke="#0E1433" stroke-width="8" />
+	</svg>
+</template>
