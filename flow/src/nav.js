@@ -34,6 +34,7 @@ export const areas = [
 			{
 				label: "Directory",
 				items: [
+					{ label: "Overview", route: "/overview/people" },
 					{ label: "People", route: "/people" },
 					r("Employees (table)", "Employee"),
 					r("Departments", "Department"),
@@ -65,6 +66,7 @@ export const areas = [
 			{
 				label: "Leave",
 				items: [
+					{ label: "Overview", route: "/overview/time" },
 					r("Requests", "Leave Application"),
 					{ label: "Policy builder", route: "/leave-policies" },
 					r("Allocations", "Leave Allocation"),
@@ -96,7 +98,11 @@ export const areas = [
 		sections: [
 			{
 				label: "Runs",
-				items: [r("Payroll runs", "Payroll Entry"), r("Salary slips", "Salary Slip")],
+				items: [
+					{ label: "Overview", route: "/overview/pay" },
+					r("Payroll runs", "Payroll Entry"),
+					r("Salary slips", "Salary Slip"),
+				],
 			},
 			{
 				label: "Setup",
@@ -131,6 +137,7 @@ export const areas = [
 			{
 				label: "Money out",
 				items: [
+					{ label: "Overview", route: "/overview/expenses" },
 					r("Expense claims", "Expense Claim"),
 					r("Advances", "Employee Advance"),
 					r("Travel requests", "Travel Request"),
@@ -148,6 +155,7 @@ export const areas = [
 			{
 				label: "Pipeline",
 				items: [
+					{ label: "Overview", route: "/overview/hiring" },
 					r("Requisitions", "Job Requisition"),
 					r("Openings", "Job Opening"),
 					r("Applicants", "Job Applicant"),
@@ -167,6 +175,7 @@ export const areas = [
 			{
 				label: "Performance",
 				items: [
+					{ label: "Overview", route: "/overview/growth" },
 					r("Appraisal cycles", "Appraisal Cycle"),
 					r("Appraisals", "Appraisal"),
 					r("Feedback", "Employee Performance Feedback"),

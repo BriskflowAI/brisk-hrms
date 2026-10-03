@@ -10,6 +10,12 @@ const routes = [
 		props: true,
 	},
 	{
+		path: "/overview/:area",
+		name: "Overview",
+		component: () => import("@/views/Overview.vue"),
+		props: true,
+	},
+	{
 		path: "/leave-policies",
 		name: "LeavePolicies",
 		component: () => import("@/views/LeavePolicies.vue"),
