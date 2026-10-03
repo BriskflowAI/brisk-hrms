@@ -3,8 +3,8 @@ briskrew can draw them. Values come from Frappe's card and chart logic, so they 
 classic desk dashboards."""
 
 import frappe
-from frappe import _
-from frappe.utils import flt, getdate, nowdate, scrub
+from frappe import _, scrub
+from frappe.utils import flt, getdate, nowdate
 
 # Which of Frappe HR's dashboards (and extra cards/charts) make up each briskrew area.
 AREAS = {
