@@ -48,6 +48,7 @@
 			<kbd class="kbd hidden md:inline-flex">{{ modKey }}K</kbd>
 		</button>
 		<div class="flex items-center justify-end gap-2 md:flex-1">
+			<AppsMenu />
 			<NotificationsMenu />
 			<a href="/app" class="btn-ghost hidden h-8 px-3 text-[13px] md:inline-flex">
 				<Icon name="ext" :size="14" />
@@ -61,6 +62,7 @@
 import { modKey } from "@/composables/platform";
 import Icon from "./Icon.vue";
 import NotificationsMenu from "./NotificationsMenu.vue";
+import AppsMenu from "./AppsMenu.vue";
 
 defineProps({
 	crumbs: { type: Array, default: () => [] },

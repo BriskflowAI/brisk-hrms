@@ -29,11 +29,15 @@ Anyone with a public link can reach the site, so switch it back afterwards.
 ## After pulling new changes
 
 ```bash
+cd /workspaces/brisk-hrms && git pull
 cd ~/frappe-bench
 bench --site briskrew.localhost migrate
-(cd apps/hrms && yarn build)
+(cd apps/hrms && yarn install && yarn build)
 pkill -f "frappe.*serve --port 8000"; bash /workspaces/*/.devcontainer/start.sh
 ```
+
+`yarn install` picks up front-end packages added since the last pull; without it the build stops
+with "Rollup failed to resolve import".
 
 ## If something's wrong
 
