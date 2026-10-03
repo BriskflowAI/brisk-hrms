@@ -1033,6 +1033,60 @@ function buildFrappe() {
 		),
 		model: lenient(
 			{
+				// Field-type lists from frappe/model/model.js (MIT).
+				no_value_type: [
+					"Section Break",
+					"Column Break",
+					"Tab Break",
+					"Attachment Gallery",
+					"HTML",
+					"Table",
+					"Table MultiSelect",
+					"Button",
+					"Image",
+					"Fold",
+					"Heading",
+				],
+				layout_fields: ["Section Break", "Column Break", "Tab Break", "Fold"],
+				table_fields: ["Table", "Table MultiSelect"],
+				numeric_fieldtypes: ["Int", "Float", "Currency", "Percent", "Duration"],
+				html_fieldtypes: [
+					"Text Editor",
+					"Text",
+					"Small Text",
+					"Long Text",
+					"HTML Editor",
+					"Markdown Editor",
+					"Code",
+				],
+				std_fields_list: [
+					"name",
+					"owner",
+					"creation",
+					"modified",
+					"modified_by",
+					"_user_tags",
+					"_assign",
+					"_liked_by",
+					"docstatus",
+					"idx",
+				],
+				child_table_field_list: ["parent", "parenttype", "parentfield"],
+				is_value_type(fieldtype) {
+					if (fieldtype && typeof fieldtype === "object")
+						fieldtype = fieldtype.fieldtype;
+					return !this.no_value_type.includes(fieldtype);
+				},
+				is_numeric_field(fieldtype) {
+					if (fieldtype && typeof fieldtype === "object")
+						fieldtype = fieldtype.fieldtype;
+					return this.numeric_fieldtypes.includes(fieldtype);
+				},
+				is_non_std_field(fieldname) {
+					return ![...this.std_fields_list, ...this.child_table_field_list].includes(
+						fieldname,
+					);
+				},
 				set_value: modelSetValue,
 				get_value: (doctype, filters, fieldname, cb) => {
 					const local = typeof filters === "string" ? findLocal(doctype, filters) : null;
@@ -2058,6 +2112,11 @@ export async function attachListScript(list, router) {
 					add_inner_button: (label, fn, group) => addButton(label, fn, group || ""),
 					add_action_item: (label, fn) => addButton(label, fn, "Actions"),
 					add_menu_item: (label, fn) => addButton(label, fn, "Menu"),
+					// A named dropdown; items join it through add_custom_menu_item.
+					add_custom_button_group: (label) =>
+						Object.assign(jQuery("<div>"), { briskrewGroup: label }),
+					add_custom_menu_item: (group, label, fn) =>
+						addButton(label, fn, group?.briskrewGroup || "Menu"),
 					set_primary_action: (label, fn) =>
 						(list.primaryAction = { label, action: fn }),
 					clear_primary_action: () => (list.primaryAction = null),

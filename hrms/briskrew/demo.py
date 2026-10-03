@@ -104,9 +104,13 @@ def seed(company: str | None = None) -> dict:
 	_bonus(company, _draft_slip_employee(team, today) or team[3], today)
 	_expense_setup(company)
 
-	shift = _shift_request(team[4], lead_user, add_days(next_monday, 7))
+	_shifts(company, team, today)
+	shift = _shift_request(team[4], lead_user, add_days(next_monday, 7), company)
 	if shift:
 		requests.append(shift)
+
+	_performance(company, lead, team, today)
+	_hiring(company, lead_user, today)
 
 	frappe.db.commit()
 	return {
@@ -284,7 +288,7 @@ def _attendance(employee, day, reason):
 	return doc.name
 
 
-def _shift_request(employee, approver, from_date):
+def _shift_request(employee, approver, from_date, company):
 	shift_type = frappe.db.get_value("Shift Type", {}, "name")
 	if not shift_type:
 		return None
@@ -295,6 +299,7 @@ def _shift_request(employee, approver, from_date):
 		{
 			"doctype": "Shift Request",
 			"employee": employee,
+			"company": company,
 			"shift_type": shift_type,
 			"from_date": from_date,
 			"to_date": add_days(from_date, 4),
@@ -458,3 +463,174 @@ def _draft_slip_employee(employees, today):
 		{"employee": ("in", employees), "start_date": get_first_day(today), "docstatus": 0},
 		"employee",
 	)
+
+
+def _insert(doc: dict, submit: bool = False) -> str:
+	d = frappe.get_doc(doc)
+	d.insert(ignore_permissions=True)
+	if submit:
+		d.submit()
+	return d.name
+
+
+def _performance(company, lead, team, today):
+	"""An appraisal cycle with a template, two appraisals and a goal."""
+	for kra in ("Design quality", "Delivery"):
+		if not frappe.db.exists("KRA", kra):
+			_insert({"doctype": "KRA", "title": kra})
+	for criteria in ("Collaboration", "Ownership"):
+		if not frappe.db.exists("Employee Feedback Criteria", criteria):
+			_insert({"doctype": "Employee Feedback Criteria", "criteria": criteria})
+	template = "briskrew Demo Designer"
+	if not frappe.db.exists("Appraisal Template", template):
+		_insert(
+			{
+				"doctype": "Appraisal Template",
+				"template_title": template,
+				"goals": [
+					{"key_result_area": "Design quality", "per_weightage": 60},
+					{"key_result_area": "Delivery", "per_weightage": 40},
+				],
+				"rating_criteria": [
+					{"criteria": "Collaboration", "per_weightage": 50},
+					{"criteria": "Ownership", "per_weightage": 50},
+				],
+			}
+		)
+	cycle = f"briskrew Demo {today.year}"
+	if not frappe.db.exists("Appraisal Cycle", cycle):
+		_insert(
+			{
+				"doctype": "Appraisal Cycle",
+				"cycle_name": cycle,
+				"company": company,
+				"start_date": f"{today.year}-01-01",
+				"end_date": f"{today.year}-12-31",
+				"status": "In Progress",
+			}
+		)
+	for emp in team[:2]:
+		if not frappe.db.exists("Appraisal", {"employee": emp, "appraisal_cycle": cycle}):
+			_insert(
+				{
+					"doctype": "Appraisal",
+					"employee": emp,
+					"company": company,
+					"appraisal_cycle": cycle,
+					"appraisal_template": template,
+				}
+			)
+	if not frappe.db.exists("Goal", {"employee": team[0], "goal_name": "Ship the new onboarding flow"}):
+		_insert(
+			{
+				"doctype": "Goal",
+				"employee": team[0],
+				"goal_name": "Ship the new onboarding flow",
+				"kra": "Delivery",
+				"appraisal_cycle": cycle,
+				"start_date": f"{today.year}-01-01",
+				"progress": 40,
+			}
+		)
+
+
+def _hiring(company, lead_user, today):
+	"""An open role with two applicants, an interview and a draft offer."""
+	designation = "Product Designer"
+	if not frappe.db.exists("Designation", designation):
+		_insert({"doctype": "Designation", "designation_name": designation})
+	opening = frappe.db.get_value("Job Opening", {"job_title": "Product Designer (demo)"})
+	if not opening:
+		opening = _insert(
+			{
+				"doctype": "Job Opening",
+				"job_title": "Product Designer (demo)",
+				"designation": designation,
+				"company": company,
+				"status": "Open",
+				"description": "Design calm, fast tools for our HR team.",
+			}
+		)
+	applicants = []
+	for name, email in (("Aarav Shah", "aarav@applicant.demo"), ("Lina Morales", "lina@applicant.demo")):
+		existing = frappe.db.get_value("Job Applicant", {"email_id": email})
+		applicants.append(
+			existing
+			or _insert(
+				{
+					"doctype": "Job Applicant",
+					"applicant_name": name,
+					"email_id": email,
+					"job_title": opening,
+					"status": "Open",
+				}
+			)
+		)
+	if not frappe.db.exists("Skill", "Visual design"):
+		_insert({"doctype": "Skill", "skill_name": "Visual design"})
+	interview_type = "Portfolio review"
+	if not frappe.db.exists("Interview Type", interview_type):
+		_insert(
+			{
+				"doctype": "Interview Type",
+				"interview_type_name": interview_type,
+				"expected_skill_set": [{"skill": "Visual design"}],
+			}
+		)
+	if not frappe.db.exists("Interview", {"job_applicant": applicants[0]}):
+		_insert(
+			{
+				"doctype": "Interview",
+				"job_applicant": applicants[0],
+				"interview_type": interview_type,
+				"status": "Pending",
+				"scheduled_on": add_days(today, 3),
+				"from_time": "11:00:00",
+				"to_time": "12:00:00",
+				"interview_details": [{"interviewer": lead_user}],
+			}
+		)
+	if not frappe.db.exists("Job Offer", {"job_applicant": applicants[1]}):
+		_insert(
+			{
+				"doctype": "Job Offer",
+				"job_applicant": applicants[1],
+				"applicant_name": "Lina Morales",
+				"offer_date": today,
+				"designation": designation,
+				"company": company,
+				"status": "Awaiting Response",
+			}
+		)
+
+
+def _shifts(company, team, today):
+	"""A day shift at the head office, assigned to one person."""
+	shift_type = "briskrew Demo Day"
+	if not frappe.db.exists("Shift Type", shift_type):
+		_insert(
+			{
+				"doctype": "Shift Type",
+				"__newname": shift_type,
+				"name": shift_type,
+				"start_time": "09:00:00",
+				"end_time": "18:00:00",
+			}
+		)
+	if not frappe.db.exists("Shift Location", "Head office"):
+		_insert({"doctype": "Shift Location", "location_name": "Head office"})
+	if not frappe.db.exists(
+		"Shift Assignment", {"employee": team[2], "shift_type": shift_type, "docstatus": 1}
+	):
+		_insert(
+			{
+				"doctype": "Shift Assignment",
+				"employee": team[2],
+				"company": company,
+				"shift_type": shift_type,
+				"shift_location": "Head office",
+				"start_date": today,
+				"status": "Active",
+			},
+			submit=True,
+		)

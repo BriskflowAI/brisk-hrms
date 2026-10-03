@@ -5,27 +5,27 @@ const { chromium } = require("playwright");
 const fs = require("fs");
 const GROUPS = {
   priority: [
-  "Employee",
-  "Leave Application",
-  "Leave Allocation",
-  "Leave Policy",
-  "Leave Type",
-  "Holiday List",
-  "Attendance",
-  "Employee Checkin",
-  "Attendance Request",
-  "Shift Request",
-  "Shift Assignment",
-  "Expense Claim",
-  "Employee Advance",
-  "Payroll Entry",
-  "Salary Slip",
-  "Salary Structure",
-  "Salary Structure Assignment",
-  "Job Opening",
-  "Job Applicant",
-  "Appraisal",
-],
+    "Employee",
+    "Leave Application",
+    "Leave Allocation",
+    "Leave Policy",
+    "Leave Type",
+    "Holiday List",
+    "Attendance",
+    "Employee Checkin",
+    "Attendance Request",
+    "Shift Request",
+    "Shift Assignment",
+    "Expense Claim",
+    "Employee Advance",
+    "Payroll Entry",
+    "Salary Slip",
+    "Salary Structure",
+    "Salary Structure Assignment",
+    "Job Opening",
+    "Job Applicant",
+    "Appraisal",
+  ],
   performance: [
     "Appraisal Cycle",
     "Appraisal Template",
@@ -40,7 +40,7 @@ const GROUPS = {
     "Job Requisition",
     "Job Opening",
     "Job Applicant",
-    "Interview Round",
+    "Interview Type",
     "Interview",
     "Interview Feedback",
     "Job Offer",
@@ -59,7 +59,9 @@ const GROUPS = {
 };
 // Groups or doctype names on the command line; the priority screens by default.
 const args = process.argv.slice(2);
-const DOCTYPES = (args.length ? args : ["priority"]).flatMap((a) => GROUPS[a] || [a]);
+const DOCTYPES = (args.length ? args : ["priority"]).flatMap(
+  (a) => GROUPS[a] || [a],
+);
 const OUT = process.env.AUDIT_OUT || "audit.json";
 (async () => {
   const b = await chromium.launch({});
