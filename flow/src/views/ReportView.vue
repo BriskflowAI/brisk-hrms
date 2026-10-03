@@ -371,8 +371,8 @@ async function run() {
 				total[c.fieldname] = isNum(c)
 					? rows.reduce((a, r) => a + (Number(r[c.fieldname]) || 0), 0)
 					: i === 0
-						? "Total"
-						: "";
+					  ? "Total"
+					  : "";
 			});
 			rows.push(total);
 		}
@@ -460,7 +460,9 @@ function printableHtml() {
 h1{font-size:18px;margin:0 0 4px}p{color:#4A5068;margin:0 0 14px}
 table{width:100%;border-collapse:collapse}th,td{padding:4px 6px;border-bottom:1px solid #E6E8F0}
 th{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#6B7083}</style></head>
-<body><h1>${esc(props.name)}</h1><p>${filters}</p><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></body></html>`;
+<body><h1>${esc(
+		props.name,
+	)}</h1><p>${filters}</p><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></body></html>`;
 }
 function printReport() {
 	const w = window.open("", "_blank");

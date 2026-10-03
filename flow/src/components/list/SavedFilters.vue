@@ -14,7 +14,7 @@
 				<button
 					type="button"
 					class="min-w-0 flex-grow truncate px-3 py-1.5 text-left text-[13.5px]"
-					@click="(apply(s), close())"
+					@click="apply(s), close()"
 				>
 					{{ s.filter_name }}
 					<span v-if="!s.for_user" class="text-[11.5px] text-mut">{{

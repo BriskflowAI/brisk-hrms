@@ -84,7 +84,7 @@
 						type="button"
 						role="menuitem"
 						class="hidden w-full px-3.5 py-2 text-left hover:bg-side md:block"
-						@click="((menuOpen = false), (shortcutsOpen = true))"
+						@click="(menuOpen = false), (shortcutsOpen = true)"
 					>
 						{{ __("Keyboard shortcuts") }}
 					</button>

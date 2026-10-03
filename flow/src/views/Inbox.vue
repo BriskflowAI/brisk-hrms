@@ -92,7 +92,7 @@
 								? 'bg-surf shadow-[inset_0_0_0_1.5px] shadow-ink'
 								: 'hover:bg-surf/70'
 						"
-						@click="(select(item), (phoneDetail = true))"
+						@click="select(item), (phoneDetail = true)"
 					>
 						<Avatar :label="item.employee_name" :size="30" />
 						<span class="min-w-0 flex-grow">
@@ -240,8 +240,8 @@
 															isHoliday(d.date)
 																? 'Holiday'
 																: d.away.includes(m.name)
-																	? 'Away'
-																	: 'In'
+																  ? 'Away'
+																  : 'In'
 														"
 													/>
 												</td>

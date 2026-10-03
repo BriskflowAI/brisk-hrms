@@ -86,8 +86,8 @@
 							d.today
 								? 'rounded-lg bg-acc-tint/50'
 								: d.holiday
-									? 'bg-[repeating-linear-gradient(90deg,transparent_0_3px,theme(colors.line.2)_3px_4px)] opacity-60'
-									: ''
+								  ? 'bg-[repeating-linear-gradient(90deg,transparent_0_3px,theme(colors.line.2)_3px_4px)] opacity-60'
+								  : ''
 						"
 					/>
 				</div>
@@ -178,7 +178,7 @@
 						data.inbox.items.length
 							? `${Math.min(4, data.inbox.items.length)} of ${
 									data.inbox.items.length
-								}`
+							  }`
 							: ""
 					}}</span>
 					<router-link to="/inbox" class="ml-auto text-[13px] font-semibold text-acc">{{
@@ -390,7 +390,7 @@ const payrollLink = computed(() =>
 		? {
 				name: "Form",
 				params: { doctype: "Payroll Entry", name: data.value.payroll.entry.name },
-			}
+		  }
 		: { name: "Form", params: { doctype: "Payroll Entry", name: "new" } },
 );
 const stageIndex = computed(

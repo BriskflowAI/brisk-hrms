@@ -353,10 +353,10 @@ const inputType = (c) =>
 	isNum(c)
 		? "number"
 		: c.fieldtype === "Date"
-			? "date"
-			: c.fieldtype === "Datetime"
-				? "datetime-local"
-				: "text";
+		  ? "date"
+		  : c.fieldtype === "Datetime"
+		    ? "datetime-local"
+		    : "text";
 const sum = (f) => rows.value.reduce((a, r) => a + (Number(r[f]) || 0), 0);
 const q = (f) => `\`tab${props.doctype}\`.\`${f}\``;
 
@@ -494,7 +494,7 @@ const settings = () => ({
 				group_by: q(group.field),
 				aggregate_function: group.fn,
 				aggregate_on: group.fn === "count" ? "name" : group.on,
-			}
+		  }
 		: null,
 });
 async function saveReport() {

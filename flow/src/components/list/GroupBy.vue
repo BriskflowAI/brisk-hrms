@@ -34,7 +34,7 @@
 					:key="c.name ?? '∅'"
 					type="button"
 					class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[13.5px] hover:bg-acc-tint"
-					@click="(choose(c), close())"
+					@click="choose(c), close()"
 				>
 					<span class="min-w-0 flex-grow truncate">{{
 						c.title || c.name || "Not set"

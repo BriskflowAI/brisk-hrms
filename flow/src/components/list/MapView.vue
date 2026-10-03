@@ -77,7 +77,9 @@ async function load() {
 		layer = L.featureGroup();
 		for (const r of rows) {
 			const label = esc(r[title] || r.name);
-			const popup = `<a href="#" data-open="${esc(r.name)}"><b>${label}</b></a><br><span style="color:#6B7083">${esc(r.name)}</span>`;
+			const popup = `<a href="#" data-open="${esc(
+				r.name,
+			)}"><b>${label}</b></a><br><span style="color:#6B7083">${esc(r.name)}</span>`;
 			if (geo && r.location) {
 				try {
 					L.geoJSON(JSON.parse(r.location)).bindPopup(popup).addTo(layer);

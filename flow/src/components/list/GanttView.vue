@@ -71,8 +71,8 @@
 							dayW >= 28
 								? d.date.format(dayW >= 60 ? "ddd D" : "D")
 								: d.date.date() === 1 || d.date.day() === 1
-									? d.date.format("D MMM")
-									: ""
+								  ? d.date.format("D MMM")
+								  : ""
 						}}
 					</div>
 				</div>

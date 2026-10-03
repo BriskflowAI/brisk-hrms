@@ -917,8 +917,8 @@ function openType(t) {
 			values[df.fieldname] = t
 				? t[df.fieldname]
 				: df.fieldtype === "Check"
-					? Number(df.default || 0)
-					: (df.default ?? null);
+				  ? Number(df.default || 0)
+				  : df.default ?? null;
 	values.leave_type_name = t?.leave_type_name || "";
 	typeEdit.value = { name: t?.name || null, values };
 }

@@ -352,7 +352,9 @@ const timeline = computed(() => {
 			key: `m${c.name}`,
 			kind: "email",
 			by: c.sender_full_name || c.sender,
-			what: `${c.sent_or_received === "Received" ? "wrote" : "emailed"} · ${c.subject || ""}`,
+			what: `${c.sent_or_received === "Received" ? "wrote" : "emailed"} · ${
+				c.subject || ""
+			}`,
 			body: strip(
 				String(c.content || "")
 					.replace(/<br\s*\/?>/gi, "\n")

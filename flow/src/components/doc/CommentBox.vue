@@ -163,7 +163,9 @@ function toHtml(raw) {
 		const p = known.get(name);
 		const span = `<span class="mention" data-id="${escapeAttr(p.id)}" data-value="${escapeAttr(
 			p.value,
-		)}" data-denotation-char="@"${p.is_group ? ' data-is-group="true"' : ""}>@${escape(p.value)}</span>`;
+		)}" data-denotation-char="@"${p.is_group ? ' data-is-group="true"' : ""}>@${escape(
+			p.value,
+		)}</span>`;
 		html = html.split(`@${escape(name)}`).join(span);
 	}
 	return `<div>${html.replace(/\n/g, "<br>")}</div>`;

@@ -329,10 +329,10 @@ const step = computed(() =>
 	props.df.fieldtype === "Int"
 		? "1"
 		: ["Float", "Currency", "Percent"].includes(props.df.fieldtype)
-			? "any"
-			: props.df.fieldtype === "Time"
-				? "1"
-				: undefined,
+		  ? "any"
+		  : props.df.fieldtype === "Time"
+		    ? "1"
+		    : undefined,
 );
 const inputValue = computed(() => {
 	const v = value.value;

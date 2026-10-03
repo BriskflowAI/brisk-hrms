@@ -59,8 +59,8 @@
 							day.key === today
 								? 'bg-acc text-white'
 								: day.inMonth
-									? 'text-ink-2'
-									: 'text-mut/70'
+								  ? 'text-ink-2'
+								  : 'text-mut/70'
 						"
 						>{{ day.date.date() }}</span
 					>

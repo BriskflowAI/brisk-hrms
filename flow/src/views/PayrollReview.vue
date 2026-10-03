@@ -295,8 +295,8 @@
 											c.ok
 												? 'mt-0.5 text-pos'
 												: c.warning
-													? 'mt-0.5 text-warn'
-													: 'mt-0.5 text-neg'
+												  ? 'mt-0.5 text-warn'
+												  : 'mt-0.5 text-neg'
 										"
 									/>
 									<span>{{ c.label }}</span>
@@ -368,8 +368,8 @@ const shown = computed(() =>
 	tab.value === "changes"
 		? changed.value
 		: tab.value === "flagged"
-			? flagged.value
-			: data.value?.people || [],
+		  ? flagged.value
+		  : data.value?.people || [],
 );
 const listed = computed(() => (tab.value === "all" ? data.value?.people || [] : shown.value));
 const netDelta = computed(() =>
@@ -418,12 +418,12 @@ const deltaTone = (p) =>
 	p.missing_slip
 		? "text-neg"
 		: p.new
-			? "text-acc"
-			: p.change > 0
-				? "text-pos"
-				: p.change < 0
-					? "text-neg"
-					: "text-mut";
+		  ? "text-acc"
+		  : p.change > 0
+		    ? "text-pos"
+		    : p.change < 0
+		      ? "text-neg"
+		      : "text-mut";
 function lineSign(l) {
 	const deduction = l.section === "deductions";
 	if (l.kind === "added") return { sign: "+", tone: deduction ? "text-neg" : "text-pos" };
@@ -438,10 +438,10 @@ const lineBg = (l) =>
 	l.kind === "same"
 		? ""
 		: l.kind === "removed"
-			? "bg-neg-tint/60"
-			: l.kind === "added"
-				? "bg-pos-tint/60"
-				: "bg-acc-tint/50";
+		  ? "bg-neg-tint/60"
+		  : l.kind === "added"
+		    ? "bg-pos-tint/60"
+		    : "bg-acc-tint/50";
 
 // Unchanged components collapse into one row, like a code review.
 function visibleLines(p) {

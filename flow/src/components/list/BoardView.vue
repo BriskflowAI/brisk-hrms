@@ -91,7 +91,7 @@
 						class="cursor-grab rounded-lg border border-line bg-surf px-3 py-2.5 shadow-[0_1px_0_rgba(11,16,32,0.04)] active:cursor-grabbing"
 						:class="dragging?.name === c.name && 'opacity-40'"
 						@dragstart="dragging = { ...c, from: col.name }"
-						@dragend="((dragging = null), (dragOver = null))"
+						@dragend="(dragging = null), (dragOver = null)"
 					>
 						<router-link
 							:to="{ name: 'Form', params: { doctype, name: c.name } }"

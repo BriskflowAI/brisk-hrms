@@ -198,7 +198,7 @@ const addressFields = computed(() => [
 		? [
 				{ key: "cc", label: "Cc" },
 				{ key: "bcc", label: "Bcc" },
-			]
+		  ]
 		: []),
 ]);
 

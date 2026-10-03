@@ -173,7 +173,7 @@
 									v-if="form.undoStack.length"
 									type="button"
 									class="menu-item"
-									@click="((menu = null), form.undo())"
+									@click="(menu = null), form.undo()"
 								>
 									{{ __("Undo last change") }}
 								</button>
@@ -181,21 +181,21 @@
 									v-if="form.redoStack.length"
 									type="button"
 									class="menu-item"
-									@click="((menu = null), form.redo())"
+									@click="(menu = null), form.redo()"
 								>
 									{{ __("Redo") }}
 								</button>
 								<button
 									type="button"
 									class="menu-item"
-									@click="((menu = null), (jumpOpen = true))"
+									@click="(menu = null), (jumpOpen = true)"
 								>
 									{{ __("Jump to field") }}
 								</button>
 								<button
 									type="button"
 									class="menu-item"
-									@click="((remindOpen = true), (menu = null))"
+									@click="(remindOpen = true), (menu = null)"
 								>
 									{{ __("Remind me") }}
 								</button>
@@ -209,7 +209,7 @@
 														doctype: 'Auto Repeat',
 														name: form.doc.auto_repeat,
 													},
-												}
+											  }
 											: {
 													name: 'Form',
 													params: {
@@ -220,7 +220,7 @@
 														reference_doctype: doctype,
 														reference_document: form.doc.name,
 													},
-												}
+											  }
 									"
 									class="menu-item"
 									>{{
@@ -238,7 +238,9 @@
 								>
 								<a
 									v-if="isSystemManager"
-									:href="`/app/customize-form?doc_type=${encodeURIComponent(doctype)}`"
+									:href="`/app/customize-form?doc_type=${encodeURIComponent(
+										doctype,
+									)}`"
 									class="menu-item"
 									>{{ __("Customize") }}</a
 								>

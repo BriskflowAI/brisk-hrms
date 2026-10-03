@@ -761,8 +761,8 @@ function routeTo(args) {
 		kind === "query-report"
 			? `/app/query-report/${encodeURIComponent(doctype)}`
 			: kind === "Tree"
-				? `/app/${slug(doctype)}/view/tree`
-				: `/app/${parts
+			  ? `/app/${slug(doctype)}/view/tree`
+			  : `/app/${parts
 						.map((p) => (/^[A-Z]/.test(p) ? slug(p) : encodeURIComponent(p)))
 						.join("/")}`;
 	const q = new URLSearchParams(query).toString();
@@ -1466,7 +1466,7 @@ function fieldHandle(form, fieldname, table = "") {
 							};
 							return true;
 						},
-					})
+				  })
 				: null;
 		},
 		get value() {

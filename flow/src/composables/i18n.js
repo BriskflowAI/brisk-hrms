@@ -14,7 +14,9 @@ export async function loadTranslations(code) {
 	if (base === "en") return;
 	try {
 		const res = await fetch(
-			`/api/method/frappe.translate.get_boot_translations?lang=${encodeURIComponent(lang.value)}`,
+			`/api/method/frappe.translate.get_boot_translations?lang=${encodeURIComponent(
+				lang.value,
+			)}`,
 		);
 		Object.assign(messages, (await res.json()).message || {});
 	} catch {
