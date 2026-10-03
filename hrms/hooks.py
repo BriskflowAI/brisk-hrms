@@ -217,7 +217,10 @@ doc_events = {
 	},
 	"Loan": {"validate": "hrms.hr.utils.validate_loan_repay_from_salary"},
 	"Employee": {
-		"validate": "hrms.overrides.employee_master.validate_onboarding_process",
+		"validate": [
+			"hrms.overrides.employee_master.validate_onboarding_process",
+			"hrms.briskrew.approvers.set_default_approvers",
+		],
 		"on_update": [
 			"hrms.overrides.employee_master.update_approver_role",
 			"hrms.overrides.employee_master.publish_update",
@@ -232,10 +235,19 @@ doc_events = {
 	"Project": {"validate": "hrms.controllers.employee_boarding_controller.update_employee_boarding_status"},
 	"Task": {"on_update": "hrms.controllers.employee_boarding_controller.update_task"},
 	# ---- Usage telemetry: recurring feature usage (see hrms/telemetry.py) ----
-	"Leave Application": {"on_submit": "hrms.telemetry.on_leave_application_submit"},
-	"Expense Claim": {"on_submit": "hrms.telemetry.on_expense_claim_submit"},
+	"Leave Application": {
+		"before_validate": "hrms.briskrew.approvers.set_request_approver",
+		"on_submit": "hrms.telemetry.on_leave_application_submit",
+	},
+	"Expense Claim": {
+		"before_validate": "hrms.briskrew.approvers.set_request_approver",
+		"on_submit": "hrms.telemetry.on_expense_claim_submit",
+	},
 	"Attendance Request": {"on_submit": "hrms.telemetry.on_attendance_request_submit"},
-	"Shift Request": {"on_submit": "hrms.telemetry.on_shift_request_submit"},
+	"Shift Request": {
+		"before_validate": "hrms.briskrew.approvers.set_request_approver",
+		"on_submit": "hrms.telemetry.on_shift_request_submit",
+	},
 	"Employee Checkin": {"after_insert": "hrms.telemetry.on_employee_checkin"},
 	"Payroll Entry": {"on_submit": "hrms.telemetry.on_payroll_entry_submit"},
 	"Job Offer": {"on_submit": "hrms.telemetry.on_job_offer_submit"},
