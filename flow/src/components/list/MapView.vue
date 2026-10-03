@@ -109,9 +109,11 @@ function onClick(e) {
 
 onMounted(async () => {
 	try {
+		// Leaflet as Frappe ships it. Its own files, not a desk bundle: Frappe v16 builds Leaflet
+		// into the desk's libs bundle, newer Frappe into leaflet.bundle.
 		await Promise.all([
-			loadDeskAsset("leaflet.bundle.js"),
-			loadDeskAsset("leaflet.bundle.css"),
+			loadDeskAsset("/assets/frappe/js/lib/leaflet/leaflet.js"),
+			loadDeskAsset("/assets/frappe/js/lib/leaflet/leaflet.css"),
 		]);
 		const L = window.L;
 		L.Icon.Default.imagePath = "/assets/frappe/images/leaflet/";
