@@ -1,0 +1,5600 @@
+{
+ "doctypes": [
+  {
+   "name": "Appointment Letter",
+   "module": "HR",
+   "path": "hrms/hr/doctype/appointment_letter",
+   "child_table": false,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 8,
+   "required_fields": 7,
+   "child_tables": [
+    "Appointment Letter content"
+   ],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [],
+    "server_calls": [
+     "hrms.hr.doctype.appointment_letter.appointment_letter.get_appointment_letter_details"
+    ],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Appointment Letter content",
+   "module": "HR",
+   "path": "hrms/hr/doctype/appointment_letter_content",
+   "child_table": true,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 2,
+   "required_fields": 2,
+   "child_tables": [],
+   "form_js": null,
+   "views": []
+  },
+  {
+   "name": "Appointment Letter Template",
+   "module": "HR",
+   "path": "hrms/hr/doctype/appointment_letter_template",
+   "child_table": false,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 4,
+   "required_fields": 3,
+   "child_tables": [
+    "Appointment Letter content"
+   ],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Appraisal",
+   "module": "HR",
+   "path": "hrms/hr/doctype/appraisal",
+   "child_table": false,
+   "single": false,
+   "submittable": true,
+   "tree": false,
+   "fields": 23,
+   "required_fields": 4,
+   "child_tables": [
+    "Appraisal Goal",
+    "Appraisal KRA",
+    "Employee Feedback Rating"
+   ],
+   "form_js": {
+    "buttons": [
+     "View Goals"
+    ],
+    "link_filters": [],
+    "server_calls": [
+     "set_appraisal_template"
+    ],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Appraisal Cycle",
+   "module": "HR",
+   "path": "hrms/hr/doctype/appraisal_cycle",
+   "child_table": false,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 14,
+   "required_fields": 4,
+   "child_tables": [
+    "Appraisee"
+   ],
+   "form_js": {
+    "buttons": [
+     "Create Appraisals",
+     "Mark as Completed",
+     "Mark as In Progress",
+     "Start",
+     "View Goals"
+    ],
+    "link_filters": [
+     "department"
+    ],
+    "server_calls": [
+     "complete_cycle",
+     "create_appraisals",
+     "set_employees"
+    ],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Appraisal Goal",
+   "module": "HR",
+   "path": "hrms/hr/doctype/appraisal_goal",
+   "child_table": true,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 4,
+   "required_fields": 2,
+   "child_tables": [],
+   "form_js": null,
+   "views": []
+  },
+  {
+   "name": "Appraisal KRA",
+   "module": "HR",
+   "path": "hrms/hr/doctype/appraisal_kra",
+   "child_table": true,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 4,
+   "required_fields": 2,
+   "child_tables": [],
+   "form_js": null,
+   "views": []
+  },
+  {
+   "name": "Appraisal Template",
+   "module": "HR",
+   "path": "hrms/hr/doctype/appraisal_template",
+   "child_table": false,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 4,
+   "required_fields": 2,
+   "child_tables": [
+    "Appraisal Template Goal",
+    "Employee Feedback Rating"
+   ],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Appraisal Template Goal",
+   "module": "HR",
+   "path": "hrms/hr/doctype/appraisal_template_goal",
+   "child_table": true,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 2,
+   "required_fields": 2,
+   "child_tables": [],
+   "form_js": null,
+   "views": []
+  },
+  {
+   "name": "Appraisee",
+   "module": "HR",
+   "path": "hrms/hr/doctype/appraisee",
+   "child_table": true,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 6,
+   "required_fields": 1,
+   "child_tables": [],
+   "form_js": null,
+   "views": []
+  },
+  {
+   "name": "Attendance",
+   "module": "HR",
+   "path": "hrms/hr/doctype/attendance",
+   "child_table": false,
+   "single": false,
+   "submittable": true,
+   "tree": false,
+   "fields": 22,
+   "required_fields": 5,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [
+     "Attendance Request"
+    ],
+    "link_filters": [
+     "employee"
+    ],
+    "server_calls": [
+     "hrms.hr.doctype.attendance.attendance.get_employee_shift"
+    ],
+    "dialogs": 0
+   },
+   "views": [
+    {
+     "kind": "list",
+     "buttons": [],
+     "link_filters": [],
+     "server_calls": [
+      "hrms.hr.doctype.attendance.attendance.get_unmarked_days",
+      "hrms.hr.doctype.attendance.attendance.mark_bulk_attendance"
+     ],
+     "dialogs": 1
+    },
+    {
+     "kind": "calendar",
+     "buttons": [],
+     "link_filters": [],
+     "server_calls": [
+      "hrms.hr.doctype.attendance.attendance.get_events"
+     ],
+     "dialogs": 0
+    }
+   ]
+  },
+  {
+   "name": "Attendance Request",
+   "module": "HR",
+   "path": "hrms/hr/doctype/attendance_request",
+   "child_table": false,
+   "single": false,
+   "submittable": true,
+   "tree": false,
+   "fields": 13,
+   "required_fields": 5,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [],
+    "server_calls": [
+     "hrms.hr.doctype.attendance.attendance.get_employee_shift"
+    ],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Compensatory Leave Request",
+   "module": "HR",
+   "path": "hrms/hr/doctype/compensatory_leave_request",
+   "child_table": false,
+   "single": false,
+   "submittable": true,
+   "tree": false,
+   "fields": 11,
+   "required_fields": 4,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [
+     "leave_type"
+    ],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Daily Work Summary",
+   "module": "HR",
+   "path": "hrms/hr/doctype/daily_work_summary",
+   "child_table": false,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 3,
+   "required_fields": 0,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Daily Work Summary Group",
+   "module": "HR",
+   "path": "hrms/hr/doctype/daily_work_summary_group",
+   "child_table": false,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 6,
+   "required_fields": 1,
+   "child_tables": [
+    "Daily Work Summary Group User"
+   ],
+   "form_js": {
+    "buttons": [
+     "Daily Work Summary"
+    ],
+    "link_filters": [],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Daily Work Summary Group User",
+   "module": "HR",
+   "path": "hrms/hr/doctype/daily_work_summary_group_user",
+   "child_table": true,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 2,
+   "required_fields": 0,
+   "child_tables": [],
+   "form_js": null,
+   "views": []
+  },
+  {
+   "name": "Department Approver",
+   "module": "HR",
+   "path": "hrms/hr/doctype/department_approver",
+   "child_table": true,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 1,
+   "required_fields": 1,
+   "child_tables": [],
+   "form_js": null,
+   "views": []
+  },
+  {
+   "name": "Designation Skill",
+   "module": "HR",
+   "path": "hrms/hr/doctype/designation_skill",
+   "child_table": true,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 1,
+   "required_fields": 0,
+   "child_tables": [],
+   "form_js": null,
+   "views": []
+  },
+  {
+   "name": "Earned Leave Schedule",
+   "module": "HR",
+   "path": "hrms/hr/doctype/earned_leave_schedule",
+   "child_table": true,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 7,
+   "required_fields": 0,
+   "child_tables": [],
+   "form_js": null,
+   "views": []
+  },
+  {
+   "name": "Employee Advance",
+   "module": "HR",
+   "path": "hrms/hr/doctype/employee_advance",
+   "child_table": false,
+   "single": false,
+   "submittable": true,
+   "tree": false,
+   "fields": 19,
+   "required_fields": 6,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [
+     "Deduction from Salary",
+     "Expense Claim",
+     "Payment",
+     "Return"
+    ],
+    "link_filters": [
+     "advance_account",
+     "employee"
+    ],
+    "server_calls": [
+     "hrms.hr.doctype.employee_advance.employee_advance.create_return_through_additional_salary",
+     "hrms.hr.doctype.employee_advance.employee_advance.get_employee_advance_return",
+     "hrms.hr.doctype.employee_advance.employee_advance.make_return_entry",
+     "hrms.hr.doctype.expense_claim.expense_claim.get_expense_claim",
+     "hrms.overrides.employee_payment_entry.get_payment_entry_for_employee"
+    ],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Employee Attendance Tool",
+   "module": "HR",
+   "path": "hrms/hr/doctype/employee_attendance_tool",
+   "child_table": false,
+   "single": true,
+   "submittable": false,
+   "tree": false,
+   "fields": 14,
+   "required_fields": 0,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [],
+    "server_calls": [
+     "hrms.hr.doctype.employee_attendance_tool.employee_attendance_tool.get_employees",
+     "hrms.hr.doctype.employee_attendance_tool.employee_attendance_tool.mark_employee_attendance"
+    ],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Employee Boarding Activity",
+   "module": "HR",
+   "path": "hrms/hr/doctype/employee_boarding_activity",
+   "child_table": true,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 9,
+   "required_fields": 1,
+   "child_tables": [],
+   "form_js": null,
+   "views": []
+  },
+  {
+   "name": "Employee Checkin",
+   "module": "HR",
+   "path": "hrms/hr/doctype/employee_checkin",
+   "child_table": false,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 18,
+   "required_fields": 2,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [
+     "Fetch Shift"
+    ],
+    "link_filters": [],
+    "server_calls": [
+     "fetch_shift"
+    ],
+    "dialogs": 0
+   },
+   "views": [
+    {
+     "kind": "list",
+     "buttons": [],
+     "link_filters": [],
+     "server_calls": [
+      "hrms.hr.doctype.employee_checkin.employee_checkin.bulk_fetch_shift"
+     ],
+     "dialogs": 0
+    }
+   ]
+  },
+  {
+   "name": "Employee Feedback Criteria",
+   "module": "HR",
+   "path": "hrms/hr/doctype/employee_feedback_criteria",
+   "child_table": false,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 1,
+   "required_fields": 1,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Employee Feedback Rating",
+   "module": "HR",
+   "path": "hrms/hr/doctype/employee_feedback_rating",
+   "child_table": true,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 3,
+   "required_fields": 2,
+   "child_tables": [],
+   "form_js": null,
+   "views": []
+  },
+  {
+   "name": "Employee Grade",
+   "module": "HR",
+   "path": "hrms/hr/doctype/employee_grade",
+   "child_table": false,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 3,
+   "required_fields": 0,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [
+     "default_leave_policy",
+     "default_salary_structure"
+    ],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Employee Grievance",
+   "module": "HR",
+   "path": "hrms/hr/doctype/employee_grievance",
+   "child_table": false,
+   "single": false,
+   "submittable": true,
+   "tree": false,
+   "fields": 19,
+   "required_fields": 8,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [
+     "associated_document_type",
+     "grievance_against",
+     "grievance_against_party"
+    ],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": [
+    {
+     "kind": "list",
+     "buttons": [],
+     "link_filters": [],
+     "server_calls": [],
+     "dialogs": 0
+    }
+   ]
+  },
+  {
+   "name": "Employee Health Insurance",
+   "module": "HR",
+   "path": "hrms/hr/doctype/employee_health_insurance",
+   "child_table": false,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 1,
+   "required_fields": 1,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Employee Onboarding",
+   "module": "HR",
+   "path": "hrms/hr/doctype/employee_onboarding",
+   "child_table": false,
+   "single": false,
+   "submittable": true,
+   "tree": false,
+   "fields": 17,
+   "required_fields": 6,
+   "child_tables": [
+    "Employee Boarding Activity"
+   ],
+   "form_js": {
+    "buttons": [
+     "Employee",
+     "Mark as Completed",
+     "Project",
+     "Task"
+    ],
+    "link_filters": [
+     "job_applicant",
+     "job_offer"
+    ],
+    "server_calls": [
+     "hrms.controllers.employee_boarding_controller.get_onboarding_details",
+     "hrms.hr.doctype.employee_onboarding.employee_onboarding.make_employee",
+     "mark_onboarding_as_completed"
+    ],
+    "dialogs": 0
+   },
+   "views": [
+    {
+     "kind": "list",
+     "buttons": [],
+     "link_filters": [],
+     "server_calls": [],
+     "dialogs": 0
+    }
+   ]
+  },
+  {
+   "name": "Employee Onboarding Template",
+   "module": "HR",
+   "path": "hrms/hr/doctype/employee_onboarding_template",
+   "child_table": false,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 6,
+   "required_fields": 1,
+   "child_tables": [
+    "Employee Boarding Activity"
+   ],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [
+     "department"
+    ],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Employee Performance Feedback",
+   "module": "HR",
+   "path": "hrms/hr/doctype/employee_performance_feedback",
+   "child_table": false,
+   "single": false,
+   "submittable": true,
+   "tree": false,
+   "fields": 16,
+   "required_fields": 6,
+   "child_tables": [
+    "Employee Feedback Rating"
+   ],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [
+     "appraisal",
+     "reviewer"
+    ],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Employee Promotion",
+   "module": "HR",
+   "path": "hrms/hr/doctype/employee_promotion",
+   "child_table": false,
+   "single": false,
+   "submittable": true,
+   "tree": false,
+   "fields": 10,
+   "required_fields": 2,
+   "child_tables": [
+    "Employee Property History"
+   ],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Employee Property History",
+   "module": "HR",
+   "path": "hrms/hr/doctype/employee_property_history",
+   "child_table": true,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 4,
+   "required_fields": 0,
+   "child_tables": [],
+   "form_js": null,
+   "views": []
+  },
+  {
+   "name": "Employee Referral",
+   "module": "HR",
+   "path": "hrms/hr/doctype/employee_referral",
+   "child_table": false,
+   "single": false,
+   "submittable": true,
+   "tree": false,
+   "fields": 20,
+   "required_fields": 7,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [
+     "Create Additional Salary",
+     "Create Job Applicant",
+     "Reject Employee Referral"
+    ],
+    "link_filters": [],
+    "server_calls": [
+     "hrms.hr.doctype.employee_referral.employee_referral.create_additional_salary",
+     "hrms.hr.doctype.employee_referral.employee_referral.create_job_applicant"
+    ],
+    "dialogs": 0
+   },
+   "views": [
+    {
+     "kind": "list",
+     "buttons": [],
+     "link_filters": [],
+     "server_calls": [],
+     "dialogs": 0
+    }
+   ]
+  },
+  {
+   "name": "Employee Separation",
+   "module": "HR",
+   "path": "hrms/hr/doctype/employee_separation",
+   "child_table": false,
+   "single": false,
+   "submittable": true,
+   "tree": false,
+   "fields": 15,
+   "required_fields": 3,
+   "child_tables": [
+    "Employee Boarding Activity"
+   ],
+   "form_js": {
+    "buttons": [
+     "Employee",
+     "Project",
+     "Task"
+    ],
+    "link_filters": [],
+    "server_calls": [
+     "hrms.controllers.employee_boarding_controller.get_onboarding_details"
+    ],
+    "dialogs": 0
+   },
+   "views": [
+    {
+     "kind": "list",
+     "buttons": [],
+     "link_filters": [],
+     "server_calls": [],
+     "dialogs": 0
+    }
+   ]
+  },
+  {
+   "name": "Employee Separation Template",
+   "module": "HR",
+   "path": "hrms/hr/doctype/employee_separation_template",
+   "child_table": false,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 6,
+   "required_fields": 1,
+   "child_tables": [
+    "Employee Boarding Activity"
+   ],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Employee Skill",
+   "module": "HR",
+   "path": "hrms/hr/doctype/employee_skill",
+   "child_table": true,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 3,
+   "required_fields": 2,
+   "child_tables": [],
+   "form_js": null,
+   "views": []
+  },
+  {
+   "name": "Employee Skill Map",
+   "module": "HR",
+   "path": "hrms/hr/doctype/employee_skill_map",
+   "child_table": false,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 5,
+   "required_fields": 0,
+   "child_tables": [
+    "Employee Skill",
+    "Employee Training"
+   ],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Employee Training",
+   "module": "HR",
+   "path": "hrms/hr/doctype/employee_training",
+   "child_table": true,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 2,
+   "required_fields": 0,
+   "child_tables": [],
+   "form_js": null,
+   "views": []
+  },
+  {
+   "name": "Employee Transfer",
+   "module": "HR",
+   "path": "hrms/hr/doctype/employee_transfer",
+   "child_table": false,
+   "single": false,
+   "submittable": true,
+   "tree": false,
+   "fields": 11,
+   "required_fields": 3,
+   "child_tables": [
+    "Employee Property History"
+   ],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Employment Type",
+   "module": "HR",
+   "path": "hrms/hr/doctype/employment_type",
+   "child_table": false,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 1,
+   "required_fields": 1,
+   "child_tables": [],
+   "form_js": null,
+   "views": []
+  },
+  {
+   "name": "Exit Interview",
+   "module": "HR",
+   "path": "hrms/hr/doctype/exit_interview",
+   "child_table": false,
+   "single": false,
+   "submittable": true,
+   "tree": false,
+   "fields": 19,
+   "required_fields": 3,
+   "child_tables": [
+    "Interviewer"
+   ],
+   "form_js": {
+    "buttons": [
+     "Send Exit Questionnaire"
+    ],
+    "link_filters": [],
+    "server_calls": [
+     "hrms.hr.doctype.exit_interview.exit_interview.send_exit_questionnaire"
+    ],
+    "dialogs": 0
+   },
+   "views": [
+    {
+     "kind": "list",
+     "buttons": [],
+     "link_filters": [],
+     "server_calls": [
+      "hrms.hr.doctype.exit_interview.exit_interview.send_exit_questionnaire"
+     ],
+     "dialogs": 0
+    }
+   ]
+  },
+  {
+   "name": "Expected Skill Set",
+   "module": "HR",
+   "path": "hrms/hr/doctype/expected_skill_set",
+   "child_table": true,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 2,
+   "required_fields": 1,
+   "child_tables": [],
+   "form_js": null,
+   "views": []
+  },
+  {
+   "name": "Expense Claim",
+   "module": "HR",
+   "path": "hrms/hr/doctype/expense_claim",
+   "child_table": false,
+   "single": false,
+   "submittable": true,
+   "tree": false,
+   "fields": 39,
+   "required_fields": 7,
+   "child_tables": [
+    "Expense Claim Advance",
+    "Expense Claim Detail",
+    "Expense Taxes and Charges"
+   ],
+   "form_js": {
+    "buttons": [
+     "Accounting Ledger",
+     "Bank Entries",
+     "Payment",
+     "View Exchange Gain/Loss Journals"
+    ],
+    "link_filters": [
+     "account_head",
+     "bank_or_cash_account",
+     "department",
+     "employee",
+     "employee_advance",
+     "expense_approver",
+     "payable_account",
+     "task"
+    ],
+    "server_calls": [
+     "calculate_taxes",
+     "erpnext.setup.utils.get_exchange_rate",
+     "hrms.hr.doctype.expense_claim.expense_claim.get_advances",
+     "hrms.hr.doctype.expense_claim.expense_claim.get_expense_claim_account_and_cost_center",
+     "hrms.hr.doctype.leave_application.leave_application.get_mandatory_approval",
+     "hrms.overrides.employee_payment_entry.get_payment_entry_for_employee"
+    ],
+    "dialogs": 0
+   },
+   "views": [
+    {
+     "kind": "list",
+     "buttons": [],
+     "link_filters": [],
+     "server_calls": [],
+     "dialogs": 0
+    }
+   ]
+  },
+  {
+   "name": "Expense Claim Account",
+   "module": "HR",
+   "path": "hrms/hr/doctype/expense_claim_account",
+   "child_table": true,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 2,
+   "required_fields": 1,
+   "child_tables": [],
+   "form_js": null,
+   "views": []
+  },
+  {
+   "name": "Expense Claim Advance",
+   "module": "HR",
+   "path": "hrms/hr/doctype/expense_claim_advance",
+   "child_table": true,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 15,
+   "required_fields": 2,
+   "child_tables": [],
+   "form_js": null,
+   "views": []
+  },
+  {
+   "name": "Expense Claim Detail",
+   "module": "HR",
+   "path": "hrms/hr/doctype/expense_claim_detail",
+   "child_table": true,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 10,
+   "required_fields": 2,
+   "child_tables": [],
+   "form_js": null,
+   "views": []
+  },
+  {
+   "name": "Expense Claim Type",
+   "module": "HR",
+   "path": "hrms/hr/doctype/expense_claim_type",
+   "child_table": false,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 4,
+   "required_fields": 1,
+   "child_tables": [
+    "Expense Claim Account"
+   ],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Expense Taxes and Charges",
+   "module": "HR",
+   "path": "hrms/hr/doctype/expense_taxes_and_charges",
+   "child_table": true,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 9,
+   "required_fields": 2,
+   "child_tables": [],
+   "form_js": null,
+   "views": []
+  },
+  {
+   "name": "Full and Final Asset",
+   "module": "HR",
+   "path": "hrms/hr/doctype/full_and_final_asset",
+   "child_table": true,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 9,
+   "required_fields": 3,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Full and Final Outstanding Statement",
+   "module": "HR",
+   "path": "hrms/hr/doctype/full_and_final_outstanding_statement",
+   "child_table": true,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 8,
+   "required_fields": 1,
+   "child_tables": [],
+   "form_js": null,
+   "views": []
+  },
+  {
+   "name": "Full and Final Statement",
+   "module": "HR",
+   "path": "hrms/hr/doctype/full_and_final_statement",
+   "child_table": false,
+   "single": false,
+   "submittable": true,
+   "tree": false,
+   "fields": 16,
+   "required_fields": 2,
+   "child_tables": [
+    "Full and Final Asset",
+    "Full and Final Outstanding Statement"
+   ],
+   "form_js": {
+    "buttons": [
+     "Create Journal Entry"
+    ],
+    "link_filters": [
+     "reference_document",
+     "reference_document_type"
+    ],
+    "server_calls": [
+     "create_journal_entry",
+     "get_outstanding_statements",
+     "hrms.hr.doctype.full_and_final_statement.full_and_final_statement.get_account_and_amount"
+    ],
+    "dialogs": 0
+   },
+   "views": [
+    {
+     "kind": "list",
+     "buttons": [],
+     "link_filters": [],
+     "server_calls": [],
+     "dialogs": 0
+    }
+   ]
+  },
+  {
+   "name": "Goal",
+   "module": "HR",
+   "path": "hrms/hr/doctype/goal",
+   "child_table": false,
+   "single": false,
+   "submittable": false,
+   "tree": true,
+   "fields": 17,
+   "required_fields": 3,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [
+     "Archive",
+     "Close",
+     "Reopen",
+     "Unarchive"
+    ],
+    "link_filters": [
+     "appraisal_cycle",
+     "kra",
+     "parent_goal"
+    ],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": [
+    {
+     "kind": "list",
+     "buttons": [],
+     "link_filters": [],
+     "server_calls": [
+      "hrms.hr.doctype.goal.goal.update_status"
+     ],
+     "dialogs": 0
+    },
+    {
+     "kind": "tree",
+     "buttons": [],
+     "link_filters": [],
+     "server_calls": [
+      "hrms.hr.doctype.goal.goal.update_progress"
+     ],
+     "dialogs": 1
+    }
+   ]
+  },
+  {
+   "name": "Grievance Type",
+   "module": "HR",
+   "path": "hrms/hr/doctype/grievance_type",
+   "child_table": false,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 1,
+   "required_fields": 0,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Holiday List Assignment",
+   "module": "HR",
+   "path": "hrms/hr/doctype/holiday_list_assignment",
+   "child_table": false,
+   "single": false,
+   "submittable": true,
+   "tree": false,
+   "fields": 10,
+   "required_fields": 5,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "HR Settings",
+   "module": "HR",
+   "path": "hrms/hr/doctype/hr_settings",
+   "child_table": false,
+   "single": true,
+   "submittable": false,
+   "tree": false,
+   "fields": 34,
+   "required_fields": 0,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [
+     "hiring_sender",
+     "sender"
+    ],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Identification Document Type",
+   "module": "HR",
+   "path": "hrms/hr/doctype/identification_document_type",
+   "child_table": false,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 1,
+   "required_fields": 0,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Interest",
+   "module": "HR",
+   "path": "hrms/hr/doctype/interest",
+   "child_table": false,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 1,
+   "required_fields": 1,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Interview",
+   "module": "HR",
+   "path": "hrms/hr/doctype/interview",
+   "child_table": false,
+   "single": false,
+   "submittable": true,
+   "tree": false,
+   "fields": 15,
+   "required_fields": 6,
+   "child_tables": [
+    "Interview Detail"
+   ],
+   "form_js": {
+    "buttons": [
+     "Reschedule Interview",
+     "Submit Feedback"
+    ],
+    "link_filters": [
+     "job_applicant"
+    ],
+    "server_calls": [
+     "hrms.hr.doctype.interview.interview.create_interview_feedback",
+     "hrms.hr.doctype.interview.interview.get_expected_skill_set",
+     "hrms.hr.doctype.interview.interview.get_feedback",
+     "hrms.hr.doctype.interview.interview.get_interviewers",
+     "hrms.hr.doctype.interview.interview.get_skill_wise_average_rating",
+     "reschedule_interview"
+    ],
+    "dialogs": 2
+   },
+   "views": [
+    {
+     "kind": "list",
+     "buttons": [],
+     "link_filters": [],
+     "server_calls": [],
+     "dialogs": 0
+    },
+    {
+     "kind": "calendar",
+     "buttons": [],
+     "link_filters": [],
+     "server_calls": [
+      "hrms.hr.doctype.interview.interview.get_events"
+     ],
+     "dialogs": 0
+    }
+   ]
+  },
+  {
+   "name": "Interview Detail",
+   "module": "HR",
+   "path": "hrms/hr/doctype/interview_detail",
+   "child_table": true,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 1,
+   "required_fields": 0,
+   "child_tables": [],
+   "form_js": null,
+   "views": []
+  },
+  {
+   "name": "Interview Feedback",
+   "module": "HR",
+   "path": "hrms/hr/doctype/interview_feedback",
+   "child_table": false,
+   "single": false,
+   "submittable": true,
+   "tree": false,
+   "fields": 9,
+   "required_fields": 5,
+   "child_tables": [
+    "Skill Assessment"
+   ],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [
+     "interview",
+     "interviewer"
+    ],
+    "server_calls": [
+     "hrms.hr.doctype.interview.interview.get_expected_skill_set",
+     "hrms.hr.doctype.interview_feedback.interview_feedback.get_applicable_interviewers"
+    ],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Interview Type",
+   "module": "HR",
+   "path": "hrms/hr/doctype/interview_type",
+   "child_table": false,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 6,
+   "required_fields": 1,
+   "child_tables": [
+    "Expected Skill Set",
+    "Interviewer"
+   ],
+   "form_js": {
+    "buttons": [
+     "Create Interview"
+    ],
+    "link_filters": [],
+    "server_calls": [
+     "hrms.hr.doctype.interview_type.interview_type.create_interview"
+    ],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Interviewer",
+   "module": "HR",
+   "path": "hrms/hr/doctype/interviewer",
+   "child_table": true,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 1,
+   "required_fields": 0,
+   "child_tables": [],
+   "form_js": null,
+   "views": []
+  },
+  {
+   "name": "Job Applicant",
+   "module": "HR",
+   "path": "hrms/hr/doctype/job_applicant",
+   "child_table": false,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 19,
+   "required_fields": 3,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [
+     "Create Job Offer",
+     "Reject",
+     "Schedule Interview",
+     "Shortlist",
+     "View Job Offer"
+    ],
+    "link_filters": [
+     "job_title"
+    ],
+    "server_calls": [
+     "hrms.hr.doctype.interview.interview.get_interviewers",
+     "hrms.hr.doctype.job_applicant.job_applicant.get_interview_details",
+     "hrms.hr.doctype.job_applicant.job_applicant.schedule_interview"
+    ],
+    "dialogs": 1
+   },
+   "views": [
+    {
+     "kind": "list",
+     "buttons": [],
+     "link_filters": [],
+     "server_calls": [],
+     "dialogs": 0
+    }
+   ]
+  },
+  {
+   "name": "Job Applicant Source",
+   "module": "HR",
+   "path": "hrms/hr/doctype/job_applicant_source",
+   "child_table": false,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 2,
+   "required_fields": 1,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Job Offer",
+   "module": "HR",
+   "path": "hrms/hr/doctype/job_offer",
+   "child_table": false,
+   "single": false,
+   "submittable": true,
+   "tree": false,
+   "fields": 14,
+   "required_fields": 5,
+   "child_tables": [
+    "Job Offer Term"
+   ],
+   "form_js": {
+    "buttons": [
+     "Create Employee",
+     "Show Employee"
+    ],
+    "link_filters": [
+     "select_terms"
+    ],
+    "server_calls": [
+     "hrms.hr.doctype.job_offer.job_offer.make_employee"
+    ],
+    "dialogs": 0
+   },
+   "views": [
+    {
+     "kind": "list",
+     "buttons": [],
+     "link_filters": [],
+     "server_calls": [],
+     "dialogs": 0
+    }
+   ]
+  },
+  {
+   "name": "Job Offer Term",
+   "module": "HR",
+   "path": "hrms/hr/doctype/job_offer_term",
+   "child_table": true,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 2,
+   "required_fields": 2,
+   "child_tables": [],
+   "form_js": null,
+   "views": []
+  },
+  {
+   "name": "Job Offer Term Template",
+   "module": "HR",
+   "path": "hrms/hr/doctype/job_offer_term_template",
+   "child_table": false,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 2,
+   "required_fields": 0,
+   "child_tables": [
+    "Job Offer Term"
+   ],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Job Opening",
+   "module": "HR",
+   "path": "hrms/hr/doctype/job_opening",
+   "child_table": false,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 26,
+   "required_fields": 3,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [
+     "department"
+    ],
+    "server_calls": [
+     "hrms.hr.doctype.staffing_plan.staffing_plan.get_active_staffing_plan_details"
+    ],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Job Opening Template",
+   "module": "HR",
+   "path": "hrms/hr/doctype/job_opening_template",
+   "child_table": false,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 11,
+   "required_fields": 1,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [
+     "Create Job Opening"
+    ],
+    "link_filters": [],
+    "server_calls": [
+     "hrms.hr.doctype.job_opening_template.job_opening_template.create_job_opening_from_template"
+    ],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Job Requisition",
+   "module": "HR",
+   "path": "hrms/hr/doctype/job_requisition",
+   "child_table": false,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 17,
+   "required_fields": 8,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [
+     "Associate Job Opening",
+     "Create Job Opening"
+    ],
+    "link_filters": [],
+    "server_calls": [
+     "hrms.hr.doctype.job_requisition.job_requisition.make_job_opening"
+    ],
+    "dialogs": 0
+   },
+   "views": [
+    {
+     "kind": "list",
+     "buttons": [],
+     "link_filters": [],
+     "server_calls": [],
+     "dialogs": 0
+    }
+   ]
+  },
+  {
+   "name": "KRA",
+   "module": "HR",
+   "path": "hrms/hr/doctype/kra",
+   "child_table": false,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 2,
+   "required_fields": 1,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Leave Adjustment",
+   "module": "HR",
+   "path": "hrms/hr/doctype/leave_adjustment",
+   "child_table": false,
+   "single": false,
+   "submittable": true,
+   "tree": false,
+   "fields": 14,
+   "required_fields": 7,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [
+     "leave_type"
+    ],
+    "server_calls": [
+     "hrms.hr.doctype.leave_adjustment.leave_adjustment.get_leave_allocation_for_posting_date"
+    ],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Leave Allocation",
+   "module": "HR",
+   "path": "hrms/hr/doctype/leave_allocation",
+   "child_table": false,
+   "single": false,
+   "submittable": true,
+   "tree": false,
+   "fields": 23,
+   "required_fields": 7,
+   "child_tables": [
+    "Earned Leave Schedule"
+   ],
+   "form_js": {
+    "buttons": [
+     "Adjust Allocation",
+     "Expire Allocation"
+    ],
+    "link_filters": [
+     "employee",
+     "leave_type"
+    ],
+    "server_calls": [
+     "create_leave_adjustment",
+     "hrms.hr.doctype.leave_ledger_entry.leave_ledger_entry.expire_allocation",
+     "retry_failed_allocations",
+     "set_total_leaves_allocated"
+    ],
+    "dialogs": 1
+   },
+   "views": [
+    {
+     "kind": "list",
+     "buttons": [],
+     "link_filters": [],
+     "server_calls": [],
+     "dialogs": 0
+    }
+   ]
+  },
+  {
+   "name": "Leave Application",
+   "module": "HR",
+   "path": "hrms/hr/doctype/leave_application",
+   "child_table": false,
+   "single": false,
+   "submittable": true,
+   "tree": false,
+   "fields": 22,
+   "required_fields": 8,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [
+     "employee",
+     "leave_approver",
+     "leave_type"
+    ],
+    "server_calls": [
+     "hrms.hr.doctype.leave_application.leave_application.get_leave_approver",
+     "hrms.hr.doctype.leave_application.leave_application.get_leave_balance_on",
+     "hrms.hr.doctype.leave_application.leave_application.get_leave_details",
+     "hrms.hr.doctype.leave_application.leave_application.get_mandatory_approval",
+     "hrms.hr.doctype.leave_application.leave_application.get_number_of_leave_days"
+    ],
+    "dialogs": 0
+   },
+   "views": [
+    {
+     "kind": "list",
+     "buttons": [],
+     "link_filters": [],
+     "server_calls": [],
+     "dialogs": 0
+    },
+    {
+     "kind": "calendar",
+     "buttons": [],
+     "link_filters": [
+      "employee",
+      "leave_type"
+     ],
+     "server_calls": [
+      "frappe.client.save",
+      "hrms.hr.doctype.leave_application.leave_application.get_events",
+      "hrms.hr.doctype.leave_application.leave_application.get_leave_approver_and_mandatory",
+      "hrms.hr.doctype.leave_application.leave_application.get_leave_details",
+      "hrms.hr.doctype.leave_application.leave_application.get_leave_metrics_and_details"
+     ],
+     "dialogs": 0
+    }
+   ]
+  },
+  {
+   "name": "Leave Block List",
+   "module": "HR",
+   "path": "hrms/hr/doctype/leave_block_list",
+   "child_table": false,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 7,
+   "required_fields": 3,
+   "child_tables": [
+    "Leave Block List Allow",
+    "Leave Block List Date"
+   ],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [],
+    "server_calls": [],
+    "dialogs": 1
+   },
+   "views": []
+  },
+  {
+   "name": "Leave Block List Allow",
+   "module": "HR",
+   "path": "hrms/hr/doctype/leave_block_list_allow",
+   "child_table": true,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 1,
+   "required_fields": 1,
+   "child_tables": [],
+   "form_js": null,
+   "views": []
+  },
+  {
+   "name": "Leave Block List Date",
+   "module": "HR",
+   "path": "hrms/hr/doctype/leave_block_list_date",
+   "child_table": true,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 2,
+   "required_fields": 2,
+   "child_tables": [],
+   "form_js": null,
+   "views": []
+  },
+  {
+   "name": "Leave Control Panel",
+   "module": "HR",
+   "path": "hrms/hr/doctype/leave_control_panel",
+   "child_table": false,
+   "single": true,
+   "submittable": false,
+   "tree": false,
+   "fields": 15,
+   "required_fields": 0,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [
+     "department",
+     "leave_period",
+     "leave_policy"
+    ],
+    "server_calls": [
+     "allocate_leave",
+     "get_employees"
+    ],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Leave Encashment",
+   "module": "HR",
+   "path": "hrms/hr/doctype/leave_encashment",
+   "child_table": false,
+   "single": false,
+   "submittable": true,
+   "tree": false,
+   "fields": 22,
+   "required_fields": 5,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [
+     "Payment"
+    ],
+    "link_filters": [
+     "expense_account",
+     "leave_period",
+     "leave_type",
+     "payable_account"
+    ],
+    "server_calls": [
+     "get_leave_details_for_encashment",
+     "hrms.overrides.employee_payment_entry.get_payment_entry_for_employee",
+     "hrms.payroll.doctype.salary_structure_assignment.salary_structure_assignment.get_employee_currency"
+    ],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Leave Ledger Entry",
+   "module": "HR",
+   "path": "hrms/hr/doctype/leave_ledger_entry",
+   "child_table": false,
+   "single": false,
+   "submittable": true,
+   "tree": false,
+   "fields": 14,
+   "required_fields": 1,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": [
+    {
+     "kind": "list",
+     "buttons": [],
+     "link_filters": [],
+     "server_calls": [],
+     "dialogs": 0
+    }
+   ]
+  },
+  {
+   "name": "Leave Period",
+   "module": "HR",
+   "path": "hrms/hr/doctype/leave_period",
+   "child_table": false,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 5,
+   "required_fields": 3,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [
+     "department"
+    ],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Leave Policy",
+   "module": "HR",
+   "path": "hrms/hr/doctype/leave_policy",
+   "child_table": false,
+   "single": false,
+   "submittable": true,
+   "tree": false,
+   "fields": 3,
+   "required_fields": 2,
+   "child_tables": [
+    "Leave Policy Detail"
+   ],
+   "form_js": {
+    "buttons": [
+     "Bulk Assignment",
+     "Single Assignment"
+    ],
+    "link_filters": [],
+    "server_calls": [
+     "frappe.client.get_value"
+    ],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Leave Policy Assignment",
+   "module": "HR",
+   "path": "hrms/hr/doctype/leave_policy_assignment",
+   "child_table": false,
+   "single": false,
+   "submittable": true,
+   "tree": false,
+   "fields": 11,
+   "required_fields": 4,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [
+     "leave_period",
+     "leave_policy"
+    ],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": [
+    {
+     "kind": "list",
+     "buttons": [],
+     "link_filters": [],
+     "server_calls": [],
+     "dialogs": 0
+    }
+   ]
+  },
+  {
+   "name": "Leave Policy Detail",
+   "module": "HR",
+   "path": "hrms/hr/doctype/leave_policy_detail",
+   "child_table": true,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 2,
+   "required_fields": 2,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Leave Type",
+   "module": "HR",
+   "path": "hrms/hr/doctype/leave_type",
+   "child_table": false,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 23,
+   "required_fields": 1,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Offer Term",
+   "module": "HR",
+   "path": "hrms/hr/doctype/offer_term",
+   "child_table": false,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 1,
+   "required_fields": 1,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Overtime Details",
+   "module": "HR",
+   "path": "hrms/hr/doctype/overtime_details",
+   "child_table": true,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 6,
+   "required_fields": 4,
+   "child_tables": [],
+   "form_js": null,
+   "views": []
+  },
+  {
+   "name": "Overtime Salary Component",
+   "module": "HR",
+   "path": "hrms/hr/doctype/overtime_salary_component",
+   "child_table": true,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 1,
+   "required_fields": 1,
+   "child_tables": [],
+   "form_js": null,
+   "views": []
+  },
+  {
+   "name": "Overtime Slip",
+   "module": "HR",
+   "path": "hrms/hr/doctype/overtime_slip",
+   "child_table": false,
+   "single": false,
+   "submittable": true,
+   "tree": false,
+   "fields": 13,
+   "required_fields": 6,
+   "child_tables": [
+    "Overtime Details"
+   ],
+   "form_js": {
+    "buttons": [
+     "Fetch Overtime Details"
+    ],
+    "link_filters": [],
+    "server_calls": [
+     "get_emp_and_overtime_details",
+     "get_frequency_and_dates"
+    ],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Overtime Type",
+   "module": "HR",
+   "path": "hrms/hr/doctype/overtime_type",
+   "child_table": false,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 10,
+   "required_fields": 3,
+   "child_tables": [
+    "Overtime Salary Component"
+   ],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Purpose of Travel",
+   "module": "HR",
+   "path": "hrms/hr/doctype/purpose_of_travel",
+   "child_table": false,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 1,
+   "required_fields": 0,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "PWA Notification",
+   "module": "HR",
+   "path": "hrms/hr/doctype/pwa_notification",
+   "child_table": false,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 6,
+   "required_fields": 0,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Shift Assignment",
+   "module": "HR",
+   "path": "hrms/hr/doctype/shift_assignment",
+   "child_table": false,
+   "single": false,
+   "submittable": true,
+   "tree": false,
+   "fields": 13,
+   "required_fields": 4,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": [
+    {
+     "kind": "list",
+     "buttons": [],
+     "link_filters": [],
+     "server_calls": [],
+     "dialogs": 0
+    },
+    {
+     "kind": "calendar",
+     "buttons": [],
+     "link_filters": [],
+     "server_calls": [
+      "hrms.hr.doctype.shift_assignment.shift_assignment.get_events"
+     ],
+     "dialogs": 0
+    }
+   ]
+  },
+  {
+   "name": "Shift Assignment Tool",
+   "module": "HR",
+   "path": "hrms/hr/doctype/shift_assignment_tool",
+   "child_table": false,
+   "single": true,
+   "submittable": false,
+   "tree": false,
+   "fields": 17,
+   "required_fields": 2,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [],
+    "server_calls": [
+     "bulk_assign",
+     "bulk_process_shift_requests",
+     "get_employees"
+    ],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Shift Location",
+   "module": "HR",
+   "path": "hrms/hr/doctype/shift_location",
+   "child_table": false,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 6,
+   "required_fields": 1,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": [
+    {
+     "kind": "list",
+     "buttons": [],
+     "link_filters": [],
+     "server_calls": [],
+     "dialogs": 0
+    }
+   ]
+  },
+  {
+   "name": "Shift Request",
+   "module": "HR",
+   "path": "hrms/hr/doctype/shift_request",
+   "child_table": false,
+   "single": false,
+   "submittable": true,
+   "tree": false,
+   "fields": 10,
+   "required_fields": 6,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [
+     "approver",
+     "employee"
+    ],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": [
+    {
+     "kind": "list",
+     "buttons": [],
+     "link_filters": [],
+     "server_calls": [],
+     "dialogs": 0
+    }
+   ]
+  },
+  {
+   "name": "Shift Schedule",
+   "module": "HR",
+   "path": "hrms/hr/doctype/shift_schedule",
+   "child_table": false,
+   "single": false,
+   "submittable": true,
+   "tree": false,
+   "fields": 4,
+   "required_fields": 3,
+   "child_tables": [
+    "Assignment Rule Day"
+   ],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": [
+    {
+     "kind": "list",
+     "buttons": [],
+     "link_filters": [],
+     "server_calls": [],
+     "dialogs": 0
+    }
+   ]
+  },
+  {
+   "name": "Shift Schedule Assignment",
+   "module": "HR",
+   "path": "hrms/hr/doctype/shift_schedule_assignment",
+   "child_table": false,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 8,
+   "required_fields": 3,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": [
+    {
+     "kind": "list",
+     "buttons": [],
+     "link_filters": [],
+     "server_calls": [],
+     "dialogs": 0
+    }
+   ]
+  },
+  {
+   "name": "Shift Type",
+   "module": "HR",
+   "path": "hrms/hr/doctype/shift_type",
+   "child_table": false,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 21,
+   "required_fields": 2,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [
+     "Mark Attendance"
+    ],
+    "link_filters": [],
+    "server_calls": [
+     "process_auto_attendance"
+    ],
+    "dialogs": 0
+   },
+   "views": [
+    {
+     "kind": "list",
+     "buttons": [],
+     "link_filters": [],
+     "server_calls": [],
+     "dialogs": 0
+    }
+   ]
+  },
+  {
+   "name": "Skill",
+   "module": "HR",
+   "path": "hrms/hr/doctype/skill",
+   "child_table": false,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 2,
+   "required_fields": 0,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Skill Assessment",
+   "module": "HR",
+   "path": "hrms/hr/doctype/skill_assessment",
+   "child_table": true,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 2,
+   "required_fields": 2,
+   "child_tables": [],
+   "form_js": null,
+   "views": []
+  },
+  {
+   "name": "Staffing Plan",
+   "module": "HR",
+   "path": "hrms/hr/doctype/staffing_plan",
+   "child_table": false,
+   "single": false,
+   "submittable": true,
+   "tree": false,
+   "fields": 8,
+   "required_fields": 4,
+   "child_tables": [
+    "Staffing Plan Detail"
+   ],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [
+     "department",
+     "designation"
+    ],
+    "server_calls": [
+     "hrms.hr.doctype.staffing_plan.staffing_plan.get_designation_counts",
+     "set_job_requisitions"
+    ],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Staffing Plan Detail",
+   "module": "HR",
+   "path": "hrms/hr/doctype/staffing_plan_detail",
+   "child_table": true,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 7,
+   "required_fields": 1,
+   "child_tables": [],
+   "form_js": null,
+   "views": []
+  },
+  {
+   "name": "Training Event",
+   "module": "HR",
+   "path": "hrms/hr/doctype/training_event",
+   "child_table": false,
+   "single": false,
+   "submittable": true,
+   "tree": false,
+   "fields": 19,
+   "required_fields": 7,
+   "child_tables": [
+    "Training Event Employee"
+   ],
+   "form_js": {
+    "buttons": [
+     "Training Feedback",
+     "Training Result"
+    ],
+    "link_filters": [
+     "employee"
+    ],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": [
+    {
+     "kind": "calendar",
+     "buttons": [],
+     "link_filters": [],
+     "server_calls": [
+      "frappe.desk.calendar.get_events"
+     ],
+     "dialogs": 0
+    }
+   ]
+  },
+  {
+   "name": "Training Event Employee",
+   "module": "HR",
+   "path": "hrms/hr/doctype/training_event_employee",
+   "child_table": true,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 6,
+   "required_fields": 0,
+   "child_tables": [],
+   "form_js": null,
+   "views": []
+  },
+  {
+   "name": "Training Feedback",
+   "module": "HR",
+   "path": "hrms/hr/doctype/training_feedback",
+   "child_table": false,
+   "single": false,
+   "submittable": true,
+   "tree": false,
+   "fields": 9,
+   "required_fields": 3,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Training Program",
+   "module": "HR",
+   "path": "hrms/hr/doctype/training_program",
+   "child_table": false,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 9,
+   "required_fields": 3,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Training Result",
+   "module": "HR",
+   "path": "hrms/hr/doctype/training_result",
+   "child_table": false,
+   "single": false,
+   "submittable": true,
+   "tree": false,
+   "fields": 4,
+   "required_fields": 1,
+   "child_tables": [
+    "Training Result Employee"
+   ],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [],
+    "server_calls": [
+     "hrms.hr.doctype.training_result.training_result.get_employees"
+    ],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Training Result Employee",
+   "module": "HR",
+   "path": "hrms/hr/doctype/training_result_employee",
+   "child_table": true,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 6,
+   "required_fields": 0,
+   "child_tables": [],
+   "form_js": null,
+   "views": []
+  },
+  {
+   "name": "Travel Itinerary",
+   "module": "HR",
+   "path": "hrms/hr/doctype/travel_itinerary",
+   "child_table": true,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 13,
+   "required_fields": 0,
+   "child_tables": [],
+   "form_js": null,
+   "views": []
+  },
+  {
+   "name": "Travel Request",
+   "module": "HR",
+   "path": "hrms/hr/doctype/travel_request",
+   "child_table": false,
+   "single": false,
+   "submittable": true,
+   "tree": false,
+   "fields": 22,
+   "required_fields": 3,
+   "child_tables": [
+    "Travel Itinerary",
+    "Travel Request Costing"
+   ],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Travel Request Costing",
+   "module": "HR",
+   "path": "hrms/hr/doctype/travel_request_costing",
+   "child_table": true,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 5,
+   "required_fields": 0,
+   "child_tables": [],
+   "form_js": null,
+   "views": []
+  },
+  {
+   "name": "Vehicle Log",
+   "module": "HR",
+   "path": "hrms/hr/doctype/vehicle_log",
+   "child_table": false,
+   "single": false,
+   "submittable": true,
+   "tree": false,
+   "fields": 14,
+   "required_fields": 6,
+   "child_tables": [
+    "Vehicle Service"
+   ],
+   "form_js": {
+    "buttons": [
+     "Expense Claim"
+    ],
+    "link_filters": [
+     "employee"
+    ],
+    "server_calls": [
+     "hrms.hr.doctype.vehicle_log.vehicle_log.get_draft_expense_claim_cancellation_actions",
+     "hrms.hr.doctype.vehicle_log.vehicle_log.make_expense_claim"
+    ],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Vehicle Service",
+   "module": "HR",
+   "path": "hrms/hr/doctype/vehicle_service",
+   "child_table": true,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 4,
+   "required_fields": 4,
+   "child_tables": [],
+   "form_js": null,
+   "views": []
+  },
+  {
+   "name": "Vehicle Service Item",
+   "module": "HR",
+   "path": "hrms/hr/doctype/vehicle_service_item",
+   "child_table": false,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 1,
+   "required_fields": 1,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Additional Salary",
+   "module": "Payroll",
+   "path": "hrms/payroll/doctype/additional_salary",
+   "child_table": false,
+   "single": false,
+   "submittable": true,
+   "tree": false,
+   "fields": 19,
+   "required_fields": 6,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [
+     "employee",
+     "salary_component"
+    ],
+    "server_calls": [
+     "frappe.client.get_value",
+     "hrms.payroll.doctype.salary_structure_assignment.salary_structure_assignment.get_employee_currency"
+    ],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Arrear",
+   "module": "Payroll",
+   "path": "hrms/payroll/doctype/arrear",
+   "child_table": false,
+   "single": false,
+   "submittable": true,
+   "tree": false,
+   "fields": 12,
+   "required_fields": 7,
+   "child_tables": [
+    "Payroll Correction Child"
+   ],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [
+     "employee",
+     "payroll_period",
+     "salary_structure"
+    ],
+    "server_calls": [
+     "hrms.payroll.doctype.salary_structure_assignment.salary_structure_assignment.get_employee_currency"
+    ],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Bulk Salary Structure Assignment",
+   "module": "Payroll",
+   "path": "hrms/payroll/doctype/bulk_salary_structure_assignment",
+   "child_table": false,
+   "single": true,
+   "submittable": false,
+   "tree": false,
+   "fields": 11,
+   "required_fields": 3,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [
+     "income_tax_slab",
+     "payroll_payable_account",
+     "salary_structure"
+    ],
+    "server_calls": [
+     "bulk_assign_structure",
+     "get_employees"
+    ],
+    "dialogs": 1
+   },
+   "views": []
+  },
+  {
+   "name": "Employee Benefit Application",
+   "module": "Payroll",
+   "path": "hrms/payroll/doctype/employee_benefit_application",
+   "child_table": false,
+   "single": false,
+   "submittable": true,
+   "tree": false,
+   "fields": 12,
+   "required_fields": 6,
+   "child_tables": [
+    "Employee Benefit Application Detail"
+   ],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Employee Benefit Application Detail",
+   "module": "Payroll",
+   "path": "hrms/payroll/doctype/employee_benefit_application_detail",
+   "child_table": true,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 3,
+   "required_fields": 3,
+   "child_tables": [],
+   "form_js": null,
+   "views": []
+  },
+  {
+   "name": "Employee Benefit Claim",
+   "module": "Payroll",
+   "path": "hrms/payroll/doctype/employee_benefit_claim",
+   "child_table": false,
+   "single": false,
+   "submittable": true,
+   "tree": false,
+   "fields": 12,
+   "required_fields": 6,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [
+     "earning_component"
+    ],
+    "server_calls": [
+     "hrms.payroll.doctype.salary_structure_assignment.salary_structure_assignment.get_employee_currency"
+    ],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Employee Benefit Detail",
+   "module": "Payroll",
+   "path": "hrms/payroll/doctype/employee_benefit_detail",
+   "child_table": true,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 2,
+   "required_fields": 2,
+   "child_tables": [],
+   "form_js": null,
+   "views": []
+  },
+  {
+   "name": "Employee Benefit Ledger",
+   "module": "Payroll",
+   "path": "hrms/payroll/doctype/employee_benefit_ledger",
+   "child_table": false,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 14,
+   "required_fields": 0,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": [
+    {
+     "kind": "list",
+     "buttons": [],
+     "link_filters": [],
+     "server_calls": [],
+     "dialogs": 0
+    }
+   ]
+  },
+  {
+   "name": "Employee Cost Center",
+   "module": "Payroll",
+   "path": "hrms/payroll/doctype/employee_cost_center",
+   "child_table": true,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 2,
+   "required_fields": 2,
+   "child_tables": [],
+   "form_js": null,
+   "views": []
+  },
+  {
+   "name": "Employee Incentive",
+   "module": "Payroll",
+   "path": "hrms/payroll/doctype/employee_incentive",
+   "child_table": false,
+   "single": false,
+   "submittable": true,
+   "tree": false,
+   "fields": 9,
+   "required_fields": 6,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [
+     "employee",
+     "salary_component"
+    ],
+    "server_calls": [
+     "frappe.client.get_value",
+     "hrms.payroll.doctype.salary_structure_assignment.salary_structure_assignment.get_employee_currency"
+    ],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Employee Other Income",
+   "module": "Payroll",
+   "path": "hrms/payroll/doctype/employee_other_income",
+   "child_table": false,
+   "single": false,
+   "submittable": true,
+   "tree": false,
+   "fields": 7,
+   "required_fields": 4,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Employee Tax Exemption Category",
+   "module": "Payroll",
+   "path": "hrms/payroll/doctype/employee_tax_exemption_category",
+   "child_table": false,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 3,
+   "required_fields": 0,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Employee Tax Exemption Declaration",
+   "module": "Payroll",
+   "path": "hrms/payroll/doctype/employee_tax_exemption_declaration",
+   "child_table": false,
+   "single": false,
+   "submittable": true,
+   "tree": false,
+   "fields": 10,
+   "required_fields": 3,
+   "child_tables": [
+    "Employee Tax Exemption Declaration Category"
+   ],
+   "form_js": {
+    "buttons": [
+     "Submit Proof"
+    ],
+    "link_filters": [
+     "employee",
+     "exemption_sub_category",
+     "payroll_period"
+    ],
+    "server_calls": [
+     "hrms.payroll.doctype.employee_tax_exemption_declaration.employee_tax_exemption_declaration.make_proof_submission",
+     "hrms.payroll.doctype.salary_structure_assignment.salary_structure_assignment.get_employee_currency"
+    ],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Employee Tax Exemption Declaration Category",
+   "module": "Payroll",
+   "path": "hrms/payroll/doctype/employee_tax_exemption_declaration_category",
+   "child_table": true,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 4,
+   "required_fields": 4,
+   "child_tables": [],
+   "form_js": null,
+   "views": []
+  },
+  {
+   "name": "Employee Tax Exemption Proof Submission",
+   "module": "Payroll",
+   "path": "hrms/payroll/doctype/employee_tax_exemption_proof_submission",
+   "child_table": false,
+   "single": false,
+   "submittable": true,
+   "tree": false,
+   "fields": 12,
+   "required_fields": 5,
+   "child_tables": [
+    "Employee Tax Exemption Proof Submission Detail"
+   ],
+   "form_js": {
+    "buttons": [
+     "Get Details From Declaration"
+    ],
+    "link_filters": [
+     "employee",
+     "exemption_sub_category",
+     "payroll_period"
+    ],
+    "server_calls": [
+     "hrms.payroll.doctype.employee_tax_exemption_declaration.employee_tax_exemption_declaration.make_proof_submission",
+     "hrms.payroll.doctype.salary_structure_assignment.salary_structure_assignment.get_employee_currency"
+    ],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Employee Tax Exemption Proof Submission Detail",
+   "module": "Payroll",
+   "path": "hrms/payroll/doctype/employee_tax_exemption_proof_submission_detail",
+   "child_table": true,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 6,
+   "required_fields": 4,
+   "child_tables": [],
+   "form_js": null,
+   "views": []
+  },
+  {
+   "name": "Employee Tax Exemption Sub Category",
+   "module": "Payroll",
+   "path": "hrms/payroll/doctype/employee_tax_exemption_sub_category",
+   "child_table": false,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 4,
+   "required_fields": 1,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Gratuity",
+   "module": "Payroll",
+   "path": "hrms/payroll/doctype/gratuity",
+   "child_table": false,
+   "single": false,
+   "submittable": true,
+   "tree": false,
+   "fields": 19,
+   "required_fields": 5,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [
+     "Create Payment Entry"
+    ],
+    "link_filters": [
+     "expense_account",
+     "payable_account",
+     "salary_component"
+    ],
+    "server_calls": [
+     "hrms.overrides.employee_payment_entry.get_payment_entry_for_employee"
+    ],
+    "dialogs": 0
+   },
+   "views": [
+    {
+     "kind": "list",
+     "buttons": [],
+     "link_filters": [],
+     "server_calls": [],
+     "dialogs": 0
+    }
+   ]
+  },
+  {
+   "name": "Gratuity Applicable Component",
+   "module": "Payroll",
+   "path": "hrms/payroll/doctype/gratuity_applicable_component",
+   "child_table": true,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 1,
+   "required_fields": 1,
+   "child_tables": [],
+   "form_js": null,
+   "views": []
+  },
+  {
+   "name": "Gratuity Rule",
+   "module": "Payroll",
+   "path": "hrms/payroll/doctype/gratuity_rule",
+   "child_table": false,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 7,
+   "required_fields": 3,
+   "child_tables": [
+    "Gratuity Applicable Component",
+    "Gratuity Rule Slab"
+   ],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Gratuity Rule Slab",
+   "module": "Payroll",
+   "path": "hrms/payroll/doctype/gratuity_rule_slab",
+   "child_table": true,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 3,
+   "required_fields": 3,
+   "child_tables": [],
+   "form_js": null,
+   "views": []
+  },
+  {
+   "name": "Income Tax Slab",
+   "module": "Payroll",
+   "path": "hrms/payroll/doctype/income_tax_slab",
+   "child_table": false,
+   "single": false,
+   "submittable": true,
+   "tree": false,
+   "fields": 10,
+   "required_fields": 3,
+   "child_tables": [
+    "Income Tax Slab Other Charges",
+    "Taxable Salary Slab"
+   ],
+   "form_js": {
+    "buttons": [
+     "Salary Structure Assignment"
+    ],
+    "link_filters": [],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Income Tax Slab Other Charges",
+   "module": "Payroll",
+   "path": "hrms/payroll/doctype/income_tax_slab_other_charges",
+   "child_table": true,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 4,
+   "required_fields": 2,
+   "child_tables": [],
+   "form_js": null,
+   "views": []
+  },
+  {
+   "name": "Payroll Correction",
+   "module": "Payroll",
+   "path": "hrms/payroll/doctype/payroll_correction",
+   "child_table": false,
+   "single": false,
+   "submittable": true,
+   "tree": false,
+   "fields": 16,
+   "required_fields": 7,
+   "child_tables": [
+    "Payroll Correction Child"
+   ],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [],
+    "server_calls": [
+     "fetch_salary_slip_details"
+    ],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Payroll Correction Child",
+   "module": "Payroll",
+   "path": "hrms/payroll/doctype/payroll_correction_child",
+   "child_table": true,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 2,
+   "required_fields": 2,
+   "child_tables": [],
+   "form_js": null,
+   "views": []
+  },
+  {
+   "name": "Payroll Employee Detail",
+   "module": "Payroll",
+   "path": "hrms/payroll/doctype/payroll_employee_detail",
+   "child_table": true,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 5,
+   "required_fields": 0,
+   "child_tables": [],
+   "form_js": null,
+   "views": []
+  },
+  {
+   "name": "Payroll Entry",
+   "module": "Payroll",
+   "path": "hrms/payroll/doctype/payroll_entry",
+   "child_table": false,
+   "single": false,
+   "submittable": true,
+   "tree": false,
+   "fields": 27,
+   "required_fields": 8,
+   "child_tables": [
+    "Payroll Employee Detail"
+   ],
+   "form_js": {
+    "buttons": [
+     "Create Overtime Slips",
+     "Create Salary Slips",
+     "Get Employees",
+     "Make Bank Entry",
+     "Release Withheld Salaries",
+     "Submit Overtime Slips",
+     "Submit Salary Slip"
+    ],
+    "link_filters": [
+     "department",
+     "employee",
+     "payment_account",
+     "payroll_payable_account"
+    ],
+    "server_calls": [
+     "create_overtime_slips",
+     "create_salary_slips",
+     "erpnext.setup.utils.get_exchange_rate",
+     "fill_employee_details",
+     "get_employees_with_unmarked_attendance",
+     "hrms.payroll.doctype.payroll_entry.payroll_entry.get_end_date",
+     "hrms.payroll.doctype.payroll_entry.payroll_entry.get_start_end_dates",
+     "make_bank_entry",
+     "run_doc_method",
+     "submit_overtime_slips",
+     "submit_salary_slips"
+    ],
+    "dialogs": 0
+   },
+   "views": [
+    {
+     "kind": "list",
+     "buttons": [],
+     "link_filters": [],
+     "server_calls": [],
+     "dialogs": 0
+    }
+   ]
+  },
+  {
+   "name": "Payroll Period",
+   "module": "Payroll",
+   "path": "hrms/payroll/doctype/payroll_period",
+   "child_table": false,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 4,
+   "required_fields": 3,
+   "child_tables": [
+    "Payroll Period Date"
+   ],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Payroll Period Date",
+   "module": "Payroll",
+   "path": "hrms/payroll/doctype/payroll_period_date",
+   "child_table": true,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 2,
+   "required_fields": 2,
+   "child_tables": [],
+   "form_js": null,
+   "views": []
+  },
+  {
+   "name": "Payroll Settings",
+   "module": "Payroll",
+   "path": "hrms/payroll/doctype/payroll_settings",
+   "child_table": false,
+   "single": true,
+   "submittable": false,
+   "tree": false,
+   "fields": 18,
+   "required_fields": 0,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [
+     "sender"
+    ],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Retention Bonus",
+   "module": "Payroll",
+   "path": "hrms/payroll/doctype/retention_bonus",
+   "child_table": false,
+   "single": false,
+   "submittable": true,
+   "tree": false,
+   "fields": 10,
+   "required_fields": 6,
+   "child_tables": [],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [
+     "employee",
+     "salary_component"
+    ],
+    "server_calls": [
+     "hrms.payroll.doctype.salary_structure_assignment.salary_structure_assignment.get_employee_currency"
+    ],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Salary Component",
+   "module": "Payroll",
+   "path": "hrms/payroll/doctype/salary_component",
+   "child_table": false,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 27,
+   "required_fields": 3,
+   "child_tables": [
+    "Salary Component Account"
+   ],
+   "form_js": {
+    "buttons": [
+     "Salary Structure",
+     "Sync {0}"
+    ],
+    "link_filters": [
+     "account",
+     "earning_component_group"
+    ],
+    "server_calls": [
+     "get_structures_to_be_updated",
+     "update_salary_structures"
+    ],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Salary Component Account",
+   "module": "Payroll",
+   "path": "hrms/payroll/doctype/salary_component_account",
+   "child_table": true,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 2,
+   "required_fields": 0,
+   "child_tables": [],
+   "form_js": null,
+   "views": []
+  },
+  {
+   "name": "Salary Detail",
+   "module": "Payroll",
+   "path": "hrms/payroll/doctype/salary_detail",
+   "child_table": true,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 23,
+   "required_fields": 1,
+   "child_tables": [],
+   "form_js": null,
+   "views": []
+  },
+  {
+   "name": "Salary Slip",
+   "module": "Payroll",
+   "path": "hrms/payroll/doctype/salary_slip",
+   "child_table": false,
+   "single": false,
+   "submittable": true,
+   "tree": false,
+   "fields": 67,
+   "required_fields": 9,
+   "child_tables": [
+    "Employee Benefit Detail",
+    "Salary Detail",
+    "Salary Slip Leave",
+    "Salary Slip Timesheet"
+   ],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [
+     "employee",
+     "salary_component"
+    ],
+    "server_calls": [
+     "erpnext.setup.utils.get_exchange_rate",
+     "frappe.client.get",
+     "get_emp_and_working_day_details",
+     "hrms.payroll.doctype.payroll_entry.payroll_entry.get_end_date",
+     "hrms.payroll.utils.get_payroll_settings_for_payment_days",
+     "process_salary_based_on_working_days",
+     "set_totals"
+    ],
+    "dialogs": 0
+   },
+   "views": [
+    {
+     "kind": "list",
+     "buttons": [],
+     "link_filters": [],
+     "server_calls": [],
+     "dialogs": 0
+    }
+   ]
+  },
+  {
+   "name": "Salary Slip Leave",
+   "module": "Payroll",
+   "path": "hrms/payroll/doctype/salary_slip_leave",
+   "child_table": true,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 6,
+   "required_fields": 0,
+   "child_tables": [],
+   "form_js": null,
+   "views": []
+  },
+  {
+   "name": "Salary Slip Loan",
+   "module": "Payroll",
+   "path": "hrms/payroll/doctype/salary_slip_loan",
+   "child_table": true,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 8,
+   "required_fields": 1,
+   "child_tables": [],
+   "form_js": null,
+   "views": []
+  },
+  {
+   "name": "Salary Slip Timesheet",
+   "module": "Payroll",
+   "path": "hrms/payroll/doctype/salary_slip_timesheet",
+   "child_table": true,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 2,
+   "required_fields": 1,
+   "child_tables": [],
+   "form_js": null,
+   "views": []
+  },
+  {
+   "name": "Salary Structure",
+   "module": "Payroll",
+   "path": "hrms/payroll/doctype/salary_structure",
+   "child_table": false,
+   "single": false,
+   "submittable": true,
+   "tree": false,
+   "fields": 21,
+   "required_fields": 3,
+   "child_tables": [
+    "Employee Benefit Detail",
+    "Salary Detail"
+   ],
+   "form_js": {
+    "buttons": [
+     "Bulk Assignments",
+     "Income Tax Slab",
+     "Preview Salary Slip",
+     "Single Assignment"
+    ],
+    "link_filters": [
+     "payment_account",
+     "salary_component"
+    ],
+    "server_calls": [
+     "frappe.client.get",
+     "hrms.payroll.doctype.salary_structure.salary_structure.get_employees",
+     "hrms.payroll.doctype.salary_structure.salary_structure.make_salary_slip"
+    ],
+    "dialogs": 2
+   },
+   "views": [
+    {
+     "kind": "list",
+     "buttons": [],
+     "link_filters": [],
+     "server_calls": [],
+     "dialogs": 0
+    }
+   ]
+  },
+  {
+   "name": "Salary Structure Assignment",
+   "module": "Payroll",
+   "path": "hrms/payroll/doctype/salary_structure_assignment",
+   "child_table": false,
+   "single": false,
+   "submittable": true,
+   "tree": false,
+   "fields": 22,
+   "required_fields": 5,
+   "child_tables": [
+    "Employee Benefit Detail",
+    "Employee Cost Center"
+   ],
+   "form_js": {
+    "buttons": [
+     "Payroll Entry",
+     "Preview Salary Slip",
+     "See CTC Break-up"
+    ],
+    "link_filters": [
+     "cost_center",
+     "employee",
+     "income_tax_slab",
+     "payroll_payable_account",
+     "salary_structure"
+    ],
+    "server_calls": [
+     "hrms.payroll.doctype.salary_structure.salary_structure.make_salary_slip",
+     "set_payroll_cost_centers"
+    ],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Salary Withholding",
+   "module": "Payroll",
+   "path": "hrms/payroll/doctype/salary_withholding",
+   "child_table": false,
+   "single": false,
+   "submittable": true,
+   "tree": false,
+   "fields": 14,
+   "required_fields": 5,
+   "child_tables": [
+    "Salary Withholding Cycle"
+   ],
+   "form_js": {
+    "buttons": [],
+    "link_filters": [],
+    "server_calls": [
+     "hrms.payroll.doctype.salary_withholding.salary_withholding.get_payroll_frequency",
+     "set_withholding_cycles_and_to_date"
+    ],
+    "dialogs": 0
+   },
+   "views": []
+  },
+  {
+   "name": "Salary Withholding Cycle",
+   "module": "Payroll",
+   "path": "hrms/payroll/doctype/salary_withholding_cycle",
+   "child_table": true,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 4,
+   "required_fields": 2,
+   "child_tables": [],
+   "form_js": null,
+   "views": []
+  },
+  {
+   "name": "Taxable Salary Slab",
+   "module": "Payroll",
+   "path": "hrms/payroll/doctype/taxable_salary_slab",
+   "child_table": true,
+   "single": false,
+   "submittable": false,
+   "tree": false,
+   "fields": 4,
+   "required_fields": 2,
+   "child_tables": [],
+   "form_js": null,
+   "views": []
+  }
+ ],
+ "reports": [
+  {
+   "name": "Appraisal Overview",
+   "module": "HR",
+   "path": "hrms/hr/report/appraisal_overview/appraisal_overview.json",
+   "kind": "Script Report"
+  },
+  {
+   "name": "Daily Work Summary Replies",
+   "module": "HR",
+   "path": "hrms/hr/report/daily_work_summary_replies/daily_work_summary_replies.json",
+   "kind": "Script Report"
+  },
+  {
+   "name": "Employee Advance Summary",
+   "module": "HR",
+   "path": "hrms/hr/report/employee_advance_summary/employee_advance_summary.json",
+   "kind": "Script Report"
+  },
+  {
+   "name": "Employee Analytics",
+   "module": "HR",
+   "path": "hrms/hr/report/employee_analytics/employee_analytics.json",
+   "kind": "Script Report"
+  },
+  {
+   "name": "Employee Birthday",
+   "module": "HR",
+   "path": "hrms/hr/report/employee_birthday/employee_birthday.json",
+   "kind": "Script Report"
+  },
+  {
+   "name": "Employee Exits",
+   "module": "HR",
+   "path": "hrms/hr/report/employee_exits/employee_exits.json",
+   "kind": "Script Report"
+  },
+  {
+   "name": "Employee Hours Utilization Based On Timesheet",
+   "module": "HR",
+   "path": "hrms/hr/report/employee_hours_utilization_based_on_timesheet/employee_hours_utilization_based_on_timesheet.json",
+   "kind": "Script Report"
+  },
+  {
+   "name": "Employee Information",
+   "module": "HR",
+   "path": "hrms/hr/report/employee_information/employee_information.json",
+   "kind": "Report Builder"
+  },
+  {
+   "name": "Employee Leave Balance",
+   "module": "HR",
+   "path": "hrms/hr/report/employee_leave_balance/employee_leave_balance.json",
+   "kind": "Script Report"
+  },
+  {
+   "name": "Employee Leave Balance Summary",
+   "module": "HR",
+   "path": "hrms/hr/report/employee_leave_balance_summary/employee_leave_balance_summary.json",
+   "kind": "Script Report"
+  },
+  {
+   "name": "Employees working on a holiday",
+   "module": "HR",
+   "path": "hrms/hr/report/employees_working_on_a_holiday/employees_working_on_a_holiday.json",
+   "kind": "Script Report"
+  },
+  {
+   "name": "Leave Ledger",
+   "module": "HR",
+   "path": "hrms/hr/report/leave_ledger/leave_ledger.json",
+   "kind": "Script Report"
+  },
+  {
+   "name": "Monthly Attendance Sheet",
+   "module": "HR",
+   "path": "hrms/hr/report/monthly_attendance_sheet/monthly_attendance_sheet.json",
+   "kind": "Script Report"
+  },
+  {
+   "name": "Project Profitability",
+   "module": "HR",
+   "path": "hrms/hr/report/project_profitability/project_profitability.json",
+   "kind": "Script Report"
+  },
+  {
+   "name": "Recruitment Analytics",
+   "module": "HR",
+   "path": "hrms/hr/report/recruitment_analytics/recruitment_analytics.json",
+   "kind": "Script Report"
+  },
+  {
+   "name": "Shift Attendance",
+   "module": "HR",
+   "path": "hrms/hr/report/shift_attendance/shift_attendance.json",
+   "kind": "Script Report"
+  },
+  {
+   "name": "Unpaid Expense Claim",
+   "module": "HR",
+   "path": "hrms/hr/report/unpaid_expense_claim/unpaid_expense_claim.json",
+   "kind": "Script Report"
+  },
+  {
+   "name": "Vehicle Expenses",
+   "module": "HR",
+   "path": "hrms/hr/report/vehicle_expenses/vehicle_expenses.json",
+   "kind": "Script Report"
+  },
+  {
+   "name": "Accrued Earnings Report",
+   "module": "Payroll",
+   "path": "hrms/payroll/report/accrued_earnings_report/accrued_earnings_report.json",
+   "kind": "Script Report"
+  },
+  {
+   "name": "Bank Remittance",
+   "module": "Payroll",
+   "path": "hrms/payroll/report/bank_remittance/bank_remittance.json",
+   "kind": "Script Report"
+  },
+  {
+   "name": "Employee CTC Break-up",
+   "module": "Payroll",
+   "path": "hrms/payroll/report/employee_ctc_break_up/employee_ctc_break_up.json",
+   "kind": "Script Report"
+  },
+  {
+   "name": "Income Tax Computation",
+   "module": "Payroll",
+   "path": "hrms/payroll/report/income_tax_computation/income_tax_computation.json",
+   "kind": "Script Report"
+  },
+  {
+   "name": "Income Tax Deductions",
+   "module": "Payroll",
+   "path": "hrms/payroll/report/income_tax_deductions/income_tax_deductions.json",
+   "kind": "Script Report"
+  },
+  {
+   "name": "Professional Tax Deductions",
+   "module": "Payroll",
+   "path": "hrms/payroll/report/professional_tax_deductions/professional_tax_deductions.json",
+   "kind": "Script Report"
+  },
+  {
+   "name": "Provident Fund Deductions",
+   "module": "Payroll",
+   "path": "hrms/payroll/report/provident_fund_deductions/provident_fund_deductions.json",
+   "kind": "Script Report"
+  },
+  {
+   "name": "Salary Payments Based On Payment Mode",
+   "module": "Payroll",
+   "path": "hrms/payroll/report/salary_payments_based_on_payment_mode/salary_payments_based_on_payment_mode.json",
+   "kind": "Script Report"
+  },
+  {
+   "name": "Salary Payments via ECS",
+   "module": "Payroll",
+   "path": "hrms/payroll/report/salary_payments_via_ecs/salary_payments_via_ecs.json",
+   "kind": "Script Report"
+  },
+  {
+   "name": "Salary Register",
+   "module": "Payroll",
+   "path": "hrms/payroll/report/salary_register/salary_register.json",
+   "kind": "Script Report"
+  }
+ ],
+ "dashboard_charts": [
+  {
+   "name": "Appraisal Overview",
+   "module": "HR",
+   "path": "hrms/hr/dashboard_chart/appraisal_overview/appraisal_overview.json",
+   "kind": "Report"
+  },
+  {
+   "name": "Attendance Count",
+   "module": "HR",
+   "path": "hrms/hr/dashboard_chart/attendance_count/attendance_count.json",
+   "kind": "Report"
+  },
+  {
+   "name": "Claims by Type",
+   "module": "HR",
+   "path": "hrms/hr/dashboard_chart/claims_by_type/claims_by_type.json",
+   "kind": "Group By"
+  },
+  {
+   "name": "Department Wise Employee Count",
+   "module": "HR",
+   "path": "hrms/hr/dashboard_chart/department_wise_employee_count/department_wise_employee_count.json",
+   "kind": "Group By"
+  },
+  {
+   "name": "Department wise Expense Claims",
+   "module": "HR",
+   "path": "hrms/hr/dashboard_chart/department_wise_expense_claims/department_wise_expense_claims.json",
+   "kind": "Group By"
+  },
+  {
+   "name": "Department Wise Openings",
+   "module": "HR",
+   "path": "hrms/hr/dashboard_chart/department_wise_openings/department_wise_openings.json",
+   "kind": "Group By"
+  },
+  {
+   "name": "Department wise Timesheet Hours",
+   "module": "HR",
+   "path": "hrms/hr/dashboard_chart/department_wise_timesheet_hours/department_wise_timesheet_hours.json",
+   "kind": "Group By"
+  },
+  {
+   "name": "Designation Wise Employee Count",
+   "module": "HR",
+   "path": "hrms/hr/dashboard_chart/designation_wise_employee_count/designation_wise_employee_count.json",
+   "kind": "Group By"
+  },
+  {
+   "name": "Designation Wise Openings",
+   "module": "HR",
+   "path": "hrms/hr/dashboard_chart/designation_wise_openings/designation_wise_openings.json",
+   "kind": "Group By"
+  },
+  {
+   "name": "Employee Advance Status",
+   "module": "HR",
+   "path": "hrms/hr/dashboard_chart/employee_advance_status/employee_advance_status.json",
+   "kind": "Group By"
+  },
+  {
+   "name": "Employees by Age",
+   "module": "HR",
+   "path": "hrms/hr/dashboard_chart/employees_by_age/employees_by_age.json",
+   "kind": "Custom"
+  },
+  {
+   "name": "Employees by Branch",
+   "module": "HR",
+   "path": "hrms/hr/dashboard_chart/employees_by_branch/employees_by_branch.json",
+   "kind": "Group By"
+  },
+  {
+   "name": "Employees by Grade",
+   "module": "HR",
+   "path": "hrms/hr/dashboard_chart/employees_by_grade/employees_by_grade.json",
+   "kind": "Group By"
+  },
+  {
+   "name": "Employees by Type",
+   "module": "HR",
+   "path": "hrms/hr/dashboard_chart/employees_by_type/employees_by_type.json",
+   "kind": "Group By"
+  },
+  {
+   "name": "Expense Claims",
+   "module": "HR",
+   "path": "hrms/hr/dashboard_chart/expense_claims/expense_claims.json",
+   "kind": "Sum"
+  },
+  {
+   "name": "Gender Diversity Ratio",
+   "module": "HR",
+   "path": "hrms/hr/dashboard_chart/gender_diversity_ratio/gender_diversity_ratio.json",
+   "kind": "Group By"
+  },
+  {
+   "name": "Grievance Type",
+   "module": "HR",
+   "path": "hrms/hr/dashboard_chart/grievance_type/grievance_type.json",
+   "kind": "Group By"
+  },
+  {
+   "name": "Hiring vs Attrition Count",
+   "module": "HR",
+   "path": "hrms/hr/dashboard_chart/hiring_vs_attrition_count/hiring_vs_attrition_count.json",
+   "kind": "Custom"
+  },
+  {
+   "name": "Interview Status",
+   "module": "HR",
+   "path": "hrms/hr/dashboard_chart/interview_status/interview_status.json",
+   "kind": "Group By"
+  },
+  {
+   "name": "Job Applicant Pipeline",
+   "module": "HR",
+   "path": "hrms/hr/dashboard_chart/job_applicant_pipeline/job_applicant_pipeline.json",
+   "kind": "Group By"
+  },
+  {
+   "name": "Job Applicant Source",
+   "module": "HR",
+   "path": "hrms/hr/dashboard_chart/job_applicant_source/job_applicant_source.json",
+   "kind": "Group By"
+  },
+  {
+   "name": "Job Applicants by Country",
+   "module": "HR",
+   "path": "hrms/hr/dashboard_chart/job_applicants_by_country/job_applicants_by_country.json",
+   "kind": "Group By"
+  },
+  {
+   "name": "Job Application Frequency",
+   "module": "HR",
+   "path": "hrms/hr/dashboard_chart/job_application_frequency/job_application_frequency.json",
+   "kind": "Count"
+  },
+  {
+   "name": "Job Application Status",
+   "module": "HR",
+   "path": "hrms/hr/dashboard_chart/job_application_status/job_application_status.json",
+   "kind": "Group By"
+  },
+  {
+   "name": "Job Offer Status",
+   "module": "HR",
+   "path": "hrms/hr/dashboard_chart/job_offer_status/job_offer_status.json",
+   "kind": "Group By"
+  },
+  {
+   "name": "Shift Assignment Breakup",
+   "module": "HR",
+   "path": "hrms/hr/dashboard_chart/shift_assignment_breakup/shift_assignment_breakup.json",
+   "kind": "Group By"
+  },
+  {
+   "name": "Timesheet Activity Breakup",
+   "module": "HR",
+   "path": "hrms/hr/dashboard_chart/timesheet_activity_breakup/timesheet_activity_breakup.json",
+   "kind": "Group By"
+  },
+  {
+   "name": "Training Type",
+   "module": "HR",
+   "path": "hrms/hr/dashboard_chart/training_type/training_type.json",
+   "kind": "Group By"
+  },
+  {
+   "name": "Y-O-Y Promotions",
+   "module": "HR",
+   "path": "hrms/hr/dashboard_chart/y_o_y_promotions/y_o_y_promotions.json",
+   "kind": "Count"
+  },
+  {
+   "name": "Y-O-Y Transfers",
+   "module": "HR",
+   "path": "hrms/hr/dashboard_chart/y_o_y_transfers/y_o_y_transfers.json",
+   "kind": "Count"
+  },
+  {
+   "name": "Department Wise Salary(Last Month)",
+   "module": "Payroll",
+   "path": "hrms/payroll/dashboard_chart/department_wise_salary(last_month)/department_wise_salary(last_month).json",
+   "kind": "Group By"
+  },
+  {
+   "name": "Designation Wise Salary(Last Month)",
+   "module": "Payroll",
+   "path": "hrms/payroll/dashboard_chart/designation_wise_salary(last_month)/designation_wise_salary(last_month).json",
+   "kind": "Group By"
+  },
+  {
+   "name": "Outgoing Salary",
+   "module": "Payroll",
+   "path": "hrms/payroll/dashboard_chart/outgoing_salary/outgoing_salary.json",
+   "kind": "Sum"
+  }
+ ],
+ "number_cards": [
+  {
+   "name": "Accepted Job Applicants",
+   "module": "HR",
+   "path": "hrms/hr/number_card/accepted_job_applicants/accepted_job_applicants.json",
+   "kind": "Document Type"
+  },
+  {
+   "name": "Applicant-to-Hire Percentage",
+   "module": "HR",
+   "path": "hrms/hr/number_card/applicant_to_hire_percentage/applicant_to_hire_percentage.json",
+   "kind": "Custom"
+  },
+  {
+   "name": "Approved Claims (This Month)",
+   "module": "HR",
+   "path": "hrms/hr/number_card/approved_claims_(this_month)/approved_claims_(this_month).json",
+   "kind": "Document Type"
+  },
+  {
+   "name": "Early Exit (This Month)",
+   "module": "HR",
+   "path": "hrms/hr/number_card/early_exit_(this_month)/early_exit_(this_month).json",
+   "kind": "Document Type"
+  },
+  {
+   "name": "Employee Exits (This Year)",
+   "module": "HR",
+   "path": "hrms/hr/number_card/employee_exits_(this_year)/employee_exits_(this_year).json",
+   "kind": "Document Type"
+  },
+  {
+   "name": "Employees Joining (This Quarter)",
+   "module": "HR",
+   "path": "hrms/hr/number_card/employees_joining_(this_quarter)/employees_joining_(this_quarter).json",
+   "kind": "Document Type"
+  },
+  {
+   "name": "Employees Relieving (This Quarter)",
+   "module": "HR",
+   "path": "hrms/hr/number_card/employees_relieving_(this_quarter)/employees_relieving_(this_quarter).json",
+   "kind": "Document Type"
+  },
+  {
+   "name": "Expense Claims (This Month)",
+   "module": "HR",
+   "path": "hrms/hr/number_card/expense_claims_(this_month)/expense_claims_(this_month).json",
+   "kind": "Document Type"
+  },
+  {
+   "name": "Holidays in this month",
+   "module": "HR",
+   "path": "hrms/hr/number_card/holidays_in_this_month/holidays_in_this_month.json",
+   "kind": "Custom"
+  },
+  {
+   "name": "Job Offer Acceptance Rate",
+   "module": "HR",
+   "path": "hrms/hr/number_card/job_offer_acceptance_rate/job_offer_acceptance_rate.json",
+   "kind": "Custom"
+  },
+  {
+   "name": "Job Offers (This Month)",
+   "module": "HR",
+   "path": "hrms/hr/number_card/job_offers_(this_month)/job_offers_(this_month).json",
+   "kind": "Document Type"
+  },
+  {
+   "name": "Job Openings",
+   "module": "HR",
+   "path": "hrms/hr/number_card/job_openings/job_openings.json",
+   "kind": "Document Type"
+  },
+  {
+   "name": "Late Entry (This Month)",
+   "module": "HR",
+   "path": "hrms/hr/number_card/late_entry_(this_month)/late_entry_(this_month).json",
+   "kind": "Document Type"
+  },
+  {
+   "name": "New Hires (This Year)",
+   "module": "HR",
+   "path": "hrms/hr/number_card/new_hires_(this_year)/new_hires_(this_year).json",
+   "kind": "Document Type"
+  },
+  {
+   "name": "Number of Employees on Leave (This Month)",
+   "module": "HR",
+   "path": "hrms/hr/number_card/number_of_employees_on_leave_(this_month)/number_of_employees_on_leave_(this_month).json",
+   "kind": "Document Type"
+  },
+  {
+   "name": "Number of Employees on Leave (Today)",
+   "module": "HR",
+   "path": "hrms/hr/number_card/number_of_employees_on_leave_(today)/number_of_employees_on_leave_(today).json",
+   "kind": "Document Type"
+  },
+  {
+   "name": "Onboardings (This Month)",
+   "module": "HR",
+   "path": "hrms/hr/number_card/onboardings_(this_month)/onboardings_(this_month).json",
+   "kind": "Document Type"
+  },
+  {
+   "name": "Promotions (This Month)",
+   "module": "HR",
+   "path": "hrms/hr/number_card/promotions_(this_month)/promotions_(this_month).json",
+   "kind": "Document Type"
+  },
+  {
+   "name": "Rejected Claims (This Month)",
+   "module": "HR",
+   "path": "hrms/hr/number_card/rejected_claims_(this_month)/rejected_claims_(this_month).json",
+   "kind": "Document Type"
+  },
+  {
+   "name": "Rejected Job Applicants",
+   "module": "HR",
+   "path": "hrms/hr/number_card/rejected_job_applicants/rejected_job_applicants.json",
+   "kind": "Document Type"
+  },
+  {
+   "name": "Separations (This Month)",
+   "module": "HR",
+   "path": "hrms/hr/number_card/separations_(this_month)/separations_(this_month).json",
+   "kind": "Document Type"
+  },
+  {
+   "name": "Time to Fill",
+   "module": "HR",
+   "path": "hrms/hr/number_card/time_to_fill/time_to_fill.json",
+   "kind": "Custom"
+  },
+  {
+   "name": "Total Absent (This Month)",
+   "module": "HR",
+   "path": "hrms/hr/number_card/total_absent_(this_month)/total_absent_(this_month).json",
+   "kind": "Document Type"
+  },
+  {
+   "name": "Total Applicants (This month)",
+   "module": "HR",
+   "path": "hrms/hr/number_card/total_applicants_(this_month)/total_applicants_(this_month).json",
+   "kind": "Document Type"
+  },
+  {
+   "name": "Total Employees",
+   "module": "HR",
+   "path": "hrms/hr/number_card/total_employees/total_employees.json",
+   "kind": "Document Type"
+  },
+  {
+   "name": "Total Present (This Month)",
+   "module": "HR",
+   "path": "hrms/hr/number_card/total_present_(this_month)/total_present_(this_month).json",
+   "kind": "Document Type"
+  },
+  {
+   "name": "Trainings (This Month)",
+   "module": "HR",
+   "path": "hrms/hr/number_card/trainings_(this_month)/trainings_(this_month).json",
+   "kind": "Document Type"
+  },
+  {
+   "name": "Transfers (This Month)",
+   "module": "HR",
+   "path": "hrms/hr/number_card/transfers_(this_month)/transfers_(this_month).json",
+   "kind": "Document Type"
+  },
+  {
+   "name": "Total Declaration Submitted",
+   "module": "Payroll",
+   "path": "hrms/payroll/number_card/total_declaration_submitted/total_declaration_submitted.json",
+   "kind": "Document Type"
+  },
+  {
+   "name": "Total Incentive Given(Last month)",
+   "module": "Payroll",
+   "path": "hrms/payroll/number_card/total_incentive_given(last_month)/total_incentive_given(last_month).json",
+   "kind": "Document Type"
+  },
+  {
+   "name": "Total Outgoing Salary(Last month)",
+   "module": "Payroll",
+   "path": "hrms/payroll/number_card/total_outgoing_salary(last_month)/total_outgoing_salary(last_month).json",
+   "kind": "Document Type"
+  },
+  {
+   "name": "Total Salary Structure",
+   "module": "Payroll",
+   "path": "hrms/payroll/number_card/total_salary_structure/total_salary_structure.json",
+   "kind": "Document Type"
+  }
+ ],
+ "print_formats": [
+  {
+   "name": "Job Offer",
+   "module": "HR",
+   "path": "hrms/hr/print_format/job_offer/job_offer.json",
+   "kind": "Jinja"
+  },
+  {
+   "name": "Standard Appointment Letter",
+   "module": "HR",
+   "path": "hrms/hr/print_format/standard_appointment_letter/standard_appointment_letter.json",
+   "kind": "Jinja"
+  },
+  {
+   "name": "Salary Slip based on Timesheet",
+   "module": null,
+   "path": "hrms/payroll/print_format/salary_slip_based_on_timesheet/salary_slip_based_on_timesheet.json",
+   "kind": "Jinja"
+  },
+  {
+   "name": "Salary Slip Standard",
+   "module": "HR",
+   "path": "hrms/payroll/print_format/salary_slip_standard/salary_slip_standard.json",
+   "kind": "Jinja"
+  },
+  {
+   "name": "Salary Slip with Year to Date",
+   "module": "Payroll",
+   "path": "hrms/payroll/print_format/salary_slip_with_year_to_date/salary_slip_with_year_to_date.json",
+   "kind": "Jinja"
+  }
+ ],
+ "web_forms": [
+  {
+   "name": "job-application",
+   "module": "HR",
+   "path": "hrms/hr/web_form/job_application/job_application.json"
+  }
+ ],
+ "workspaces": [
+  {
+   "name": "Expenses",
+   "links": [
+    {
+     "label": "Expense Claim",
+     "type": "DocType",
+     "to": "Expense Claim"
+    },
+    {
+     "label": "Expense Claim Type",
+     "type": "DocType",
+     "to": "Expense Claim Type"
+    },
+    {
+     "label": "Travel Request",
+     "type": "DocType",
+     "to": "Travel Request"
+    },
+    {
+     "label": "Purpose of Travel",
+     "type": "DocType",
+     "to": "Purpose of Travel"
+    },
+    {
+     "label": "Employee Advance",
+     "type": "DocType",
+     "to": "Employee Advance"
+    },
+    {
+     "label": "Payment Entry",
+     "type": "DocType",
+     "to": "Payment Entry"
+    },
+    {
+     "label": "Journal Entry",
+     "type": "DocType",
+     "to": "Journal Entry"
+    },
+    {
+     "label": "Additional Salary",
+     "type": "DocType",
+     "to": "Additional Salary"
+    },
+    {
+     "label": "Employee Advance Summary",
+     "type": "Report",
+     "to": "Employee Advance Summary"
+    },
+    {
+     "label": "Unpaid Expense Claim",
+     "type": "Report",
+     "to": "Unpaid Expense Claim"
+    },
+    {
+     "label": "Vehicle Expenses",
+     "type": "Report",
+     "to": "Vehicle Expenses"
+    },
+    {
+     "label": "Accounts Receivable",
+     "type": "Report",
+     "to": "Accounts Receivable"
+    },
+    {
+     "label": "Accounts Payable",
+     "type": "Report",
+     "to": "Accounts Payable"
+    },
+    {
+     "label": "General Ledger",
+     "type": "Report",
+     "to": "General Ledger"
+    },
+    {
+     "label": "Vehicle",
+     "type": "DocType",
+     "to": "Vehicle"
+    },
+    {
+     "label": "Driver",
+     "type": "DocType",
+     "to": "Driver"
+    },
+    {
+     "label": "Vehicle Service Item",
+     "type": "DocType",
+     "to": "Vehicle Service Item"
+    },
+    {
+     "label": "Vehicle Log",
+     "type": "DocType",
+     "to": "Vehicle Log"
+    },
+    {
+     "label": "Vehicle Expenses",
+     "type": "Report",
+     "to": "Vehicle Expenses"
+    }
+   ],
+   "charts": [
+    "Expense Claims"
+   ],
+   "number_cards": []
+  },
+  {
+   "name": "HR Setup",
+   "links": [
+    {
+     "label": "Employee",
+     "type": "DocType",
+     "to": "Employee"
+    },
+    {
+     "label": "Employee Group",
+     "type": "DocType",
+     "to": "Employee Group"
+    },
+    {
+     "label": "Employee Grade",
+     "type": "DocType",
+     "to": "Employee Grade"
+    },
+    {
+     "label": "Monthly Attendance Sheet",
+     "type": "Report",
+     "to": "Monthly Attendance Sheet"
+    },
+    {
+     "label": "Recruitment Analytics",
+     "type": "Report",
+     "to": "Recruitment Analytics"
+    },
+    {
+     "label": "Employee Analytics",
+     "type": "Report",
+     "to": "Employee Analytics"
+    },
+    {
+     "label": "Employee Leave Balance",
+     "type": "Report",
+     "to": "Employee Leave Balance"
+    },
+    {
+     "label": "Employee Leave Balance Summary",
+     "type": "Report",
+     "to": "Employee Leave Balance Summary"
+    },
+    {
+     "label": "Employee Advance Summary",
+     "type": "Report",
+     "to": "Employee Advance Summary"
+    },
+    {
+     "label": "Employee Exits",
+     "type": "Report",
+     "to": "Employee Exits"
+    },
+    {
+     "label": "Company",
+     "type": "DocType",
+     "to": "Company"
+    },
+    {
+     "label": "Branch",
+     "type": "DocType",
+     "to": "Branch"
+    },
+    {
+     "label": "Department",
+     "type": "DocType",
+     "to": "Department"
+    },
+    {
+     "label": "Designation",
+     "type": "DocType",
+     "to": "Designation"
+    },
+    {
+     "label": "Leave Application",
+     "type": "DocType",
+     "to": "Leave Application"
+    },
+    {
+     "label": "Compensatory Leave Request",
+     "type": "DocType",
+     "to": "Compensatory Leave Request"
+    },
+    {
+     "label": "Attendance",
+     "type": "DocType",
+     "to": "Attendance"
+    },
+    {
+     "label": "Attendance Request",
+     "type": "DocType",
+     "to": "Attendance Request"
+    },
+    {
+     "label": "Employee Checkin",
+     "type": "DocType",
+     "to": "Employee Checkin"
+    },
+    {
+     "label": "Expense Claim",
+     "type": "DocType",
+     "to": "Expense Claim"
+    },
+    {
+     "label": "Employee Advance",
+     "type": "DocType",
+     "to": "Employee Advance"
+    },
+    {
+     "label": "Travel Request",
+     "type": "DocType",
+     "to": "Travel Request"
+    },
+    {
+     "label": "HR Settings",
+     "type": "DocType",
+     "to": "HR Settings"
+    },
+    {
+     "label": "Payroll Settings",
+     "type": "DocType",
+     "to": "Payroll Settings"
+    },
+    {
+     "label": "Daily Work Summary Group",
+     "type": "DocType",
+     "to": "Daily Work Summary Group"
+    },
+    {
+     "label": "Employee Information",
+     "type": "Report",
+     "to": "Employee Information"
+    },
+    {
+     "label": "Employee Birthday",
+     "type": "Report",
+     "to": "Employee Birthday"
+    },
+    {
+     "label": "Employees Working on a Holiday",
+     "type": "Report",
+     "to": "Employees working on a holiday"
+    },
+    {
+     "label": "Daily Work Summary Replies",
+     "type": "Report",
+     "to": "Daily Work Summary Replies"
+    }
+   ],
+   "charts": [],
+   "number_cards": []
+  },
+  {
+   "name": "Leaves",
+   "links": [
+    {
+     "label": "Holiday List",
+     "type": "DocType",
+     "to": "Holiday List"
+    },
+    {
+     "label": "Leave Type",
+     "type": "DocType",
+     "to": "Leave Type"
+    },
+    {
+     "label": "Leave Period",
+     "type": "DocType",
+     "to": "Leave Period"
+    },
+    {
+     "label": "Leave Policy",
+     "type": "DocType",
+     "to": "Leave Policy"
+    },
+    {
+     "label": "Leave Block List",
+     "type": "DocType",
+     "to": "Leave Block List"
+    },
+    {
+     "label": "Leave Application",
+     "type": "DocType",
+     "to": "Leave Application"
+    },
+    {
+     "label": "Compensatory Leave Request",
+     "type": "DocType",
+     "to": "Compensatory Leave Request"
+    },
+    {
+     "label": "Employee Leave Balance",
+     "type": "Report",
+     "to": "Employee Leave Balance"
+    },
+    {
+     "label": "Employee Leave Balance Summary",
+     "type": "Report",
+     "to": "Employee Leave Balance Summary"
+    },
+    {
+     "label": "Employees working on a holiday",
+     "type": "Report",
+     "to": "Employees working on a holiday"
+    },
+    {
+     "label": "Leave Allocation",
+     "type": "DocType",
+     "to": "Leave Allocation"
+    },
+    {
+     "label": "Leave Policy Assignment",
+     "type": "DocType",
+     "to": "Leave Policy Assignment"
+    },
+    {
+     "label": "Leave Control Panel",
+     "type": "DocType",
+     "to": "Leave Control Panel"
+    },
+    {
+     "label": "Leave Encashment",
+     "type": "DocType",
+     "to": "Leave Encashment"
+    }
+   ],
+   "charts": [],
+   "number_cards": [
+    "Holidays in this month",
+    "Number of Employees on Leave (This Month)",
+    "Number of Employees on Leave (Today)"
+   ]
+  },
+  {
+   "name": "Performance",
+   "links": [],
+   "charts": [
+    "Appraisal Overview"
+   ],
+   "number_cards": []
+  },
+  {
+   "name": "Recruitment",
+   "links": [
+    {
+     "label": "Appointment Letter Template",
+     "type": "DocType",
+     "to": "Appointment Letter Template"
+    },
+    {
+     "label": "Appointment Letter",
+     "type": "DocType",
+     "to": "Appointment Letter"
+    },
+    {
+     "label": "Recruitment Analytics",
+     "type": "Report",
+     "to": "Recruitment Analytics"
+    },
+    {
+     "label": "Staffing Plan",
+     "type": "DocType",
+     "to": "Staffing Plan"
+    },
+    {
+     "label": "Job Requisition",
+     "type": "DocType",
+     "to": "Job Requisition"
+    },
+    {
+     "label": "Job Opening",
+     "type": "DocType",
+     "to": "Job Opening"
+    },
+    {
+     "label": "Job Applicant",
+     "type": "DocType",
+     "to": "Job Applicant"
+    },
+    {
+     "label": "Job Offer",
+     "type": "DocType",
+     "to": "Job Offer"
+    },
+    {
+     "label": "Employee Referral",
+     "type": "DocType",
+     "to": "Employee Referral"
+    },
+    {
+     "label": "Interview Type",
+     "type": "DocType",
+     "to": "Interview Type"
+    },
+    {
+     "label": "Interview",
+     "type": "DocType",
+     "to": "Interview"
+    },
+    {
+     "label": "Interview Feedback",
+     "type": "DocType",
+     "to": "Interview Feedback"
+    }
+   ],
+   "charts": [
+    "Department Wise Openings"
+   ],
+   "number_cards": []
+  },
+  {
+   "name": "Shift & Attendance",
+   "links": [
+    {
+     "label": "Attendance",
+     "type": "DocType",
+     "to": "Attendance"
+    },
+    {
+     "label": "Attendance Request",
+     "type": "DocType",
+     "to": "Attendance Request"
+    },
+    {
+     "label": "Employee Checkin",
+     "type": "DocType",
+     "to": "Employee Checkin"
+    },
+    {
+     "label": "Employee Attendance Tool",
+     "type": "DocType",
+     "to": "Employee Attendance Tool"
+    },
+    {
+     "label": "Timesheet",
+     "type": "DocType",
+     "to": "Timesheet"
+    },
+    {
+     "label": "Activity Type",
+     "type": "DocType",
+     "to": "Activity Type"
+    },
+    {
+     "label": "Monthly Attendance Sheet",
+     "type": "Report",
+     "to": "Monthly Attendance Sheet"
+    },
+    {
+     "label": "Shift Attendance",
+     "type": "Report",
+     "to": "Shift Attendance"
+    },
+    {
+     "label": "Employee Hours Utilization Based On Timesheet",
+     "type": "Report",
+     "to": "Employee Hours Utilization Based On Timesheet"
+    },
+    {
+     "label": "Project Profitability",
+     "type": "Report",
+     "to": "Project Profitability"
+    },
+    {
+     "label": "Employees working on a holiday",
+     "type": "Report",
+     "to": "Employees working on a holiday"
+    },
+    {
+     "label": "Shift Type",
+     "type": "DocType",
+     "to": "Shift Type"
+    },
+    {
+     "label": "Shift Location",
+     "type": "DocType",
+     "to": "Shift Location"
+    },
+    {
+     "label": "Shift Assignment",
+     "type": "DocType",
+     "to": "Shift Assignment"
+    },
+    {
+     "label": "Shift Schedule",
+     "type": "DocType",
+     "to": "Shift Schedule"
+    },
+    {
+     "label": "Shift Schedule Assignment",
+     "type": "DocType",
+     "to": "Shift Schedule Assignment"
+    },
+    {
+     "label": "Shift Request",
+     "type": "DocType",
+     "to": "Shift Request"
+    },
+    {
+     "label": "Shift Assignment Tool",
+     "type": "DocType",
+     "to": "Shift Assignment Tool"
+    },
+    {
+     "label": "Overtime Type",
+     "type": "DocType",
+     "to": "Overtime Type"
+    },
+    {
+     "label": "Overtime Slip",
+     "type": "DocType",
+     "to": "Overtime Slip"
+    }
+   ],
+   "charts": [
+    "Attendance Count"
+   ],
+   "number_cards": []
+  },
+  {
+   "name": "Tenure",
+   "links": [
+    {
+     "label": "Employee Onboarding Template",
+     "type": "DocType",
+     "to": "Employee Onboarding Template"
+    },
+    {
+     "label": "Employee Onboarding",
+     "type": "DocType",
+     "to": "Employee Onboarding"
+    },
+    {
+     "label": "Employee Skill Map",
+     "type": "DocType",
+     "to": "Employee Skill Map"
+    },
+    {
+     "label": "Grievance Type",
+     "type": "DocType",
+     "to": "Grievance Type"
+    },
+    {
+     "label": "Employee Grievance",
+     "type": "DocType",
+     "to": "Employee Grievance"
+    },
+    {
+     "label": "Training Program",
+     "type": "DocType",
+     "to": "Training Program"
+    },
+    {
+     "label": "Training Event",
+     "type": "DocType",
+     "to": "Training Event"
+    },
+    {
+     "label": "Training Feedback",
+     "type": "DocType",
+     "to": "Training Feedback"
+    },
+    {
+     "label": "Training Result",
+     "type": "DocType",
+     "to": "Training Result"
+    },
+    {
+     "label": "Daily Work Summary",
+     "type": "DocType",
+     "to": "Daily Work Summary"
+    },
+    {
+     "label": "Daily Work Summary Group",
+     "type": "DocType",
+     "to": "Daily Work Summary Group"
+    },
+    {
+     "label": "Daily Work Summary Replies",
+     "type": "Report",
+     "to": "Daily Work Summary Replies"
+    },
+    {
+     "label": "Employee Exits",
+     "type": "Report",
+     "to": "Employee Exits"
+    },
+    {
+     "label": "Employee Birthday",
+     "type": "Report",
+     "to": "Employee Birthday"
+    },
+    {
+     "label": "Employee Information",
+     "type": "Report",
+     "to": "Employee Information"
+    },
+    {
+     "label": "Employee Analytics",
+     "type": "Report",
+     "to": "Employee Analytics"
+    }
+   ],
+   "charts": [],
+   "number_cards": []
+  },
+  {
+   "name": "Payroll",
+   "links": [
+    {
+     "label": "Salary Component",
+     "type": "DocType",
+     "to": "Salary Component"
+    },
+    {
+     "label": "Salary Component",
+     "type": "DocType",
+     "to": "Salary Component"
+    },
+    {
+     "label": "Salary Structure",
+     "type": "DocType",
+     "to": "Salary Structure"
+    },
+    {
+     "label": "Salary Structure",
+     "type": "DocType",
+     "to": "Salary Structure"
+    },
+    {
+     "label": "Income Tax Slab",
+     "type": "DocType",
+     "to": "Income Tax Slab"
+    },
+    {
+     "label": "Income Tax Slab",
+     "type": "DocType",
+     "to": "Income Tax Slab"
+    },
+    {
+     "label": "Payroll Period",
+     "type": "DocType",
+     "to": "Payroll Period"
+    },
+    {
+     "label": "Payroll Period",
+     "type": "DocType",
+     "to": "Payroll Period"
+    },
+    {
+     "label": "Additional Salary",
+     "type": "DocType",
+     "to": "Additional Salary"
+    },
+    {
+     "label": "Additional Salary",
+     "type": "DocType",
+     "to": "Additional Salary"
+    },
+    {
+     "label": "Employee Incentive",
+     "type": "DocType",
+     "to": "Employee Incentive"
+    },
+    {
+     "label": "Employee Incentive",
+     "type": "DocType",
+     "to": "Employee Incentive"
+    },
+    {
+     "label": "Retention Bonus",
+     "type": "DocType",
+     "to": "Retention Bonus"
+    },
+    {
+     "label": "Retention Bonus",
+     "type": "DocType",
+     "to": "Retention Bonus"
+    },
+    {
+     "label": "Salary Register",
+     "type": "Report",
+     "to": "Salary Register"
+    },
+    {
+     "label": "Salary Register",
+     "type": "Report",
+     "to": "Salary Register"
+    },
+    {
+     "label": "Bank Remittance",
+     "type": "Report",
+     "to": "Bank Remittance"
+    },
+    {
+     "label": "Bank Remittance",
+     "type": "Report",
+     "to": "Bank Remittance"
+    },
+    {
+     "label": "Salary Payments Based On Payment Mode",
+     "type": "Report",
+     "to": "Salary Payments Based On Payment Mode"
+    },
+    {
+     "label": "Salary Payments Based On Payment Mode",
+     "type": "Report",
+     "to": "Salary Payments Based On Payment Mode"
+    },
+    {
+     "label": "Salary Payments via ECS",
+     "type": "Report",
+     "to": "Salary Payments via ECS"
+    },
+    {
+     "label": "Salary Payments via ECS",
+     "type": "Report",
+     "to": "Salary Payments via ECS"
+    },
+    {
+     "label": "Income Tax Computation",
+     "type": "Report",
+     "to": "Income Tax Computation"
+    },
+    {
+     "label": "Income Tax Computation",
+     "type": "Report",
+     "to": "Income Tax Computation"
+    },
+    {
+     "label": "Provident Fund Deductions",
+     "type": "Report",
+     "to": "Provident Fund Deductions"
+    },
+    {
+     "label": "Provident Fund Deductions",
+     "type": "Report",
+     "to": "Provident Fund Deductions"
+    },
+    {
+     "label": "Professional Tax Deductions",
+     "type": "Report",
+     "to": "Professional Tax Deductions"
+    },
+    {
+     "label": "Professional Tax Deductions",
+     "type": "Report",
+     "to": "Professional Tax Deductions"
+    },
+    {
+     "label": "Income Tax Deductions",
+     "type": "Report",
+     "to": "Income Tax Deductions"
+    },
+    {
+     "label": "Income Tax Deductions",
+     "type": "Report",
+     "to": "Income Tax Deductions"
+    },
+    {
+     "label": "Chart of Accounts",
+     "type": "DocType",
+     "to": "Account"
+    },
+    {
+     "label": "Chart of Accounts",
+     "type": "DocType",
+     "to": "Account"
+    },
+    {
+     "label": "Chart of Cost Centers",
+     "type": "DocType",
+     "to": "Cost Center"
+    },
+    {
+     "label": "Chart of Cost Centers",
+     "type": "DocType",
+     "to": "Cost Center"
+    },
+    {
+     "label": "Payment Entry",
+     "type": "DocType",
+     "to": "Payment Entry"
+    },
+    {
+     "label": "Payment Entry",
+     "type": "DocType",
+     "to": "Payment Entry"
+    },
+    {
+     "label": "Journal Entry",
+     "type": "DocType",
+     "to": "Journal Entry"
+    },
+    {
+     "label": "Journal Entry",
+     "type": "DocType",
+     "to": "Journal Entry"
+    },
+    {
+     "label": "Accounts Settings",
+     "type": "DocType",
+     "to": "Accounts Settings"
+    },
+    {
+     "label": "Accounts Settings",
+     "type": "DocType",
+     "to": "Accounts Settings"
+    },
+    {
+     "label": "Accounting Dimension",
+     "type": "DocType",
+     "to": "Accounting Dimension"
+    },
+    {
+     "label": "Accounting Dimension",
+     "type": "DocType",
+     "to": "Accounting Dimension"
+    },
+    {
+     "label": "Currency",
+     "type": "DocType",
+     "to": "Currency"
+    },
+    {
+     "label": "Currency",
+     "type": "DocType",
+     "to": "Currency"
+    },
+    {
+     "label": "General Ledger",
+     "type": "Report",
+     "to": "General Ledger"
+    },
+    {
+     "label": "General Ledger",
+     "type": "Report",
+     "to": "General Ledger"
+    },
+    {
+     "label": "Accounts Payable",
+     "type": "Report",
+     "to": "Accounts Payable"
+    },
+    {
+     "label": "Accounts Payable",
+     "type": "Report",
+     "to": "Accounts Payable"
+    },
+    {
+     "label": "Accounts Receivable",
+     "type": "Report",
+     "to": "Accounts Receivable"
+    },
+    {
+     "label": "Accounts Receivable",
+     "type": "Report",
+     "to": "Accounts Receivable"
+    },
+    {
+     "label": "Salary Structure Assignment",
+     "type": "DocType",
+     "to": "Salary Structure Assignment"
+    },
+    {
+     "label": "Salary Structure Assignment",
+     "type": "DocType",
+     "to": "Salary Structure Assignment"
+    },
+    {
+     "label": "Bulk Salary Structure Assignment",
+     "type": "DocType",
+     "to": "Bulk Salary Structure Assignment"
+    },
+    {
+     "label": "Bulk Salary Structure Assignment",
+     "type": "DocType",
+     "to": "Bulk Salary Structure Assignment"
+    },
+    {
+     "label": "Salary Slip",
+     "type": "DocType",
+     "to": "Salary Slip"
+    },
+    {
+     "label": "Salary Slip",
+     "type": "DocType",
+     "to": "Salary Slip"
+    },
+    {
+     "label": "Payroll Entry",
+     "type": "DocType",
+     "to": "Payroll Entry"
+    },
+    {
+     "label": "Payroll Entry",
+     "type": "DocType",
+     "to": "Payroll Entry"
+    },
+    {
+     "label": "Salary Withholding",
+     "type": "DocType",
+     "to": "Salary Withholding"
+    },
+    {
+     "label": "Salary Withholding",
+     "type": "DocType",
+     "to": "Salary Withholding"
+    }
+   ],
+   "charts": [
+    "Outgoing Salary",
+    "Outgoing Salary"
+   ],
+   "number_cards": []
+  },
+  {
+   "name": "Tax & Benefits",
+   "links": [
+    {
+     "label": "Employee Benefit Application",
+     "type": "DocType",
+     "to": "Employee Benefit Application"
+    },
+    {
+     "label": "Employee Benefit Claim",
+     "type": "DocType",
+     "to": "Employee Benefit Claim"
+    },
+    {
+     "label": "Income Tax Slab",
+     "type": "DocType",
+     "to": "Income Tax Slab"
+    },
+    {
+     "label": "Employee Tax Exemption Category",
+     "type": "DocType",
+     "to": "Employee Tax Exemption Category"
+    },
+    {
+     "label": "Employee Tax Exemption Sub Category",
+     "type": "DocType",
+     "to": "Employee Tax Exemption Sub Category"
+    },
+    {
+     "label": "Employee Tax Exemption Declaration",
+     "type": "DocType",
+     "to": "Employee Tax Exemption Declaration"
+    },
+    {
+     "label": "Employee Tax Exemption Proof Submission",
+     "type": "DocType",
+     "to": "Employee Tax Exemption Proof Submission"
+    },
+    {
+     "label": "Income Tax Computation",
+     "type": "Report",
+     "to": "Income Tax Computation"
+    },
+    {
+     "label": "Income Tax Deductions",
+     "type": "Report",
+     "to": "Income Tax Deductions"
+    }
+   ],
+   "charts": [],
+   "number_cards": []
+  }
+ ],
+ "whitelisted_methods": [
+  "hrms.api.__init__._download_pdf",
+  "hrms.api.__init__.are_push_notifications_enabled",
+  "hrms.api.__init__.delete_attachment",
+  "hrms.api.__init__.get_all_employees",
+  "hrms.api.__init__.get_attachments",
+  "hrms.api.__init__.get_attendance_calendar_events",
+  "hrms.api.__init__.get_attendance_requests",
+  "hrms.api.__init__.get_company_cost_center_and_expense_account",
+  "hrms.api.__init__.get_company_currencies",
+  "hrms.api.__init__.get_currency_symbols",
+  "hrms.api.__init__.get_current_employee_info",
+  "hrms.api.__init__.get_current_user_info",
+  "hrms.api.__init__.get_doctype_fields",
+  "hrms.api.__init__.get_doctype_states",
+  "hrms.api.__init__.get_employee_advance_balance",
+  "hrms.api.__init__.get_expense_approval_details",
+  "hrms.api.__init__.get_expense_claim_summary",
+  "hrms.api.__init__.get_expense_claim_types",
+  "hrms.api.__init__.get_expense_claims",
+  "hrms.api.__init__.get_expense_type_description",
+  "hrms.api.__init__.get_holidays_for_employee",
+  "hrms.api.__init__.get_hr_settings",
+  "hrms.api.__init__.get_leave_applications",
+  "hrms.api.__init__.get_leave_approval_details",
+  "hrms.api.__init__.get_leave_balance_map",
+  "hrms.api.__init__.get_leave_types",
+  "hrms.api.__init__.get_permitted_fields_for_write",
+  "hrms.api.__init__.get_reports_to_employee_name",
+  "hrms.api.__init__.get_shift_request_approvers",
+  "hrms.api.__init__.get_shift_requests",
+  "hrms.api.__init__.get_shifts",
+  "hrms.api.__init__.get_unread_notifications_count",
+  "hrms.api.__init__.get_workflow",
+  "hrms.api.__init__.mark_all_notifications_as_read",
+  "hrms.api.__init__.upload_base64_file",
+  "hrms.api.oauth.oauth_providers",
+  "hrms.api.roster.break_shift",
+  "hrms.api.roster.create_shift_schedule_assignment",
+  "hrms.api.roster.delete_shift_schedule_assignment",
+  "hrms.api.roster.get_default_company",
+  "hrms.api.roster.get_events",
+  "hrms.api.roster.get_schedule_from_assignment",
+  "hrms.api.roster.insert_shift",
+  "hrms.api.roster.swap_shift",
+  "hrms.api.system_settings.get_user_pass_login_disabled",
+  "hrms.controllers.employee_boarding_controller.get_onboarding_details",
+  "hrms.hr.dashboard_chart_source.employees_by_age.employees_by_age.get_data",
+  "hrms.hr.dashboard_chart_source.hiring_vs_attrition_count.hiring_vs_attrition_count.get_data",
+  "hrms.hr.doctype.appointment_letter.appointment_letter.get_appointment_letter_details",
+  "hrms.hr.doctype.appraisal.appraisal.add_feedback",
+  "hrms.hr.doctype.appraisal.appraisal.get_feedback_history",
+  "hrms.hr.doctype.appraisal.appraisal.get_kras_for_employee",
+  "hrms.hr.doctype.appraisal.appraisal.set_appraisal_template",
+  "hrms.hr.doctype.appraisal.appraisal.set_kras_and_rating_criteria",
+  "hrms.hr.doctype.appraisal_cycle.appraisal_cycle.complete_cycle",
+  "hrms.hr.doctype.appraisal_cycle.appraisal_cycle.create_appraisals",
+  "hrms.hr.doctype.appraisal_cycle.appraisal_cycle.get_appraisal_cycle_summary",
+  "hrms.hr.doctype.appraisal_cycle.appraisal_cycle.get_employees_without_feedback",
+  "hrms.hr.doctype.appraisal_cycle.appraisal_cycle.set_employees",
+  "hrms.hr.doctype.attendance.attendance.get_employee_shift",
+  "hrms.hr.doctype.attendance.attendance.get_events",
+  "hrms.hr.doctype.attendance.attendance.get_unmarked_days",
+  "hrms.hr.doctype.attendance.attendance.mark_bulk_attendance",
+  "hrms.hr.doctype.attendance_request.attendance_request.get_attendance_warnings",
+  "hrms.hr.doctype.department_approver.department_approver.get_approvers",
+  "hrms.hr.doctype.employee_advance.employee_advance.create_return_through_additional_salary",
+  "hrms.hr.doctype.employee_advance.employee_advance.get_employee_advance_return",
+  "hrms.hr.doctype.employee_advance.employee_advance.make_return_entry",
+  "hrms.hr.doctype.employee_attendance_tool.employee_attendance_tool.get_employees",
+  "hrms.hr.doctype.employee_attendance_tool.employee_attendance_tool.mark_employee_attendance",
+  "hrms.hr.doctype.employee_checkin.employee_checkin.add_log_based_on_employee_field",
+  "hrms.hr.doctype.employee_checkin.employee_checkin.bulk_fetch_shift",
+  "hrms.hr.doctype.employee_checkin.employee_checkin.fetch_shift",
+  "hrms.hr.doctype.employee_checkin.employee_checkin.set_geolocation",
+  "hrms.hr.doctype.employee_onboarding.employee_onboarding.make_employee",
+  "hrms.hr.doctype.employee_onboarding.employee_onboarding.mark_onboarding_as_completed",
+  "hrms.hr.doctype.employee_performance_feedback.employee_performance_feedback.set_feedback_criteria",
+  "hrms.hr.doctype.employee_referral.employee_referral.create_additional_salary",
+  "hrms.hr.doctype.employee_referral.employee_referral.create_job_applicant",
+  "hrms.hr.doctype.exit_interview.exit_interview.send_exit_questionnaire",
+  "hrms.hr.doctype.expense_claim.expense_claim.calculate_taxes",
+  "hrms.hr.doctype.expense_claim.expense_claim.get_advances",
+  "hrms.hr.doctype.expense_claim.expense_claim.get_allocation_amount",
+  "hrms.hr.doctype.expense_claim.expense_claim.get_expense_claim",
+  "hrms.hr.doctype.expense_claim.expense_claim.get_expense_claim_account",
+  "hrms.hr.doctype.expense_claim.expense_claim.get_expense_claim_account_and_cost_center",
+  "hrms.hr.doctype.expense_claim.expense_claim.make_expense_claim_for_delivery_trip",
+  "hrms.hr.doctype.full_and_final_statement.full_and_final_statement.create_journal_entry",
+  "hrms.hr.doctype.full_and_final_statement.full_and_final_statement.get_account_and_amount",
+  "hrms.hr.doctype.full_and_final_statement.full_and_final_statement.get_outstanding_statements",
+  "hrms.hr.doctype.goal.goal.add_tree_node",
+  "hrms.hr.doctype.goal.goal.get_children",
+  "hrms.hr.doctype.goal.goal.update_progress",
+  "hrms.hr.doctype.goal.goal.update_status",
+  "hrms.hr.doctype.hr_settings.hr_settings.set_proceed_with_frequency_change",
+  "hrms.hr.doctype.interview.interview.create_interview_feedback",
+  "hrms.hr.doctype.interview.interview.get_events",
+  "hrms.hr.doctype.interview.interview.get_expected_skill_set",
+  "hrms.hr.doctype.interview.interview.get_feedback",
+  "hrms.hr.doctype.interview.interview.get_interviewer_list",
+  "hrms.hr.doctype.interview.interview.get_interviewers",
+  "hrms.hr.doctype.interview.interview.get_skill_wise_average_rating",
+  "hrms.hr.doctype.interview.interview.reschedule_interview",
+  "hrms.hr.doctype.interview.interview.update_job_applicant_status",
+  "hrms.hr.doctype.interview_feedback.interview_feedback.get_applicable_interviewers",
+  "hrms.hr.doctype.interview_type.interview_type.create_interview",
+  "hrms.hr.doctype.job_applicant.job_applicant.create_interview",
+  "hrms.hr.doctype.job_applicant.job_applicant.create_kanban_board",
+  "hrms.hr.doctype.job_applicant.job_applicant.get_applicant_to_hire_percentage",
+  "hrms.hr.doctype.job_applicant.job_applicant.get_interview_details",
+  "hrms.hr.doctype.job_applicant.job_applicant.schedule_interview",
+  "hrms.hr.doctype.job_offer.job_offer.get_offer_acceptance_rate",
+  "hrms.hr.doctype.job_offer.job_offer.make_employee",
+  "hrms.hr.doctype.job_opening.job_opening.get_close_warning",
+  "hrms.hr.doctype.job_opening_template.job_opening_template.create_job_opening_from_template",
+  "hrms.hr.doctype.job_requisition.job_requisition.associate_job_opening",
+  "hrms.hr.doctype.job_requisition.job_requisition.check_duplicate_job_requisition",
+  "hrms.hr.doctype.job_requisition.job_requisition.get_avg_time_to_fill",
+  "hrms.hr.doctype.job_requisition.job_requisition.make_job_opening",
+  "hrms.hr.doctype.leave_adjustment.leave_adjustment.get_allocated_leave_types",
+  "hrms.hr.doctype.leave_adjustment.leave_adjustment.get_leave_allocation_for_posting_date",
+  "hrms.hr.doctype.leave_allocation.leave_allocation.allocate_leaves_manually",
+  "hrms.hr.doctype.leave_allocation.leave_allocation.create_leave_adjustment",
+  "hrms.hr.doctype.leave_allocation.leave_allocation.expire_carried_forward_allocation",
+  "hrms.hr.doctype.leave_allocation.leave_allocation.get_monthly_earned_leave",
+  "hrms.hr.doctype.leave_allocation.leave_allocation.retry_failed_allocations",
+  "hrms.hr.doctype.leave_allocation.leave_allocation.set_total_leaves_allocated",
+  "hrms.hr.doctype.leave_application.leave_application.get_events",
+  "hrms.hr.doctype.leave_application.leave_application.get_holidays",
+  "hrms.hr.doctype.leave_application.leave_application.get_leave_approver",
+  "hrms.hr.doctype.leave_application.leave_application.get_leave_approver_and_mandatory",
+  "hrms.hr.doctype.leave_application.leave_application.get_leave_balance_on",
+  "hrms.hr.doctype.leave_application.leave_application.get_leave_details",
+  "hrms.hr.doctype.leave_application.leave_application.get_leave_metrics_and_details",
+  "hrms.hr.doctype.leave_application.leave_application.get_mandatory_approval",
+  "hrms.hr.doctype.leave_application.leave_application.get_number_of_leave_days",
+  "hrms.hr.doctype.leave_application.leave_application.validate_half_day_date",
+  "hrms.hr.doctype.leave_block_list.leave_block_list.set_weekly_off_dates",
+  "hrms.hr.doctype.leave_control_panel.leave_control_panel.allocate_leave",
+  "hrms.hr.doctype.leave_control_panel.leave_control_panel.get_employees",
+  "hrms.hr.doctype.leave_control_panel.leave_control_panel.get_latest_leave_period",
+  "hrms.hr.doctype.leave_encashment.leave_encashment.get_leave_details_for_encashment",
+  "hrms.hr.doctype.leave_ledger_entry.leave_ledger_entry.expire_allocation",
+  "hrms.hr.doctype.leave_policy_assignment.leave_policy_assignment.create_assignment",
+  "hrms.hr.doctype.leave_policy_assignment.leave_policy_assignment.create_assignment_for_multiple_employees",
+  "hrms.hr.doctype.overtime_slip.overtime_slip.get_emp_and_overtime_details",
+  "hrms.hr.doctype.overtime_slip.overtime_slip.get_frequency_and_dates",
+  "hrms.hr.doctype.shift_assignment.shift_assignment.get_events",
+  "hrms.hr.doctype.shift_assignment_tool.shift_assignment_tool.bulk_assign",
+  "hrms.hr.doctype.shift_assignment_tool.shift_assignment_tool.bulk_process_shift_requests",
+  "hrms.hr.doctype.shift_assignment_tool.shift_assignment_tool.get_employees",
+  "hrms.hr.doctype.shift_location.shift_location.set_geolocation",
+  "hrms.hr.doctype.shift_type.shift_type.process_auto_attendance",
+  "hrms.hr.doctype.staffing_plan.staffing_plan.get_active_staffing_plan_details",
+  "hrms.hr.doctype.staffing_plan.staffing_plan.get_designation_counts",
+  "hrms.hr.doctype.staffing_plan.staffing_plan.set_job_requisitions",
+  "hrms.hr.doctype.training_result.training_result.get_employees",
+  "hrms.hr.doctype.vehicle_log.vehicle_log.get_draft_expense_claim_cancellation_actions",
+  "hrms.hr.doctype.vehicle_log.vehicle_log.get_draft_expense_claims",
+  "hrms.hr.doctype.vehicle_log.vehicle_log.make_expense_claim",
+  "hrms.hr.page.organizational_chart.organizational_chart.get_children",
+  "hrms.hr.page.team_updates.team_updates.get_data",
+  "hrms.hr.report.monthly_attendance_sheet.monthly_attendance_sheet.get_attendance_years",
+  "hrms.hr.utils.get_employee_field_property",
+  "hrms.hr.utils.get_leave_period",
+  "hrms.hr.utils.get_monthly_earned_leave",
+  "hrms.hr.utils.set_geolocation_from_coordinates",
+  "hrms.overrides.employee_master.get_retirement_date",
+  "hrms.overrides.employee_master.get_timeline_data",
+  "hrms.overrides.employee_payment_entry.get_payment_entry_for_employee",
+  "hrms.overrides.employee_payment_entry.get_payment_reference_details",
+  "hrms.overrides.employee_payment_entry.get_reference_details_for_employee",
+  "hrms.overrides.employee_payment_entry.set_exchange_rate_in_advance",
+  "hrms.payroll.doctype.bulk_salary_structure_assignment.bulk_salary_structure_assignment.bulk_assign_structure",
+  "hrms.payroll.doctype.bulk_salary_structure_assignment.bulk_salary_structure_assignment.get_employees",
+  "hrms.payroll.doctype.employee_benefit_application.employee_benefit_application.set_benefit_components_and_currency",
+  "hrms.payroll.doctype.employee_benefit_claim.employee_benefit_claim.get_benefit_components",
+  "hrms.payroll.doctype.employee_benefit_claim.employee_benefit_claim.get_benefit_details",
+  "hrms.payroll.doctype.employee_tax_exemption_declaration.employee_tax_exemption_declaration.make_proof_submission",
+  "hrms.payroll.doctype.gratuity.gratuity.calculate_work_experience_and_amount",
+  "hrms.payroll.doctype.payroll_correction.payroll_correction.fetch_salary_slip_details",
+  "hrms.payroll.doctype.payroll_entry.payroll_entry.create_overtime_slips",
+  "hrms.payroll.doctype.payroll_entry.payroll_entry.create_salary_slips",
+  "hrms.payroll.doctype.payroll_entry.payroll_entry.employee_query",
+  "hrms.payroll.doctype.payroll_entry.payroll_entry.fill_employee_details",
+  "hrms.payroll.doctype.payroll_entry.payroll_entry.get_employees_with_unmarked_attendance",
+  "hrms.payroll.doctype.payroll_entry.payroll_entry.get_end_date",
+  "hrms.payroll.doctype.payroll_entry.payroll_entry.get_overtime_slip_details",
+  "hrms.payroll.doctype.payroll_entry.payroll_entry.get_payroll_entries_for_jv",
+  "hrms.payroll.doctype.payroll_entry.payroll_entry.get_start_end_dates",
+  "hrms.payroll.doctype.payroll_entry.payroll_entry.get_unsubmitted_overtime_slips",
+  "hrms.payroll.doctype.payroll_entry.payroll_entry.has_bank_entries",
+  "hrms.payroll.doctype.payroll_entry.payroll_entry.make_bank_entry",
+  "hrms.payroll.doctype.payroll_entry.payroll_entry.submit_overtime_slips",
+  "hrms.payroll.doctype.payroll_entry.payroll_entry.submit_salary_slips",
+  "hrms.payroll.doctype.salary_component.salary_component.get_structures_to_be_updated",
+  "hrms.payroll.doctype.salary_component.salary_component.update_salary_structures",
+  "hrms.payroll.doctype.salary_slip.salary_slip.enqueue_email_salary_slips",
+  "hrms.payroll.doctype.salary_slip.salary_slip.get_emp_and_working_day_details",
+  "hrms.payroll.doctype.salary_slip.salary_slip.make_salary_slip_from_timesheet",
+  "hrms.payroll.doctype.salary_slip.salary_slip.process_salary_based_on_working_days",
+  "hrms.payroll.doctype.salary_slip.salary_slip.set_totals",
+  "hrms.payroll.doctype.salary_structure.salary_structure.assign_salary_structure",
+  "hrms.payroll.doctype.salary_structure.salary_structure.get_employees",
+  "hrms.payroll.doctype.salary_structure.salary_structure.get_salary_component",
+  "hrms.payroll.doctype.salary_structure.salary_structure.make_salary_slip",
+  "hrms.payroll.doctype.salary_structure_assignment.salary_structure_assignment.are_opening_entries_required",
+  "hrms.payroll.doctype.salary_structure_assignment.salary_structure_assignment.get_employee_currency",
+  "hrms.payroll.doctype.salary_structure_assignment.salary_structure_assignment.set_payroll_cost_centers",
+  "hrms.payroll.doctype.salary_withholding.salary_withholding.get_payroll_frequency",
+  "hrms.payroll.doctype.salary_withholding.salary_withholding.set_withholding_cycles_and_to_date",
+  "hrms.payroll.report.provident_fund_deductions.provident_fund_deductions.get_years",
+  "hrms.payroll.utils.get_payroll_settings_for_payment_days",
+  "hrms.subscription_utils.get_add_on_details",
+  "hrms.subscription_utils.subscription_updated",
+  "hrms.utils.__init__.get_country",
+  "hrms.utils.custom_method_for_charts.get_upcoming_holidays",
+  "hrms.utils.hierarchy_chart.get_all_nodes",
+  "hrms.www.hrms.get_context_for_dev"
+ ],
+ "pages_and_shared_scripts": [
+  {
+   "path": "hrms/hr/page/organizational_chart/organizational_chart.js",
+   "buttons": [],
+   "link_filters": [],
+   "server_calls": [
+    "frappe.client.get_count"
+   ],
+   "dialogs": 0
+  },
+  {
+   "path": "hrms/hr/page/team_updates/team_updates.js",
+   "buttons": [],
+   "link_filters": [],
+   "server_calls": [
+    "hrms.hr.page.team_updates.team_updates.get_data"
+   ],
+   "dialogs": 0
+  },
+  {
+   "path": "hrms/public/js/hierarchy_chart/hierarchy_chart_desktop.js",
+   "buttons": [],
+   "link_filters": [],
+   "server_calls": [
+    "hrms.utils.hierarchy_chart.get_all_nodes"
+   ],
+   "dialogs": 0
+  },
+  {
+   "path": "hrms/public/js/performance/performance_feedback.js",
+   "buttons": [],
+   "link_filters": [],
+   "server_calls": [
+    "add_feedback",
+    "hrms.hr.doctype.appraisal.appraisal.get_feedback_history"
+   ],
+   "dialogs": 1
+  },
+  {
+   "path": "hrms/public/js/salary_slip_deductions_report_filters.js",
+   "buttons": [],
+   "link_filters": [],
+   "server_calls": [
+    "hrms.payroll.report.provident_fund_deductions.provident_fund_deductions.get_years"
+   ],
+   "dialogs": 0
+  },
+  {
+   "path": "hrms/public/js/utils/index.js",
+   "buttons": [
+    "Roster",
+    "Shift Assignment Tool"
+   ],
+   "link_filters": [],
+   "server_calls": [
+    "hrms.hr.doctype.hr_settings.hr_settings.set_proceed_with_frequency_change"
+   ],
+   "dialogs": 0
+  },
+  {
+   "path": "hrms/public/js/utils/leave_utils.js",
+   "buttons": [
+    "View Ledger"
+   ],
+   "link_filters": [],
+   "server_calls": [],
+   "dialogs": 0
+  }
+ ],
+ "hook_overrides": {
+  "doctype_js": [
+   "Bank Transaction",
+   "Company",
+   "Delivery Trip",
+   "Department",
+   "Employee",
+   "Journal Entry",
+   "Payment Entry",
+   "Timesheet"
+  ],
+  "override_doctype_class": [
+   "Employee",
+   "Payment Entry",
+   "Project",
+   "Timesheet"
+  ],
+  "doc_events": [
+   "Appraisal Cycle",
+   "Attendance Request",
+   "Company",
+   "Employee",
+   "Employee Checkin",
+   "Employee Onboarding",
+   "Expense Claim",
+   "Holiday List",
+   "Job Opening",
+   "Journal Entry",
+   "Leave Application",
+   "Leave Type",
+   "Loan",
+   "Payment Entry",
+   "Payroll Entry",
+   "Project",
+   "Salary Slip",
+   "Salary Structure",
+   "Shift Request",
+   "Shift Type",
+   "Task",
+   "Timesheet",
+   "Unreconcile Payment",
+   "User"
+  ],
+  "doctype_js_details": {
+   "Bank Transaction": {
+    "buttons": [],
+    "link_filters": [],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "Company": {
+    "buttons": [],
+    "link_filters": [
+     "default_employee_advance_account",
+     "default_expense_claim_payable_account",
+     "default_payroll_payable_account",
+     "hra_component"
+    ],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "Delivery Trip": {
+    "buttons": [
+     "Expense Claim"
+    ],
+    "link_filters": [],
+    "server_calls": [
+     "hrms.hr.doctype.expense_claim.expense_claim.make_expense_claim_for_delivery_trip"
+    ],
+    "dialogs": 0
+   },
+   "Department": {
+    "buttons": [],
+    "link_filters": [
+     "approver",
+     "payroll_cost_center"
+    ],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "Employee": {
+    "buttons": [],
+    "link_filters": [
+     "employee_advance_account",
+     "payroll_cost_center"
+    ],
+    "server_calls": [
+     "hrms.overrides.employee_master.get_retirement_date"
+    ],
+    "dialogs": 0
+   },
+   "Journal Entry": {
+    "buttons": [],
+    "link_filters": [
+     "reference_name"
+    ],
+    "server_calls": [],
+    "dialogs": 0
+   },
+   "Payment Entry": {
+    "buttons": [],
+    "link_filters": [
+     "reference_doctype",
+     "reference_name"
+    ],
+    "server_calls": [
+     "hrms.overrides.employee_payment_entry.get_payment_reference_details"
+    ],
+    "dialogs": 0
+   },
+   "Timesheet": {
+    "buttons": [
+     "Create Salary Slip"
+    ],
+    "link_filters": [],
+    "server_calls": [
+     "hrms.payroll.doctype.salary_slip.salary_slip.make_salary_slip_from_timesheet"
+    ],
+    "dialogs": 0
+   }
+  }
+ },
+ "totals": {
+  "doctypes": 159,
+  "child_tables": 54,
+  "submittable": 53,
+  "fields": 1546,
+  "form_buttons": 76,
+  "link_filters": 96,
+  "form_server_calls": 116,
+  "dialogs": 8,
+  "custom_views": 35,
+  "reports": 28,
+  "dashboard_charts": 33,
+  "number_cards": 32,
+  "print_formats": 5,
+  "workspace_links": 179,
+  "whitelisted_methods": 219,
+  "overridden_external_doctypes": 8,
+  "pages_and_shared_scripts": 7
+ }
+}

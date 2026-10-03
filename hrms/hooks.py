@@ -16,7 +16,14 @@ add_to_apps_screen = [
 		"title": "Frappe HR",
 		"route": "/desk/people",
 		"has_permission": "hrms.hr.utils.check_app_permission",
-	}
+	},
+	{
+		"name": "briskrew",
+		"logo": "/assets/hrms/briskrew/mark.svg",
+		"title": "briskrew",
+		"route": "/flow",
+		"has_permission": "hrms.hr.utils.check_app_permission",
+	},
 ]
 
 # Includes in <head>
@@ -82,6 +89,7 @@ website_generators = ["Job Opening"]
 website_route_rules = [
 	{"from_route": "/hrms/<path:app_path>", "to_route": "hrms"},
 	{"from_route": "/hr/<path:app_path>", "to_route": "roster"},
+	{"from_route": "/flow/<path:app_path>", "to_route": "flow"},
 ]
 # Jinja
 # ----------

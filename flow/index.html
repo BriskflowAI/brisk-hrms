@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<link rel="icon" href="/assets/hrms/briskrew/mark.svg" type="image/svg+xml" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>briskrew</title>
+	</head>
+	<body>
+		<div id="app"></div>
+		<div id="modals"></div>
+		<div id="popovers"></div>
+
+		<script>
+			window.csrf_token = "{{ csrf_token }}";
+			window.site_name = "{{ site_name }}";
+			window.socketio_port = "{{ socketio_port }}";
+			window.dev_server = "{{ dev_server }}" === "1";
+		</script>
+		<script type="module" src="/src/main.js"></script>
+	</body>
+</html>
