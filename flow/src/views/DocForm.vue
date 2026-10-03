@@ -217,6 +217,23 @@
 
 			<!-- Messages -->
 			<div class="flex flex-col gap-2 px-7 pt-4 empty:hidden">
+				<div
+					v-if="changedBy"
+					role="status"
+					class="flex flex-wrap items-center gap-3 rounded-lg bg-warn-tint px-4 py-2.5 text-[13.5px] text-ink"
+				>
+					<span class="flex-grow"
+						><b>{{ changedBy }}</b> changed this record while you were editing
+						it.</span
+					>
+					<button
+						type="button"
+						class="btn-ghost h-8 px-3 text-[13px]"
+						@click="reloadLatest"
+					>
+						Load their changes
+					</button>
+				</div>
 				<p
 					v-if="form.error"
 					role="alert"
@@ -373,6 +390,8 @@
 <script setup>
 import { modKey } from "@/composables/platform";
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
+import { useLiveCheck } from "@/composables/live";
+import { call } from "frappe-ui";
 import { onBeforeRouteLeave, useRouter } from "vue-router";
 import Icon from "@/components/Icon.vue";
 import Avatar from "@/components/Avatar.vue";
@@ -604,6 +623,41 @@ const tone = (c) =>
 		yellow: "bg-warn-tint text-warn",
 		blue: "bg-acc-tint text-acc",
 	})[c] || "bg-line-2 text-ink-2";
+
+// ---- live: pick up changes others make while this record is open ----
+const changedBy = ref("");
+useLiveCheck(async () => {
+	if (!form.ready || form.isNew || !form.doc?.modified) return;
+	const latest = await call("frappe.client.get_value", {
+		doctype: props.doctype,
+		filters: { name: form.doc.name },
+		fieldname: ["modified", "modified_by"],
+	});
+	if (!latest?.modified || latest.modified === form.doc.modified) return;
+	// Someone typing in a field counts as editing even before the field reports its value.
+	const el = document.activeElement;
+	const typing = el && (el.matches?.("input, textarea, select") || el.isContentEditable);
+	if (form.dirty || typing) {
+		const who = await call("frappe.client.get_value", {
+			doctype: "User",
+			filters: { name: latest.modified_by },
+			fieldname: "full_name",
+		}).catch(() => null);
+		changedBy.value = who?.full_name || latest.modified_by;
+	} else {
+		await form.reloadDoc();
+	}
+});
+async function reloadLatest() {
+	changedBy.value = "";
+	document.activeElement?.blur?.();
+	form.dirty = false;
+	await form.reloadDoc();
+}
+watch(
+	() => form.doc?.modified,
+	(modified, before) => before && modified !== before && !form.dirty && (changedBy.value = ""),
+);
 
 function onKey(e) {
 	if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {

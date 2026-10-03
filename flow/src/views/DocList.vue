@@ -662,6 +662,7 @@ import ColumnPicker from "@/components/list/ColumnPicker.vue";
 import GroupBy from "@/components/list/GroupBy.vue";
 import SavedFilters from "@/components/list/SavedFilters.vue";
 import CalendarView from "@/components/list/CalendarView.vue";
+import { useLiveCheck } from "@/composables/live";
 import { getMeta, isLayout, isTable, listFields, titleField } from "@/composables/api";
 import {
 	attachListScript,
@@ -1202,6 +1203,28 @@ watch(
 	() => list.pageLength,
 	() => load(),
 );
+
+// ---- live: refresh when records change, unless the user is in the middle of something ----
+let lastStamp = null;
+useLiveCheck(async () => {
+	if (!list.meta || list.loading || view.value !== "list") return;
+	const [latest] = await call("frappe.client.get_list", {
+		doctype: props.doctype,
+		fields: ["modified"],
+		filters: serverFilters(),
+		order_by: "modified desc",
+		limit_page_length: 1,
+	});
+	const count = await call("frappe.client.get_count", {
+		doctype: props.doctype,
+		filters: serverFilters(),
+	});
+	const stamp = `${latest?.modified || ""}|${count}`;
+	const changed = lastStamp !== null && stamp !== lastStamp;
+	lastStamp = stamp;
+	if (changed && !list.selected.length && !menu.value && !bulkMode.value && !bulkEditOpen.value)
+		await load();
+});
 
 // ---- the user's columns, saved with their other list settings for this record type ----
 let savedColumns = null; // JSON of what's stored, so loading it doesn't save it again
