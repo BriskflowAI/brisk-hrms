@@ -8,6 +8,10 @@ def after_install():
 		print("Setting up Frappe HR...")
 		setup()
 
+		from hrms.briskrew.branding import apply as apply_briskrew_branding
+
+		apply_briskrew_branding()
+
 		click.secho("Thank you for installing Frappe HR!", fg="green")
 
 	except Exception as e:

@@ -5,8 +5,9 @@
 				<div class="flex flex-col bg-white shadow-sm p-4">
 					<div class="flex flex-row justify-between items-center">
 						<div class="flex flex-row items-center gap-2">
+							<BriskrewMark v-if="!props.pageTitle" class="h-7 w-7" />
 							<h2 class="text-xl font-bold text-gray-900">
-								{{ props.pageTitle || __("Frappe HR") }}
+								{{ props.pageTitle || "briskrew" }}
 							</h2>
 						</div>
 						<div class="flex flex-row items-center gap-3 ml-auto">
@@ -49,6 +50,7 @@
 </template>
 
 <script setup>
+import BriskrewMark from "@/components/icons/BriskrewMark.vue"
 import { IonHeader, IonContent, IonPage } from "@ionic/vue"
 import { FeatherIcon, Avatar } from "frappe-ui"
 

@@ -1,4 +1,4 @@
-import { createRouter, createWebHashHistory, createWebHistory } from "vue-router";
+import { createRouter, createWebHistory } from "vue-router";
 
 const routes = [
 	{ path: "/", name: "Home", component: () => import("@/views/Home.vue") },
@@ -8,6 +8,17 @@ const routes = [
 		name: "PayrollReview",
 		component: () => import("@/views/PayrollReview.vue"),
 		props: true,
+	},
+	{
+		path: "/overview/:area",
+		name: "Overview",
+		component: () => import("@/views/Overview.vue"),
+		props: true,
+	},
+	{
+		path: "/leave-policies",
+		name: "LeavePolicies",
+		component: () => import("@/views/LeavePolicies.vue"),
 	},
 	{ path: "/inbox", name: "Inbox", component: () => import("@/views/Inbox.vue") },
 	{
@@ -37,14 +48,11 @@ const routes = [
 ];
 
 const router = createRouter({
-	history: import.meta.env.VITE_BRISKREW_DEMO
-		? createWebHashHistory()
-		: createWebHistory("/flow"),
+	history: createWebHistory("/flow"),
 	routes,
 });
 
 router.beforeEach((to) => {
-	if (import.meta.env.VITE_BRISKREW_DEMO) return;
 	// Guests go to Frappe's login page and come back here afterwards.
 	const loggedIn = document.cookie
 		.split("; ")

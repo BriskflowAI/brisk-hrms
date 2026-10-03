@@ -1,29 +1,68 @@
 // Opens every priority doctype in briskrew on a running site and records unsupported desk APIs.
-// Usage: node flow/scripts/audit-priority-screens.cjs  (expects the site on http://127.0.0.1:8000, Administrator/admin)
+// Usage: node flow/scripts/audit-priority-screens.cjs [priority|performance|hiring|shifts|<Doctype>…]
+// (expects the site on http://127.0.0.1:8000, Administrator/admin)
 const { chromium } = require("playwright");
 const fs = require("fs");
-const DOCTYPES = [
-  "Employee",
-  "Leave Application",
-  "Leave Allocation",
-  "Leave Policy",
-  "Leave Type",
-  "Holiday List",
-  "Attendance",
-  "Employee Checkin",
-  "Attendance Request",
-  "Shift Request",
-  "Shift Assignment",
-  "Expense Claim",
-  "Employee Advance",
-  "Payroll Entry",
-  "Salary Slip",
-  "Salary Structure",
-  "Salary Structure Assignment",
-  "Job Opening",
-  "Job Applicant",
-  "Appraisal",
-];
+const GROUPS = {
+  priority: [
+    "Employee",
+    "Leave Application",
+    "Leave Allocation",
+    "Leave Policy",
+    "Leave Type",
+    "Holiday List",
+    "Attendance",
+    "Employee Checkin",
+    "Attendance Request",
+    "Shift Request",
+    "Shift Assignment",
+    "Expense Claim",
+    "Employee Advance",
+    "Payroll Entry",
+    "Salary Slip",
+    "Salary Structure",
+    "Salary Structure Assignment",
+    "Job Opening",
+    "Job Applicant",
+    "Appraisal",
+  ],
+  performance: [
+    "Appraisal Cycle",
+    "Appraisal Template",
+    "Appraisal",
+    "KRA",
+    "Goal",
+    "Employee Performance Feedback",
+    "Employee Feedback Criteria",
+  ],
+  hiring: [
+    "Staffing Plan",
+    "Job Requisition",
+    "Job Opening",
+    "Job Applicant",
+    "Interview Type",
+    "Interview",
+    "Interview Feedback",
+    "Job Offer",
+    "Appointment Letter",
+    "Employee Referral",
+  ],
+  shifts: [
+    "Shift Type",
+    "Shift Location",
+    "Shift Schedule",
+    "Shift Schedule Assignment",
+    "Shift Assignment",
+    "Shift Request",
+    "Employee Checkin",
+  ],
+};
+// Groups or doctype names on the command line; the priority screens by default.
+const args = process.argv.slice(2);
+const DOCTYPES = (args.length ? args : ["priority"]).flatMap(
+  (a) => GROUPS[a] || [a],
+);
+const OUT = process.env.AUDIT_OUT || "audit.json";
 (async () => {
   const b = await chromium.launch({});
   const p = await (
@@ -96,6 +135,6 @@ const DOCTYPES = [
         .join(" "),
     );
   }
-  fs.writeFileSync("audit.json", JSON.stringify(out, null, 1));
+  fs.writeFileSync(OUT, JSON.stringify(out, null, 1));
   await b.close();
 })();

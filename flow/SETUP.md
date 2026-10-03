@@ -4,6 +4,10 @@ These steps set up a fresh Ubuntu 24.04 machine (a cloud VM with 4 GB RAM or mor
 fine) with Frappe, ERPNext and this repository's Frappe HR, then open briskrew at
 `/flow`. They follow what was used to test briskrew during development.
 
+**Just want to look around?** Open this repository in a GitHub codespace instead (Code →
+Codespaces → Create codespace). It sets everything below up with demo data on its own; see
+[`.devcontainer/README.md`](../.devcontainer/README.md).
+
 The `develop` branches of Frappe and ERPNext need **Python 3.14** and **Node 24**.
 
 ## 1. System packages (as root or with sudo)
@@ -80,7 +84,7 @@ ssh -T git@github.com
 bench init --frappe-branch develop --python "$(uv python find 3.14)" briskrew-bench
 cd briskrew-bench
 bench get-app --branch develop erpnext
-bench get-app --branch feature/briskrew-ui git@github.com:BriskflowAI/brisk-hrms.git
+bench get-app --branch develop git@github.com:BriskflowAI/brisk-hrms.git
 
 bench new-site test.localhost --mariadb-root-password choose-a-db-password --admin-password choose-an-admin-password --install-app erpnext
 bench --site test.localhost install-app hrms
