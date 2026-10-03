@@ -215,13 +215,23 @@ test("a record updates instantly when someone else saves it", async ({
     !process.env.E2E_REALTIME,
     "set E2E_REALTIME=1 when socketio is running",
   );
-  await signIn(page, ADMIN);
-  const [draft] = await api(page, "frappe.client.get_list", {
-    doctype: "Leave Application",
-    filters: JSON.stringify({ docstatus: 0 }),
-    fields: JSON.stringify(["name"]),
-    limit_page_length: 1,
+  // Your own saves don't count as someone else's change, so the lead watches and the admin edits.
+  const admin = await playwright.request.newContext({
+    baseURL: test.info().project.use.baseURL,
   });
+  await admin.post("/api/method/login", { data: ADMIN });
+  const list = await admin.get("/api/method/frappe.client.get_list", {
+    params: {
+      doctype: "Leave Application",
+      filters: JSON.stringify({ docstatus: 0, leave_approver: LEAD.usr }),
+      fields: JSON.stringify(["name"]),
+      limit_page_length: 1,
+    },
+  });
+  const [draft] = (await list.json()).message;
+  expect(draft, "a draft leave application waiting on the lead").toBeTruthy();
+
+  await signIn(page, LEAD);
   const sockets = [];
   page.on("websocket", (ws) => sockets.push(ws.url()));
   await page.goto(
@@ -229,12 +239,8 @@ test("a record updates instantly when someone else saves it", async ({
   );
   await expect(page.locator("#f-description")).toBeVisible();
 
-  const other = await playwright.request.newContext({
-    baseURL: test.info().project.use.baseURL,
-  });
-  await other.post("/api/method/login", { data: ADMIN });
   const value = `Realtime check ${Date.now()}`;
-  await other.post("/api/method/frappe.client.set_value", {
+  await admin.post("/api/method/frappe.client.set_value", {
     data: {
       doctype: "Leave Application",
       name: draft.name,
@@ -247,5 +253,5 @@ test("a record updates instantly when someone else saves it", async ({
     timeout: 10_000,
   });
   expect(sockets.some((u) => u.includes("socket.io"))).toBeTruthy();
-  await other.dispose();
+  await admin.dispose();
 });
