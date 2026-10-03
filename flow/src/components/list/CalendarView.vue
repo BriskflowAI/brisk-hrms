@@ -96,11 +96,11 @@
 </template>
 
 <script setup>
-import { call } from "frappe-ui";
 import dayjs from "dayjs";
 import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { messageOf } from "@/engine/form";
+import { fetchEvents } from "@/composables/calendarEvents";
 
 const props = defineProps({
 	doctype: { type: String, required: true },
@@ -186,24 +186,13 @@ async function load() {
 	loading.value = true;
 	error.value = "";
 	try {
-		const method = props.settings.get_events_method || "frappe.desk.calendar.get_events";
-		const args = {
+		events.value = await fetchEvents({
 			doctype: props.doctype,
+			settings: props.settings,
 			start: gridStart.value.format("YYYY-MM-DD"),
 			end: gridEnd.value.format("YYYY-MM-DD"),
-			filters: JSON.stringify(props.filters),
-			field_map: JSON.stringify(map.value),
-		};
-		let res;
-		try {
-			res = await call(method, args);
-		} catch (e) {
-			// Most event methods take filters as JSON text; a few insist on a list.
-			const text = [e?.exc, e?.message, ...(e?.messages || [])].join(" ");
-			if (!/should be of type '[^']*list/.test(text)) throw e;
-			res = await call(method, { ...args, filters: props.filters });
-		}
-		events.value = res || [];
+			filters: props.filters,
+		});
 	} catch (e) {
 		error.value = messageOf(e, "Couldn't load the calendar.");
 		events.value = [];

@@ -1923,8 +1923,12 @@ function loadDeskAsset(name) {
 			if (!src) throw new Error(`${name} isn't built on this site`);
 		}
 		await new Promise((resolve, reject) => {
-			const el = document.createElement("script");
-			el.src = src;
+			const css = src.endsWith(".css");
+			const el = document.createElement(css ? "link" : "script");
+			if (css) {
+				el.rel = "stylesheet";
+				el.href = src;
+			} else el.src = src;
 			el.onload = resolve;
 			el.onerror = () => reject(new Error(`couldn't load ${name}`));
 			document.head.appendChild(el);
@@ -1932,6 +1936,8 @@ function loadDeskAsset(name) {
 	})();
 	return loadedAssets[name];
 }
+// Built desk bundles (scripts or stylesheets) for screens that reuse them, such as maps.
+export { loadDeskAsset };
 
 async function install() {
 	if (booted) return;

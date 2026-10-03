@@ -300,6 +300,24 @@
 			</button>
 		</div>
 
+		<GanttView
+			v-if="view === 'gantt' && calendar"
+			:doctype="doctype"
+			:settings="calendar"
+			:filters="serverFilters()"
+		/>
+		<ImageView
+			v-if="view === 'image' && list.meta"
+			:doctype="doctype"
+			:meta="list.meta"
+			:filters="serverFilters()"
+		/>
+		<MapView
+			v-if="view === 'map' && list.meta"
+			:doctype="doctype"
+			:meta="list.meta"
+			:filters="serverFilters()"
+		/>
 		<ReportGrid
 			v-if="view === 'report' && list.meta"
 			:doctype="doctype"
@@ -680,6 +698,9 @@ import SavedFilters from "@/components/list/SavedFilters.vue";
 import CalendarView from "@/components/list/CalendarView.vue";
 import TreeView from "@/components/list/TreeView.vue";
 import ReportGrid from "@/components/list/ReportGrid.vue";
+import GanttView from "@/components/list/GanttView.vue";
+import ImageView from "@/components/list/ImageView.vue";
+import MapView from "@/components/list/MapView.vue";
 import BoardView from "@/components/list/BoardView.vue";
 import { useLiveCheck } from "@/composables/live";
 import { onListUpdate } from "@/composables/realtime";
@@ -719,10 +740,20 @@ const bulkEditOpen = ref(false);
 const bulkMode = ref(null);
 const calendar = ref(null); // the desk's calendar settings, when this type has a calendar
 const tree = ref(null); // the desk's tree settings, for record types kept as a tree
+const hasMap = computed(() => {
+	const f = list.meta?.fields || [];
+	return (
+		f.some((d) => d.fieldname === "location" && d.fieldtype === "Geolocation") ||
+		(f.some((d) => d.fieldname === "latitude") && f.some((d) => d.fieldname === "longitude"))
+	);
+});
 const views = computed(() => [
 	{ key: "list", label: "List", icon: "list" },
 	{ key: "report", label: "Report", icon: "table" },
 	...(calendar.value ? [{ key: "calendar", label: "Calendar", icon: "cal" }] : []),
+	...(calendar.value ? [{ key: "gantt", label: "Gantt", icon: "gantt" }] : []),
+	...(list.meta?.image_field ? [{ key: "image", label: "Image", icon: "image" }] : []),
+	...(hasMap.value ? [{ key: "map", label: "Map", icon: "pin" }] : []),
 	...(tree.value ? [{ key: "tree", label: "Tree", icon: "tree" }] : []),
 	...((list.meta?.fields || []).some((f) => f.fieldtype === "Select" && f.options && !f.hidden)
 		? [{ key: "board", label: "Board", icon: "board" }]
