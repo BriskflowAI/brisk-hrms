@@ -30,6 +30,27 @@
 							{{ form.doc.name }}
 						</div>
 					</div>
+					<button
+						v-if="!form.isNew"
+						type="button"
+						class="flex h-7 items-center gap-1 rounded-full px-2 text-[12.5px] font-semibold transition-colors"
+						:class="liked ? 'text-neg' : 'text-mut hover:text-neg'"
+						:aria-pressed="liked"
+						:aria-label="liked ? 'Unlike' : 'Like'"
+						:title="likedBy.length ? `Liked by ${likedBy.join(', ')}` : 'Like'"
+						@click="toggleLike"
+					>
+						<svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true">
+							<path
+								d="M12 20s-7-4.4-9.2-8.6C1.3 8.5 3 5 6.4 5c2 0 3.3 1.1 4.1 2.3h3C14.3 6.1 15.6 5 17.6 5 21 5 22.7 8.5 21.2 11.4 19 15.6 12 20 12 20z"
+								:fill="liked ? 'currentColor' : 'none'"
+								stroke="currentColor"
+								stroke-width="1.8"
+								stroke-linejoin="round"
+							/>
+						</svg>
+						<span v-if="likedBy.length">{{ likedBy.length }}</span>
+					</button>
 					<span v-if="form.dirty" class="chip bg-warn-tint text-warn">Not saved</span>
 					<span v-if="form.indicator" class="chip" :class="tone(form.indicator.color)">{{
 						form.indicator.label
@@ -146,6 +167,56 @@
 								<button type="button" class="menu-item" @click="reload">
 									Reload
 								</button>
+								<button
+									type="button"
+									class="menu-item"
+									@click="((remindOpen = true), (menu = null))"
+								>
+									Remind me
+								</button>
+								<router-link
+									v-if="form.meta.allow_auto_repeat"
+									:to="
+										form.doc.auto_repeat
+											? {
+													name: 'Form',
+													params: {
+														doctype: 'Auto Repeat',
+														name: form.doc.auto_repeat,
+													},
+												}
+											: {
+													name: 'Form',
+													params: {
+														doctype: 'Auto Repeat',
+														name: 'new',
+													},
+													query: {
+														reference_doctype: doctype,
+														reference_document: form.doc.name,
+													},
+												}
+									"
+									class="menu-item"
+									>{{
+										form.doc.auto_repeat ? "Repeat settings" : "Repeat"
+									}}</router-link
+								>
+								<button type="button" class="menu-item" @click="copyJson">
+									Copy to clipboard
+								</button>
+								<router-link
+									v-if="form.perms?.create"
+									:to="{ name: 'Form', params: { doctype, name: 'new' } }"
+									class="menu-item"
+									>New {{ doctype }}</router-link
+								>
+								<a
+									v-if="isSystemManager"
+									:href="`/app/customize-form?doc_type=${encodeURIComponent(doctype)}`"
+									class="menu-item"
+									>Customize</a
+								>
 								<button
 									v-if="form.perms?.delete && form.docstatus !== 1"
 									type="button"
@@ -383,6 +454,14 @@
 			</div>
 		</div>
 
+		<RemindMe
+			v-if="!form.isNew && form.doc"
+			v-model="remindOpen"
+			:doctype="doctype"
+			:name="form.doc.name"
+			:title="form.titleValue"
+			@done="(m) => (form.headline = m)"
+		/>
 		<CompatDialogs />
 	</div>
 </template>
@@ -392,6 +471,8 @@ import { modKey } from "@/composables/platform";
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
 import { useLiveCheck } from "@/composables/live";
 import { call } from "frappe-ui";
+import { useSession } from "@/composables/session";
+import RemindMe from "@/components/doc/RemindMe.vue";
 import { onBeforeRouteLeave, useRouter } from "vue-router";
 import Icon from "@/components/Icon.vue";
 import Avatar from "@/components/Avatar.vue";
@@ -399,7 +480,7 @@ import StatusChip from "@/components/StatusChip.vue";
 import Field from "@/components/fields/Field.vue";
 import DocSidebar from "@/components/DocSidebar.vue";
 import CompatDialogs from "@/components/CompatDialogs.vue";
-import { createForm } from "@/engine/form";
+import { createForm, messageOf } from "@/engine/form";
 import { attachFormScript, detachFormScript } from "@/engine/compat";
 import { classicUrl } from "@/nav";
 
@@ -623,6 +704,42 @@ const tone = (c) =>
 		yellow: "bg-warn-tint text-warn",
 		blue: "bg-acc-tint text-acc",
 	})[c] || "bg-line-2 text-ink-2";
+
+// ---- likes, reminders, copy ----
+const remindOpen = ref(false);
+const { user: me } = useSession();
+const isSystemManager = computed(() =>
+	(window.frappe?.user_roles || window.frappe?.boot?.user?.roles || []).includes(
+		"System Manager",
+	),
+);
+const likedBy = computed(() => {
+	try {
+		return JSON.parse(form.doc?._liked_by || "[]") || [];
+	} catch {
+		return [];
+	}
+});
+const liked = computed(() => likedBy.value.includes(me));
+async function toggleLike() {
+	const add = !liked.value;
+	const next = add ? [...likedBy.value, me] : likedBy.value.filter((u) => u !== me);
+	form.doc._liked_by = JSON.stringify(next);
+	try {
+		await call("frappe.desk.like.toggle_like", {
+			doctype: props.doctype,
+			name: form.doc.name,
+			add: add ? "Yes" : "No",
+		});
+	} catch (e) {
+		form.error = messageOf(e, "Couldn't save your like.");
+	}
+}
+async function copyJson() {
+	menu.value = null;
+	await navigator.clipboard?.writeText(JSON.stringify(form.doc, null, 2)).catch(() => {});
+	form.headline = "Copied this record to the clipboard.";
+}
 
 // ---- live: pick up changes others make while this record is open ----
 const changedBy = ref("");
