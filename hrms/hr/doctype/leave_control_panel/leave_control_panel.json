@@ -7,16 +7,16 @@
  "field_order": [
   "allocate_leaves_section",
   "dates_based_on",
-  "company",
   "leave_period",
+  "company",
   "from_date",
   "to_date",
-  "carry_forward",
   "column_break_16",
-  "allocate_based_on_leave_policy",
   "leave_policy",
   "leave_type",
   "no_of_days",
+  "allocate_based_on_leave_policy",
+  "carry_forward",
   "quick_filters_section",
   "branch",
   "department",
@@ -121,7 +121,8 @@
    "fieldname": "no_of_days",
    "fieldtype": "Float",
    "label": "New Leaves Allocated (In Days)",
-   "mandatory_depends_on": "eval:!doc.allocate_based_on_leave_policy"
+   "mandatory_depends_on": "eval:!doc.allocate_based_on_leave_policy",
+   "non_negative": 1
   },
   {
    "fieldname": "select_employees_section",
@@ -187,7 +188,7 @@
  "idx": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-03-26 14:58:06.256078",
+ "modified": "2026-08-06 13:01:43.187327",
  "modified_by": "Administrator",
  "module": "HR",
  "name": "Leave Control Panel",

@@ -2,13 +2,13 @@
 	<div class="h-full overflow-y-auto">
 		<header class="flex flex-wrap items-end gap-3 px-4 md:px-7 pb-2 pt-5">
 			<div class="mr-auto">
-				<div class="kicker">{{ data?.title || "" }} · Overview</div>
+				<div class="kicker">{{ data?.title || "" }} {{ __("· Overview") }}</div>
 				<h1 class="mt-1.5 text-[28px] leading-none md:text-[36px]">
-					{{ data?.title || "Overview" }} at a glance
+					{{ data?.title || "Overview" }} {{ __("at a glance") }}{{ " " }}
 				</h1>
 			</div>
 			<label v-if="data?.companies?.length > 1" class="flex items-center gap-2 text-[13px]">
-				<span class="font-semibold text-ink-2">Company</span>
+				<span class="font-semibold text-ink-2">{{ __("Company") }}</span>
 				<select
 					:value="data.company"
 					class="h-9 rounded-lg border border-line bg-surf py-0 pl-3 pr-8 text-[13.5px] font-semibold text-ink focus:border-acc focus:ring-1 focus:ring-acc"
@@ -32,13 +32,15 @@
 		>
 			{{ error }}
 		</p>
-		<div v-else-if="!data" class="px-4 md:px-7 py-10 text-[13.5px] text-mut">Loading…</div>
+		<div v-else-if="!data" class="px-4 md:px-7 py-10 text-[13.5px] text-mut">
+			{{ __("Loading…") }}
+		</div>
 
 		<div v-else class="px-4 md:px-7 pb-10 transition-opacity" :class="loading && 'opacity-60'">
 			<!-- headline numbers -->
 			<section
 				v-if="data.cards.length"
-				aria-label="Key numbers"
+				:aria-label="__('Key numbers')"
 				class="mt-4 grid grid-cols-[repeat(auto-fill,minmax(190px,1fr))] gap-3"
 			>
 				<component
@@ -61,14 +63,15 @@
 							class="text-[12px] text-ink-2"
 						>
 							{{ c.change > 0 ? "↑" : c.change < 0 ? "↓" : "" }}
-							{{ Math.abs(Math.round(c.change)) }}% vs {{ previous(c.interval) }}
+							{{ Math.abs(Math.round(c.change)) }}{{ __("% vs") }}
+							{{ previous(c.interval) }}
 						</span>
 					</template>
 				</component>
 			</section>
 
 			<!-- charts -->
-			<section aria-label="Charts" class="mt-5 grid gap-4 xl:grid-cols-2">
+			<section :aria-label="__('Charts')" class="mt-5 grid gap-4 xl:grid-cols-2">
 				<article
 					v-for="ch in data.charts"
 					:key="ch.name"
@@ -91,7 +94,7 @@
 							v-if="chartLink(ch)"
 							:to="chartLink(ch)"
 							class="rounded px-2 py-1 text-[12px] font-semibold text-acc hover:bg-acc-tint"
-							>Open</router-link
+							>{{ __("Open") }}</router-link
 						>
 					</header>
 					<div class="px-4 py-3.5">
@@ -99,7 +102,7 @@
 							{{ ch.error }}
 						</p>
 						<p v-else-if="!hasData(ch)" class="py-6 text-center text-[13px] text-mut">
-							Nothing to show yet.
+							{{ __("Nothing to show yet.") }}
 						</p>
 						<table v-else-if="tables[ch.name]" class="w-full text-[12.5px]">
 							<thead>
@@ -157,7 +160,8 @@
 							"
 							class="mt-2 text-[12px] text-mut"
 						>
-							Showing 3 of {{ ch.datasets.length }} series. The table has them all.
+							{{ " " }}{{ __("Showing 3 of") }} {{ ch.datasets.length }}
+							{{ __("series. The table has them all.") }}{{ " " }}
 						</p>
 					</div>
 				</article>

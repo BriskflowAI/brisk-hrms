@@ -2,16 +2,18 @@
 	<div class="flex h-full min-h-0 flex-col">
 		<header class="flex flex-wrap items-end gap-3 border-b border-line px-4 md:px-7 pb-4 pt-5">
 			<div class="mr-auto">
-				<div class="kicker">Time · Leave</div>
-				<h1 class="mt-1.5 text-[28px] leading-none md:text-[36px]">Leave policies</h1>
+				<div class="kicker">{{ __("Time · Leave") }}</div>
+				<h1 class="mt-1.5 text-[28px] leading-none md:text-[36px]">
+					{{ __("Leave policies") }}
+				</h1>
 			</div>
 			<router-link
 				:to="{ name: 'List', params: { doctype: 'Leave Policy Assignment' } }"
 				class="btn-ghost"
-				>All assignments</router-link
+				>{{ __("All assignments") }}</router-link
 			>
 			<button v-if="data?.can.write_policy" type="button" class="btn-ink" @click="newPolicy">
-				<Icon name="plus" :size="15" /> New policy
+				<Icon name="plus" :size="15" /> {{ __("New policy") }}{{ " " }}
 			</button>
 		</header>
 
@@ -22,7 +24,9 @@
 		>
 			{{ error }}
 		</p>
-		<div v-else-if="!data" class="px-4 md:px-7 py-10 text-[13.5px] text-mut">Loading…</div>
+		<div v-else-if="!data" class="px-4 md:px-7 py-10 text-[13.5px] text-mut">
+			{{ __("Loading…") }}
+		</div>
 
 		<div
 			v-else
@@ -30,12 +34,12 @@
 		>
 			<!-- policies and leave types -->
 			<aside
-				aria-label="Policies"
+				:aria-label="__('Policies')"
 				class="flex max-h-[40vh] w-full shrink-0 flex-col gap-0.5 overflow-y-auto border-b border-line px-3 py-4 md:max-h-none md:w-[250px] md:border-b-0 md:border-r"
 			>
-				<div class="kicker px-2 pb-1.5">Policies</div>
+				<div class="kicker px-2 pb-1.5">{{ __("Policies") }}</div>
 				<p v-if="!data.policies.length && !draft" class="px-2 text-[13px] text-mut">
-					No policies yet.
+					{{ __("No policies yet.") }}
 				</p>
 				<button
 					v-for="p in sidebarPolicies"
@@ -54,20 +58,25 @@
 							p.title || "Untitled policy"
 						}}</span>
 						<span class="block text-[12px] text-mut">
-							{{ p.rows.length }} leave type{{ p.rows.length === 1 ? "" : "s" }}
-							<template v-if="p.docstatus === 1"> · {{ p.assigned }} on it</template>
+							{{ p.rows.length }} {{ __("leave type")
+							}}{{ p.rows.length === 1 ? "" : "s" }}
+							<template v-if="p.docstatus === 1">
+								· {{ p.assigned }} {{ __("on it") }}</template
+							>
 						</span>
 					</span>
-					<span v-if="p.docstatus !== 1" class="chip bg-warn-tint text-warn">Draft</span>
+					<span v-if="p.docstatus !== 1" class="chip bg-warn-tint text-warn">{{
+						__("Draft")
+					}}</span>
 				</button>
 
 				<div class="kicker mt-5 flex items-center px-2 pb-1.5">
-					<span class="flex-grow">Leave types</span>
+					<span class="flex-grow">{{ __("Leave types") }}</span>
 					<button
 						v-if="data.can.create_leave_type"
 						type="button"
 						class="rounded p-0.5 text-mut hover:bg-side hover:text-acc"
-						aria-label="New leave type"
+						:aria-label="__('New leave type')"
 						@click="openType(null)"
 					>
 						<Icon name="plus" :size="14" />
@@ -91,27 +100,36 @@
 			</aside>
 
 			<!-- the selected policy -->
-			<main class="min-w-0 flex-grow shrink-0 md:shrink md:overflow-y-auto px-4 md:px-7 py-6">
+			<main
+				class="min-w-0 flex-grow shrink-0 md:shrink md:overflow-y-auto px-4 md:px-7 py-6"
+			>
 				<div
 					v-if="!policy"
 					class="rounded-xl border border-line bg-surf px-6 py-12 text-center"
 				>
-					<p class="text-[15px] font-semibold">Pick a policy, or make a new one.</p>
+					<p class="text-[15px] font-semibold">
+						{{ __("Pick a policy, or make a new one.") }}
+					</p>
 					<p class="mx-auto mt-1.5 max-w-md text-[13.5px] text-mut">
-						A policy says how many days of each leave type people get a year. Assign it
-						to people and their leave balances are created for them.
+						{{
+							__(
+								"A policy says how many days of each leave type people get a year. Assign it to people and their leave balances are created for them.",
+							)
+						}}
 					</p>
 				</div>
 
 				<template v-else>
 					<section class="max-w-[860px]">
 						<div class="flex flex-wrap items-center gap-3">
-							<label class="sr-only" for="policy-title">Policy name</label>
+							<label class="sr-only" for="policy-title">{{
+								__("Policy name")
+							}}</label>
 							<input
 								id="policy-title"
 								v-model="policy.title"
 								:readonly="locked"
-								placeholder="Policy name, e.g. Standard 2026"
+								:placeholder="__('Policy name, e.g. Standard 2026')"
 								class="min-w-0 flex-grow rounded-lg border border-transparent bg-transparent px-1 py-1 font-display text-[26px] font-bold text-ink hover:border-line focus:border-acc focus:bg-surf"
 								:class="locked && 'hover:border-transparent'"
 							/>
@@ -123,8 +141,11 @@
 							</span>
 						</div>
 						<p v-if="locked" class="mt-1 px-1 text-[13px] text-mut">
-							Policies can't change once they're assignable, so existing balances
-							stay correct. Make a copy to change days, then assign the copy.
+							{{
+								__(
+									"Policies can't change once they're assignable, so existing balances stay correct. Make a copy to change days, then assign the copy.",
+								)
+							}}
 						</p>
 
 						<table
@@ -134,10 +155,14 @@
 								<tr
 									class="border-b border-line bg-paper text-left text-[12px] font-semibold uppercase tracking-wider text-mut"
 								>
-									<th class="px-4 py-2.5">Leave type</th>
-									<th class="w-[130px] px-4 py-2.5 text-right">Days a year</th>
-									<th class="px-4 py-2.5">Rules</th>
-									<th class="w-[44px]"><span class="sr-only">Remove</span></th>
+									<th class="px-4 py-2.5">{{ __("Leave type") }}</th>
+									<th class="w-[130px] px-4 py-2.5 text-right">
+										{{ __("Days a year") }}
+									</th>
+									<th class="px-4 py-2.5">{{ __("Rules") }}</th>
+									<th class="w-[44px]">
+										<span class="sr-only">{{ __("Remove") }}</span>
+									</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -154,7 +179,7 @@
 											:class="inputCls"
 											@change="onTypePicked(row)"
 										>
-											<option value="">Choose…</option>
+											<option value="">{{ __("Choose…") }}</option>
 											<option
 												v-for="t in data.leave_types"
 												:key="t.name"
@@ -170,7 +195,7 @@
 												v-if="data.can.create_leave_type"
 												value="__new"
 											>
-												+ New leave type…
+												{{ __("+ New leave type…") }}
 											</option>
 										</select>
 										<span v-else class="font-semibold">{{
@@ -203,7 +228,7 @@
 														? 'font-semibold text-neg'
 														: 'text-mut'
 												"
-												>max {{ maxDays(row) }}</span
+												>{{ __("max") }} {{ maxDays(row) }}</span
 											>
 										</template>
 										<span v-else class="tabular-nums">{{
@@ -224,14 +249,14 @@
 											<span
 												v-if="!rules(typeOf(row.leave_type)).length"
 												class="text-[13px] text-mut"
-												>Standard paid leave</span
+												>{{ __("Standard paid leave") }}</span
 											>
 											<button
 												type="button"
 												class="text-[13px] font-semibold text-acc hover:underline"
 												@click="openType(typeOf(row.leave_type))"
 											>
-												Edit rules
+												{{ __("Edit rules") }}
 											</button>
 										</div>
 									</td>
@@ -254,7 +279,7 @@
 										colspan="4"
 										class="px-4 py-6 text-center text-[13.5px] text-mut"
 									>
-										No leave types in this policy yet.
+										{{ __("No leave types in this policy yet.") }}
 									</td>
 								</tr>
 							</tbody>
@@ -262,10 +287,10 @@
 
 						<div class="mt-4 flex flex-wrap items-center gap-2">
 							<button v-if="!locked" type="button" class="btn-ghost" @click="addRow">
-								<Icon name="plus" :size="14" /> Add leave type
+								<Icon name="plus" :size="14" /> {{ __("Add leave type") }}{{ " " }}
 							</button>
 							<span class="mr-auto text-[13px] text-mut"
-								>{{ totalDays }} days a year in total</span
+								>{{ totalDays }} {{ __("days a year in total") }}</span
 							>
 							<template v-if="!locked">
 								<button
@@ -274,7 +299,7 @@
 									:disabled="busy"
 									@click="savePolicy(false)"
 								>
-									Save draft
+									{{ __("Save draft") }}
 								</button>
 								<button
 									v-if="data.can.submit_policy"
@@ -283,7 +308,7 @@
 									:disabled="busy"
 									@click="savePolicy(true)"
 								>
-									Save and make assignable
+									{{ __("Save and make assignable") }}
 								</button>
 							</template>
 							<template v-else>
@@ -293,7 +318,7 @@
 										params: { doctype: 'Leave Policy', name: policy.name },
 									}"
 									class="btn-ghost"
-									>Open record</router-link
+									>{{ __("Open record") }}</router-link
 								>
 								<button
 									v-if="data.can.write_policy"
@@ -301,7 +326,7 @@
 									class="btn-ghost"
 									@click="copyPolicy"
 								>
-									Make a copy
+									{{ __("Make a copy") }}
 								</button>
 							</template>
 						</div>
@@ -321,10 +346,15 @@
 						class="mt-9 max-w-[860px]"
 						aria-labelledby="assign-h"
 					>
-						<h2 id="assign-h" class="text-[20px] font-bold">Who gets it</h2>
+						<h2 id="assign-h" class="text-[20px] font-bold">
+							{{ __("Who gets it") }}
+						</h2>
 						<p class="mt-0.5 text-[13.5px] text-mut">
-							Assigning creates each person's leave balance for the period. People
-							who already have a policy for those dates are skipped, with the reason.
+							{{
+								__(
+									"Assigning creates each person's leave balance for the period. People who already have a policy for those dates are skipped, with the reason.",
+								)
+							}}
 						</p>
 
 						<div
@@ -341,7 +371,7 @@
 									:input-id="`flt-${f.key}`"
 									:doctype="f.doctype"
 									:label="f.label"
-									placeholder="Any"
+									:placeholder="__('Any')"
 									:input-class="inputCls"
 									@update:model-value="loadCandidates"
 								/>
@@ -355,18 +385,20 @@
 								<label
 									for="as-basis"
 									class="mb-1 block text-[12.5px] font-semibold text-ink-2"
-									>Starts from</label
+									>{{ __("Starts from") }}</label
 								>
 								<select
 									id="as-basis"
 									v-model="when.assignment_based_on"
 									:class="inputCls"
 								>
-									<option value="Leave Period">A leave period</option>
-									<option value="Joining Date">
-										Each person's joining date
+									<option value="Leave Period">
+										{{ __("A leave period") }}
 									</option>
-									<option value="">Dates I choose</option>
+									<option value="Joining Date">
+										{{ __("Each person's joining date") }}
+									</option>
+									<option value="">{{ __("Dates I choose") }}</option>
 								</select>
 							</div>
 							<div
@@ -376,14 +408,14 @@
 								<label
 									for="as-period"
 									class="mb-1 block text-[12.5px] font-semibold text-ink-2"
-									>Leave period</label
+									>{{ __("Leave period") }}</label
 								>
 								<select
 									id="as-period"
 									v-model="when.leave_period"
 									:class="inputCls"
 								>
-									<option value="">Choose…</option>
+									<option value="">{{ __("Choose…") }}</option>
 									<option
 										v-for="lp in data.leave_periods"
 										:key="lp.name"
@@ -400,7 +432,7 @@
 									<label
 										for="as-from"
 										class="mb-1 block text-[12.5px] font-semibold text-ink-2"
-										>From</label
+										>{{ __("From") }}</label
 									>
 									<input
 										id="as-from"
@@ -413,7 +445,7 @@
 									<label
 										for="as-to"
 										class="mb-1 block text-[12.5px] font-semibold text-ink-2"
-										>Until</label
+										>{{ __("Until") }}</label
 									>
 									<input
 										id="as-to"
@@ -429,7 +461,7 @@
 									type="checkbox"
 									class="h-4 w-4 rounded border-line text-acc"
 								/>
-								Carry forward unused leave
+								{{ __("Carry forward unused leave") }}{{ " " }}
 							</label>
 						</div>
 
@@ -450,9 +482,12 @@
 										"
 										@change="toggleAll($event.target.checked)"
 									/>
-									{{ picked.size }} of {{ candidates.length }} people selected
+									{{ picked.size }} {{ __("of") }} {{ candidates.length }}
+									{{ __("people selected") }}{{ " " }}
 								</label>
-								<span v-if="loadingCandidates" class="text-mut">Loading…</span>
+								<span v-if="loadingCandidates" class="text-mut">{{
+									__("Loading…")
+								}}</span>
 							</div>
 							<ul class="max-h-[360px] overflow-y-auto">
 								<li
@@ -494,7 +529,7 @@
 												? "On this policy"
 												: `On ${policyTitle(e.current.leave_policy)}`
 										}}
-										until {{ fmt(e.current.effective_to) }}
+										{{ __("until") }} {{ fmt(e.current.effective_to) }}
 									</span>
 									<span
 										v-if="result[e.name]"
@@ -512,7 +547,7 @@
 									v-if="!candidates.length && !loadingCandidates"
 									class="px-4 py-6 text-center text-[13.5px] text-mut"
 								>
-									No active employees match.
+									{{ __("No active employees match.") }}
 								</li>
 							</ul>
 						</div>
@@ -524,7 +559,7 @@
 								:disabled="!picked.size || busy || !whenReady"
 								@click="assign"
 							>
-								Assign to {{ picked.size }}
+								{{ " " }}{{ __("Assign to") }} {{ picked.size }}
 								{{ picked.size === 1 ? "person" : "people" }}
 							</button>
 							<span v-if="!whenReady" class="text-[13px] text-mut">{{
@@ -537,7 +572,7 @@
 							class="mt-4 rounded-xl border border-neg/40 bg-neg-tint/50 px-4 py-3"
 						>
 							<p class="text-[13.5px] font-bold text-neg">
-								{{ failures.length }} not assigned
+								{{ failures.length }} {{ __("not assigned") }}{{ " " }}
 							</p>
 							<ul class="mt-1.5 space-y-1 text-[13px]">
 								<li v-for="f in failures" :key="f.employee">
@@ -553,9 +588,9 @@
 							role="status"
 							class="mt-3 text-[13.5px] font-semibold text-pos"
 						>
-							Assigned to {{ assignedCount }}
-							{{ assignedCount === 1 ? "person" : "people" }}. Their leave balances
-							are ready.
+							{{ " " }}{{ __("Assigned to") }} {{ assignedCount }}
+							{{ assignedCount === 1 ? "person" : "people"
+							}}{{ __(". Their leave balances are ready.") }}{{ " " }}
 						</p>
 					</section>
 				</template>
@@ -564,12 +599,12 @@
 			<!-- leave type rules -->
 			<aside
 				v-if="typeEdit"
-				aria-label="Leave type rules"
+				:aria-label="__('Leave type rules')"
 				class="flex w-full shrink-0 flex-col border-t border-line bg-surf md:w-[400px] md:border-l md:border-t-0"
 			>
 				<header class="flex items-center gap-2 border-b border-line px-5 py-3.5">
 					<div class="min-w-0 flex-grow">
-						<div class="kicker">Leave type</div>
+						<div class="kicker">{{ __("Leave type") }}</div>
 						<div class="truncate text-[17px] font-bold">
 							{{ typeEdit.name || "New leave type" }}
 						</div>
@@ -577,7 +612,7 @@
 					<button
 						type="button"
 						class="rounded p-1.5 text-mut hover:bg-side"
-						aria-label="Close"
+						:aria-label="__('Close')"
 						@click="typeEdit = null"
 					>
 						<Icon name="x" :size="16" />
@@ -588,23 +623,21 @@
 						v-if="typeEdit.name && policiesUsing(typeEdit.name) > 1"
 						class="mb-3 rounded-lg bg-warn-tint px-3 py-2 text-[12.5px] text-warn"
 					>
-						These rules apply to this leave type in every policy ({{
-							policiesUsing(typeEdit.name)
-						}}
-						policies use it).
+						{{ " " }}{{ __("These rules apply to this leave type in every policy (")
+						}}{{ policiesUsing(typeEdit.name) }} {{ __("policies use it).") }}{{ " " }}
 					</p>
 					<div v-if="!typeEdit.name" class="mb-4">
 						<label
 							for="lt-name"
 							class="mb-1 block text-[12.5px] font-semibold text-ink-2"
-							>Name</label
+							>{{ __("Name") }}</label
 						>
 						<input
 							id="lt-name"
 							v-model="typeEdit.values.leave_type_name"
 							required
 							:class="inputCls"
-							placeholder="e.g. Annual Leave"
+							:placeholder="__('e.g. Annual Leave')"
 						/>
 					</div>
 					<fieldset v-for="g in data.groups" :key="g.label" class="mb-5">
@@ -694,7 +727,7 @@
 							params: { doctype: 'Leave Type', name: typeEdit.name },
 						}"
 						class="text-[13px] font-semibold text-acc hover:underline"
-						>Open full record</router-link
+						>{{ __("Open full record") }}</router-link
 					>
 					<button
 						v-if="canEditType"
@@ -884,8 +917,8 @@ function openType(t) {
 			values[df.fieldname] = t
 				? t[df.fieldname]
 				: df.fieldtype === "Check"
-					? Number(df.default || 0)
-					: (df.default ?? null);
+				  ? Number(df.default || 0)
+				  : df.default ?? null;
 	values.leave_type_name = t?.leave_type_name || "";
 	typeEdit.value = { name: t?.name || null, values };
 }

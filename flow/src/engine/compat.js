@@ -90,6 +90,12 @@ function record(path) {
 	if (import.meta.env.DEV) console.warn(`[briskrew compat] unsupported: ${path}`);
 }
 
+// Keys these stand-ins never answer: promise checks, and Vue's internal flags (`__v_raw`,
+// `__v_isRef`...). Answering those with another stand-in sends Vue round in circles when one of
+// these ends up inside reactive state.
+const internal = (prop) =>
+	typeof prop === "symbol" || SKIP.has(prop) || String(prop).startsWith("__v_");
+
 function stub(path) {
 	const fn = function () {
 		record(path);
@@ -97,7 +103,7 @@ function stub(path) {
 	};
 	return new Proxy(fn, {
 		get(t, prop) {
-			if (typeof prop === "symbol" || SKIP.has(prop)) return undefined;
+			if (internal(prop)) return undefined;
 			return stub(`${path}.${String(prop)}`);
 		},
 		set() {
@@ -114,7 +120,7 @@ function silent() {
 	};
 	return new Proxy(fn, {
 		get(t, prop) {
-			if (typeof prop === "symbol" || SKIP.has(prop)) return undefined;
+			if (internal(prop)) return undefined;
 			return silent();
 		},
 		set() {
@@ -755,8 +761,8 @@ function routeTo(args) {
 		kind === "query-report"
 			? `/app/query-report/${encodeURIComponent(doctype)}`
 			: kind === "Tree"
-				? `/app/${slug(doctype)}/view/tree`
-				: `/app/${parts
+			  ? `/app/${slug(doctype)}/view/tree`
+			  : `/app/${parts
 						.map((p) => (/^[A-Z]/.test(p) ? slug(p) : encodeURIComponent(p)))
 						.join("/")}`;
 	const q = new URLSearchParams(query).toString();
@@ -1460,7 +1466,7 @@ function fieldHandle(form, fieldname, table = "") {
 							};
 							return true;
 						},
-					})
+				  })
 				: null;
 		},
 		get value() {
@@ -1923,8 +1929,12 @@ function loadDeskAsset(name) {
 			if (!src) throw new Error(`${name} isn't built on this site`);
 		}
 		await new Promise((resolve, reject) => {
-			const el = document.createElement("script");
-			el.src = src;
+			const css = src.endsWith(".css");
+			const el = document.createElement(css ? "link" : "script");
+			if (css) {
+				el.rel = "stylesheet";
+				el.href = src;
+			} else el.src = src;
 			el.onload = resolve;
 			el.onerror = () => reject(new Error(`couldn't load ${name}`));
 			document.head.appendChild(el);
@@ -1932,6 +1942,8 @@ function loadDeskAsset(name) {
 	})();
 	return loadedAssets[name];
 }
+// Built desk bundles (scripts or stylesheets) for screens that reuse them, such as maps.
+export { loadDeskAsset };
 
 async function install() {
 	if (booted) return;

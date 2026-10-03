@@ -2,12 +2,12 @@
 	<div class="flex h-full min-h-0">
 		<!-- Queue -->
 		<section
-			aria-label="Requests"
+			:aria-label="__('Requests')"
 			class="w-full shrink-0 flex-col gap-3 border-r border-line px-3.5 pt-6 md:flex md:w-[340px]"
 			:class="phoneDetail ? 'hidden' : 'flex'"
 		>
 			<div class="flex items-baseline gap-2.5 px-2">
-				<h1 class="text-[28px] leading-none md:text-[36px]">Inbox</h1>
+				<h1 class="text-[28px] leading-none md:text-[36px]">{{ __("Inbox") }}</h1>
 				<span class="text-[13px] text-mut">{{
 					loading ? "Loading…" : `${pending.length} to decide`
 				}}</span>
@@ -15,7 +15,7 @@
 
 			<div
 				role="tablist"
-				aria-label="Inbox view"
+				:aria-label="__('Inbox view')"
 				class="mx-2 flex gap-0.5 rounded-[9px] bg-side p-[3px]"
 			>
 				<button
@@ -58,13 +58,15 @@
 				class="mx-2 flex items-center gap-2 rounded-[10px] bg-acc-tint px-3 py-2 text-[12.5px] text-ink"
 			>
 				<Icon name="check" :size="15" :stroke="2.2" class="text-acc" />
-				<span class="min-w-0 flex-grow">Approve all that pass every check</span>
+				<span class="min-w-0 flex-grow">{{
+					__("Approve all that pass every check")
+				}}</span>
 				<button
 					type="button"
 					class="shrink-0 whitespace-nowrap font-bold text-acc hover:text-acc-hover"
 					@click="confirmBulk = true"
 				>
-					Review {{ visible.length }}
+					{{ " " }}{{ __("Review") }} {{ visible.length }}
 				</button>
 			</div>
 
@@ -90,7 +92,7 @@
 								? 'bg-surf shadow-[inset_0_0_0_1.5px] shadow-ink'
 								: 'hover:bg-surf/70'
 						"
-						@click="(select(item), (phoneDetail = true))"
+						@click="select(item), (phoneDetail = true)"
 					>
 						<Avatar :label="item.employee_name" :size="30" />
 						<span class="min-w-0 flex-grow">
@@ -114,7 +116,7 @@
 
 		<!-- Decision -->
 		<section
-			aria-label="Decision"
+			:aria-label="__('Decision')"
 			class="min-w-0 flex-grow flex-col md:flex"
 			:class="phoneDetail ? 'flex' : 'hidden'"
 		>
@@ -123,7 +125,7 @@
 				class="flex items-center gap-1.5 border-b border-line px-4 py-2.5 text-[13.5px] font-semibold text-acc md:hidden"
 				@click="phoneDetail = false"
 			>
-				← All requests
+				{{ __("← All requests") }}
 			</button>
 			<div
 				v-if="!current"
@@ -134,7 +136,7 @@
 						{{ pending.length ? "Pick a request" : "Nothing waiting on you" }}
 					</p>
 					<p class="mt-2 text-[14px] text-mut">
-						Tip: J and K move through the list, A approves, R rejects.
+						{{ __("Tip: J and K move through the list, A approves, R rejects.") }}
 					</p>
 				</div>
 			</div>
@@ -148,7 +150,8 @@
 						{{ error }}
 					</p>
 					<div class="kicker text-acc">
-						{{ current.kind }} request · sent {{ ago(current.creation) }} ago
+						{{ current.kind }} {{ __("request · sent") }} {{ ago(current.creation) }}
+						{{ __("ago") }}{{ " " }}
 					</div>
 					<h2 class="mt-3 max-w-[640px] text-[28px] leading-[1.05] md:text-[40px]">
 						{{ headline }}
@@ -174,7 +177,7 @@
 						>
 							<div>
 								<div class="mb-3 text-[13px] font-bold">
-									{{ current.leave_type }} balance
+									{{ current.leave_type }} {{ __("balance") }}{{ " " }}
 								</div>
 								<div
 									class="flex max-w-[190px] flex-wrap gap-1.5"
@@ -188,16 +191,20 @@
 									/>
 								</div>
 								<ul class="mt-3 flex flex-col gap-1 text-[12.5px] text-ink-2">
-									<li>{{ fmt(ctx.leave_balance) }} available now</li>
-									<li>{{ fmt(current.total_leave_days) }} in this request</li>
+									<li>{{ fmt(ctx.leave_balance) }} {{ __("available now") }}</li>
+									<li>
+										{{ fmt(current.total_leave_days) }}
+										{{ __("in this request") }}
+									</li>
 									<li :class="ctx.balance_after < 0 ? 'font-bold text-neg' : ''">
-										{{ fmt(ctx.balance_after) }} left after
+										{{ fmt(ctx.balance_after) }} {{ __("left after")
+										}}{{ " " }}
 									</li>
 								</ul>
 							</div>
 							<div v-if="ctx.team.members.length">
 								<div class="mb-2.5 text-[13px] font-bold">
-									{{ dept(current.department) }} those days
+									{{ dept(current.department) }} {{ __("those days") }}{{ " " }}
 								</div>
 								<div class="overflow-x-auto">
 									<table class="border-separate border-spacing-1 text-[12px]">
@@ -233,8 +240,8 @@
 															isHoliday(d.date)
 																? 'Holiday'
 																: d.away.includes(m.name)
-																	? 'Away'
-																	: 'In'
+																  ? 'Away'
+																  : 'In'
 														"
 													/>
 												</td>
@@ -255,10 +262,10 @@
 									class="bg-paper text-[11.5px] uppercase tracking-wide text-mut"
 								>
 									<tr>
-										<th class="px-3.5 py-2 text-left">Date</th>
-										<th class="px-3.5 py-2 text-left">Type</th>
-										<th class="px-3.5 py-2 text-left">Note</th>
-										<th class="px-3.5 py-2 text-right">Amount</th>
+										<th class="px-3.5 py-2 text-left">{{ __("Date") }}</th>
+										<th class="px-3.5 py-2 text-left">{{ __("Type") }}</th>
+										<th class="px-3.5 py-2 text-left">{{ __("Note") }}</th>
+										<th class="px-3.5 py-2 text-right">{{ __("Amount") }}</th>
 									</tr>
 								</thead>
 								<tbody>
@@ -285,7 +292,7 @@
 						</div>
 
 						<div v-if="ctx.checks.length">
-							<div class="kicker mb-2.5">Checks</div>
+							<div class="kicker mb-2.5">{{ __("Checks") }}</div>
 							<ul class="flex flex-col gap-2">
 								<li
 									v-for="c in ctx.checks"
@@ -322,12 +329,13 @@
 									:disabled="!note.trim() || busy"
 									@click="postComment"
 								>
-									Post comment
+									{{ __("Post comment") }}
 								</button>
-								<span class="self-center text-[12.5px] text-mut"
-									>Or pick Approve / Reject below to send it with your
-									decision.</span
-								>
+								<span class="self-center text-[12.5px] text-mut">{{
+									__(
+										"Or pick Approve / Reject below to send it with your decision.",
+									)
+								}}</span>
 							</span>
 						</label>
 					</div>
@@ -341,14 +349,14 @@
 						class="btn border-transparent text-ink hover:bg-side"
 						@click="openNote('Comment')"
 					>
-						<Icon name="file" :size="15" /> Comment
+						<Icon name="file" :size="15" /> {{ __("Comment") }}
 						<kbd class="kbd hidden md:inline-flex">C</kbd>
 					</button>
 					<a
 						:href="classicUrl(current.doctype, current.name)"
 						class="btn hidden border-transparent text-ink-2 hover:bg-side md:inline-flex"
 					>
-						<Icon name="ext" :size="15" /> Classic desk
+						<Icon name="ext" :size="15" /> {{ __("Classic desk") }}{{ " " }}
 					</a>
 					<div class="flex-grow" />
 					<template v-if="ctx">
@@ -374,9 +382,9 @@
 							{{ primaryAction.action }} &amp; next
 							<kbd class="kbd hidden md:inline-flex">A</kbd>
 						</button>
-						<span v-if="!ctx.actions.length" class="text-[13px] text-mut"
-							>You can view this request but not decide it.</span
-						>
+						<span v-if="!ctx.actions.length" class="text-[13px] text-mut">{{
+							__("You can view this request but not decide it.")
+						}}</span>
 					</template>
 				</div>
 			</template>
@@ -385,7 +393,7 @@
 		<!-- Context -->
 		<aside
 			v-if="current && ctx"
-			aria-label="About the requester"
+			:aria-label="__('About the requester')"
 			class="hidden w-[290px] lg:flex shrink-0 flex-col gap-5 overflow-y-auto border-l border-line bg-surf px-5 py-6"
 		>
 			<div class="flex items-center gap-3">
@@ -410,11 +418,11 @@
 					dept(ctx.employee.department)
 				}}</span>
 				<span v-if="ctx.employee.date_of_joining" class="chip bg-line-2 text-ink-2"
-					>Joined {{ date(ctx.employee.date_of_joining) }}</span
+					>{{ __("Joined") }} {{ date(ctx.employee.date_of_joining) }}</span
 				>
 			</div>
 			<div v-if="ctx.holidays?.length">
-				<div class="kicker mb-2">Holidays in range</div>
+				<div class="kicker mb-2">{{ __("Holidays in range") }}</div>
 				<ul class="flex flex-col gap-1 text-[13px] text-ink-2">
 					<li v-for="h in ctx.holidays" :key="h.holiday_date">
 						{{ date(h.holiday_date) }} · {{ strip(h.description) }}
@@ -423,7 +431,8 @@
 			</div>
 			<div>
 				<div class="kicker mb-2">
-					Their recent {{ current.kind.toLowerCase() }} requests
+					{{ " " }}{{ __("Their recent") }} {{ current.kind.toLowerCase() }}
+					{{ __("requests") }}{{ " " }}
 				</div>
 				<ul v-if="ctx.history.length" class="flex flex-col gap-1.5 text-[13px] text-ink-2">
 					<li v-for="h in ctx.history" :key="h.name" class="flex gap-2">
@@ -432,7 +441,7 @@
 						}}</span>
 					</li>
 				</ul>
-				<p v-else class="text-[13px] text-mut">None before this one.</p>
+				<p v-else class="text-[13px] text-mut">{{ __("None before this one.") }}</p>
 			</div>
 		</aside>
 
@@ -448,18 +457,22 @@
 				aria-labelledby="bulk-title"
 				class="w-[460px] rounded-2xl border border-line bg-surf p-6 shadow-2xl"
 			>
-				<h2 id="bulk-title" class="text-[22px]">Approve what's clear?</h2>
+				<h2 id="bulk-title" class="text-[22px]">{{ __("Approve what's clear?") }}</h2>
 				<p class="mt-2 text-[14px] leading-relaxed text-ink-2">
-					Each of the {{ visible.length }}
-					{{ kind === "all" ? "" : kind.toLowerCase() }} requests is checked again on the
-					server. Only those with no warnings are approved; the rest stay here for you.
+					{{ " " }}{{ __("Each of the") }} {{ visible.length }}
+					{{ kind === "all" ? "" : kind.toLowerCase() }}
+					{{
+						__(
+							"requests is checked again on the server. Only those with no warnings are approved; the rest stay here for you.",
+						)
+					}}{{ " " }}
 				</p>
 				<div class="mt-5 flex justify-end gap-2">
 					<button type="button" class="btn-ghost" @click="confirmBulk = false">
-						Cancel
+						{{ __("Cancel") }}
 					</button>
 					<button type="button" class="btn-ink" :disabled="busy" @click="bulkApprove">
-						Approve the clear ones
+						{{ __("Approve the clear ones") }}
 					</button>
 				</div>
 			</div>
@@ -478,7 +491,7 @@
 				class="font-bold text-lime"
 				@click="toast.undo()"
 			>
-				Undo
+				{{ __("Undo") }}
 			</button>
 		</div>
 	</div>

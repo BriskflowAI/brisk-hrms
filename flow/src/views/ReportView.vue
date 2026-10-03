@@ -2,7 +2,7 @@
 	<div class="flex flex-col gap-4 px-4 md:px-7 py-6">
 		<header class="flex flex-wrap items-end gap-2">
 			<div class="mr-auto">
-				<div class="kicker">Report</div>
+				<div class="kicker">{{ __("Report") }}</div>
 				<h1 class="mt-1.5 text-[28px] leading-none md:text-[34px]">{{ name }}</h1>
 			</div>
 			<button
@@ -24,7 +24,7 @@
 				<button
 					type="button"
 					class="btn-ghost px-2.5"
-					aria-label="More"
+					:aria-label="__('More')"
 					:aria-expanded="menu"
 					@click="menu = !menu"
 				>
@@ -50,7 +50,7 @@
 						:disabled="!report.rows.length"
 						@click="printReport"
 					>
-						Print
+						{{ __("Print") }}
 					</button>
 					<button
 						type="button"
@@ -58,7 +58,7 @@
 						:disabled="!report.rows.length"
 						@click="pdfReport"
 					>
-						Download PDF
+						{{ __("Download PDF") }}
 					</button>
 					<button
 						type="button"
@@ -66,7 +66,7 @@
 						:disabled="!report.rows.length"
 						@click="exportReport('Excel')"
 					>
-						Export to Excel
+						{{ __("Export to Excel") }}
 					</button>
 					<button
 						type="button"
@@ -74,11 +74,11 @@
 						:disabled="!report.rows.length"
 						@click="exportReport('CSV')"
 					>
-						Export to CSV
+						{{ __("Export to CSV") }}
 					</button>
 					<div class="my-1 border-t border-line-2" />
 					<button type="button" class="menu-item" @click="saveAsOpen = true">
-						Save as…
+						{{ __("Save as…") }}
 					</button>
 					<router-link
 						:to="{
@@ -87,11 +87,11 @@
 							query: { report: name },
 						}"
 						class="menu-item"
-						>Email this regularly</router-link
+						>{{ __("Email this regularly") }}</router-link
 					>
-					<a :href="`/app/query-report/${encodeURIComponent(name)}`" class="menu-item"
-						>Open in classic desk</a
-					>
+					<a :href="`/app/query-report/${encodeURIComponent(name)}`" class="menu-item">{{
+						__("Open in classic desk")
+					}}</a>
 				</div>
 			</div>
 			<button type="button" class="btn-ink" :disabled="report.loading" @click="report.run()">
@@ -103,13 +103,14 @@
 			v-if="report.unsupported.length"
 			class="rounded-lg bg-line-2 px-4 py-2 text-[12.5px] text-ink-2"
 		>
-			Parts of this report's script ({{ report.unsupported.slice(0, 2).join(", ") }}) run
-			only in the classic desk.
+			{{ " " }}{{ __("Parts of this report's script (")
+			}}{{ report.unsupported.slice(0, 2).join(", ")
+			}}{{ __(") run only in the classic desk.") }}{{ " " }}
 		</p>
 
 		<section
 			v-if="report.form && visibleFilters.length"
-			aria-label="Filters"
+			:aria-label="__('Filters')"
 			class="grid grid-cols-2 gap-x-8 gap-y-2 rounded-xl border border-line bg-surf px-5 py-4 lg:grid-cols-3"
 		>
 			<Field
@@ -153,7 +154,7 @@
 
 		<section
 			v-if="chart && !chartHidden && report.rows.length"
-			aria-label="Chart"
+			:aria-label="__('Chart')"
 			class="rounded-xl border border-line bg-surf px-5 py-4"
 		>
 			<ReportChart :chart="chart" :title="`${name} chart`" />
@@ -164,18 +165,22 @@
 			class="flex flex-wrap items-center gap-2 rounded-xl border border-line bg-surf px-4 py-3"
 			@submit.prevent="saveAs"
 		>
-			<label for="save-as-name" class="text-[13px] font-semibold text-ink-2"
-				>Save these filters and columns as</label
-			>
+			<label for="save-as-name" class="text-[13px] font-semibold text-ink-2">{{
+				__("Save these filters and columns as")
+			}}</label>
 			<input
 				id="save-as-name"
 				v-model="saveAsName"
 				type="text"
-				placeholder="Report name"
+				:placeholder="__('Report name')"
 				class="h-9 min-w-[240px] flex-grow rounded-lg border border-line bg-paper px-2.5 text-[13.5px]"
 			/>
-			<button type="submit" class="btn-ink" :disabled="!saveAsName.trim()">Save</button>
-			<button type="button" class="btn-ghost" @click="saveAsOpen = false">Cancel</button>
+			<button type="submit" class="btn-ink" :disabled="!saveAsName.trim()">
+				{{ __("Save") }}
+			</button>
+			<button type="button" class="btn-ghost" @click="saveAsOpen = false">
+				{{ __("Cancel") }}
+			</button>
 		</form>
 		<p
 			v-if="notice"
@@ -243,7 +248,7 @@
 				}}
 			</div>
 			<div v-if="report.loading" class="px-6 py-6 text-center text-[13px] text-mut">
-				Running…
+				{{ __("Running…") }}
 			</div>
 		</div>
 
@@ -366,8 +371,8 @@ async function run() {
 				total[c.fieldname] = isNum(c)
 					? rows.reduce((a, r) => a + (Number(r[c.fieldname]) || 0), 0)
 					: i === 0
-						? "Total"
-						: "";
+					  ? "Total"
+					  : "";
 			});
 			rows.push(total);
 		}
@@ -455,7 +460,9 @@ function printableHtml() {
 h1{font-size:18px;margin:0 0 4px}p{color:#4A5068;margin:0 0 14px}
 table{width:100%;border-collapse:collapse}th,td{padding:4px 6px;border-bottom:1px solid #E6E8F0}
 th{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#6B7083}</style></head>
-<body><h1>${esc(props.name)}</h1><p>${filters}</p><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></body></html>`;
+<body><h1>${esc(
+		props.name,
+	)}</h1><p>${filters}</p><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></body></html>`;
 }
 function printReport() {
 	const w = window.open("", "_blank");
@@ -547,6 +554,20 @@ watch(
 
 onMounted(async () => {
 	try {
+		// Reports built in the Report view open there, with their columns and grouping.
+		const meta = await call("frappe.client.get_value", {
+			doctype: "Report",
+			filters: { name: props.name },
+			fieldname: ["report_type", "ref_doctype"],
+		}).catch(() => null);
+		if (meta?.report_type === "Report Builder" && meta.ref_doctype) {
+			router.replace({
+				name: "List",
+				params: { doctype: meta.ref_doctype },
+				query: { view: "report", report: props.name },
+			});
+			return;
+		}
 		await Promise.all([attachReportScript(report), loadColumnChoice()]);
 		await run();
 	} catch (e) {

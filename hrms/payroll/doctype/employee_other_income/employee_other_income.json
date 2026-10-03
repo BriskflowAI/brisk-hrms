@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_import": 1,
  "autoname": "HR-INCOME-.######",
  "creation": "2020-03-18 15:04:40.767434",
  "doctype": "DocType",
@@ -60,6 +61,7 @@
    "fieldtype": "Currency",
    "in_list_view": 1,
    "label": "Amount",
+   "non_negative": 1,
    "options": "Company:company:default_currency",
    "reqd": 1
   },
@@ -96,7 +98,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2024-03-27 13:09:40.255656",
+ "modified": "2026-09-01 18:39:51.520758",
  "modified_by": "Administrator",
  "module": "Payroll",
  "name": "Employee Other Income",

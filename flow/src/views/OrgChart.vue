@@ -2,8 +2,10 @@
 	<div class="flex flex-col gap-5 px-4 md:px-7 py-6">
 		<header class="flex flex-wrap items-end gap-3">
 			<div class="mr-auto">
-				<div class="kicker">People</div>
-				<h1 class="mt-1.5 text-[28px] leading-none md:text-[34px]">Org chart</h1>
+				<div class="kicker">{{ __("People") }}</div>
+				<h1 class="mt-1.5 text-[28px] leading-none md:text-[34px]">
+					{{ __("Org chart") }}
+				</h1>
 			</div>
 			<LinkInput
 				class="w-[260px]"
@@ -11,15 +13,15 @@
 				:get-query="
 					() => ({ filters: { status: 'Active', ...(company ? { company } : {}) } })
 				"
-				label="Find a person"
-				placeholder="Find a person…"
+				:label="__('Find a person')"
+				:placeholder="__('Find a person…')"
 				input-class="h-9 w-full rounded-lg border border-line bg-surf px-2.5 text-[13.5px] focus:border-acc focus:ring-1 focus:ring-acc"
 				@update:model-value="(e) => e && focus(e)"
 			/>
 			<select
 				v-if="companies.length > 1"
 				v-model="company"
-				aria-label="Company"
+				:aria-label="__('Company')"
 				class="h-9 rounded-lg border border-line bg-surf py-0 pl-2.5 pr-8 text-[13.5px]"
 			>
 				<option v-for="c in companies" :key="c" :value="c">{{ c }}</option>
@@ -34,9 +36,11 @@
 			{{ error }}
 		</p>
 
-		<div v-if="loading && !rows.length" class="text-[13.5px] text-mut">Loading…</div>
+		<div v-if="loading && !rows.length" class="text-[13.5px] text-mut">
+			{{ __("Loading…") }}
+		</div>
 		<p v-else-if="!rows[0]?.length" class="text-[13.5px] text-mut">
-			No active employees in {{ company || "this company" }}.
+			{{ " " }}{{ __("No active employees in") }} {{ company || "this company" }}.
 		</p>
 
 		<!-- One row per level: the people at the top, then the reports of whoever is picked. -->
@@ -50,7 +54,7 @@
 				<span aria-hidden="true">↳</span>
 				<span
 					><b class="text-ink-2">{{ path[level - 1]?.name }}</b
-					>'s team · {{ row.length }}</span
+					>{{ __("'s team ·") }} {{ row.length }}</span
 				>
 			</div>
 			<ul class="flex flex-wrap gap-2.5">
@@ -76,7 +80,8 @@
 								v-if="p.connections"
 								class="mt-0.5 block text-[11.5px] font-semibold text-acc"
 								>{{ p.connections }}
-								{{ p.connections === 1 ? "person" : "people" }} below</span
+								{{ p.connections === 1 ? "person" : "people" }}
+								{{ __("below") }}</span
 							>
 						</span>
 					</button>
@@ -93,7 +98,7 @@
 			<router-link
 				:to="{ name: 'Form', params: { doctype: 'Employee', name: last.id } }"
 				class="text-[13px] font-semibold text-acc"
-				>Open profile →</router-link
+				>{{ __("Open profile →") }}</router-link
 			>
 		</div>
 	</div>

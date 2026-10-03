@@ -20,18 +20,18 @@
 		<div
 			v-if="open"
 			role="dialog"
-			aria-label="Notifications"
+			:aria-label="__('Notifications')"
 			class="absolute right-0 top-full z-50 mt-2 flex max-h-[min(560px,80vh)] w-[min(380px,calc(100vw-16px))] flex-col overflow-hidden rounded-xl border border-line bg-surf text-ink shadow-xl"
 		>
 			<div class="flex items-center gap-2 border-b border-line-2 px-4 py-3">
-				<span class="flex-grow text-[14px] font-bold">Notifications</span>
+				<span class="flex-grow text-[14px] font-bold">{{ __("Notifications") }}</span>
 				<button
 					v-if="unread"
 					type="button"
 					class="text-[12.5px] font-semibold text-acc hover:underline"
 					@click="markAll"
 				>
-					Mark all as read
+					{{ __("Mark all as read") }}
 				</button>
 			</div>
 			<div class="min-h-0 flex-grow overflow-y-auto">
@@ -39,10 +39,10 @@
 					v-if="loading && !items.length"
 					class="px-4 py-8 text-center text-[13px] text-mut"
 				>
-					Loading…
+					{{ __("Loading…") }}
 				</div>
 				<div v-else-if="!items.length" class="px-4 py-10 text-center text-[13px] text-mut">
-					You're all caught up.
+					{{ __("You're all caught up.") }}
 				</div>
 				<button
 					v-for="n in items"
@@ -65,7 +65,7 @@
 					</span>
 					<span
 						v-if="!n.read"
-						aria-label="Unread"
+						:aria-label="__('Unread')"
 						class="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-acc"
 					/>
 				</button>
@@ -75,7 +75,7 @@
 					:to="{ name: 'List', params: { doctype: 'Notification Log' } }"
 					class="flex-1 px-4 py-2.5 font-semibold text-ink-2 hover:bg-side"
 					@click="open = false"
-					>See all</router-link
+					>{{ __("See all") }}</router-link
 				>
 				<router-link
 					:to="{
@@ -84,7 +84,7 @@
 					}"
 					class="flex-1 border-l border-line-2 px-4 py-2.5 text-right font-semibold text-ink-2 hover:bg-side"
 					@click="open = false"
-					>Settings</router-link
+					>{{ __("Settings") }}</router-link
 				>
 			</div>
 		</div>
@@ -99,6 +99,7 @@ import Icon from "./Icon.vue";
 import Avatar from "./Avatar.vue";
 import { ago, plainText } from "@/composables/format";
 import { useSession } from "@/composables/session";
+import { onNotification } from "@/composables/realtime";
 
 const router = useRouter();
 const { user } = useSession();
@@ -162,12 +163,18 @@ async function openItem(n) {
 // New notifications show up within a minute, and as soon as the tab is looked at again.
 let timer;
 const onFocus = () => document.visibilityState === "visible" && refreshCount();
+let stopRealtime = () => {};
 onMounted(() => {
 	refreshCount();
+	stopRealtime = onNotification(() => {
+		refreshCount();
+		if (open.value) load();
+	});
 	timer = setInterval(() => document.visibilityState === "visible" && refreshCount(), 60_000);
 	document.addEventListener("visibilitychange", onFocus);
 });
 onBeforeUnmount(() => {
+	stopRealtime();
 	clearInterval(timer);
 	document.removeEventListener("visibilitychange", onFocus);
 });

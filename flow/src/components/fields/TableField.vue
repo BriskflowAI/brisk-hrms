@@ -77,7 +77,7 @@
 									class="text-[12.5px] text-mut hover:text-ink"
 									@click="moveRow(i, -1)"
 								>
-									Move up
+									{{ __("Move up") }}
 								</button>
 								<button
 									v-if="i < rows.length - 1"
@@ -85,7 +85,7 @@
 									class="text-[12.5px] text-mut hover:text-ink"
 									@click="moveRow(i, 1)"
 								>
-									Move down
+									{{ __("Move down") }}
 								</button>
 							</div>
 						</td>
@@ -93,7 +93,7 @@
 				</template>
 				<tr v-if="!rows.length">
 					<td :colspan="columns.length + 2" class="px-3 py-4 text-center text-mut">
-						No rows yet
+						{{ __("No rows yet") }}
 					</td>
 				</tr>
 			</tbody>
@@ -107,7 +107,7 @@
 				class="text-[13px] font-semibold text-acc hover:text-acc-hover"
 				@click="add"
 			>
-				+ Add row
+				{{ __("+ Add row") }}
 			</button>
 		</div>
 	</div>

@@ -45,7 +45,7 @@
 			<div
 				v-if="views.length > 1"
 				role="group"
-				aria-label="View"
+				:aria-label="__('View')"
 				class="flex h-9 rounded-lg border border-line bg-surf p-0.5"
 			>
 				<button
@@ -65,7 +65,7 @@
 				<button
 					type="button"
 					class="btn-ghost px-2.5"
-					aria-label="More"
+					:aria-label="__('More')"
 					:aria-expanded="menu === 'more'"
 					@click="toggleMenu('more')"
 				>
@@ -74,10 +74,10 @@
 				<div v-if="menu === 'more'" class="menu right-0 w-[220px]">
 					<template v-if="list.perms.export">
 						<button type="button" class="menu-item" @click="exportRows('Excel')">
-							Export to Excel
+							{{ __("Export to Excel") }}
 						</button>
 						<button type="button" class="menu-item" @click="exportRows('CSV')">
-							Export to CSV
+							{{ __("Export to CSV") }}
 						</button>
 						<div class="my-1 border-t border-line-2" />
 					</template>
@@ -87,12 +87,11 @@
 							doctype,
 						)}`"
 						class="menu-item block"
-						>Import</a
+						>{{ __("Import") }}</a
 					>
-					<a :href="classicUrl(doctype) + '/view/report'" class="menu-item block"
-						>Report view</a
-					>
-					<a :href="classicUrl(doctype)" class="menu-item block">Open in classic desk</a>
+					<a :href="classicUrl(doctype)" class="menu-item block">{{
+						__("Open in classic desk")
+					}}</a>
 				</div>
 			</div>
 
@@ -117,8 +116,12 @@
 			v-if="list.unsupported.length"
 			class="rounded-lg bg-line-2 px-4 py-2 text-[12.5px] text-ink-2"
 		>
-			Some of this list's extras ({{ list.unsupported.slice(0, 2).join(", ") }}) run only in
-			the <a :href="classicUrl(doctype)" class="font-semibold text-acc">classic desk</a>.
+			{{ " " }}{{ __("Some of this list's extras (")
+			}}{{ list.unsupported.slice(0, 2).join(", ") }}{{ __(") run only in the") }}
+			<a :href="classicUrl(doctype)" class="font-semibold text-acc">{{
+				__("classic desk")
+			}}</a
+			>.
 		</p>
 
 		<!-- Filters -->
@@ -176,16 +179,16 @@
 					:aria-expanded="menu === 'filter'"
 					@click="toggleMenu('filter')"
 				>
-					<Icon name="filter" :size="14" /> Filter
+					<Icon name="filter" :size="14" /> {{ __("Filter") }}{{ " " }}
 				</button>
 				<div v-if="menu === 'filter'" class="menu left-0 w-[360px] p-3">
 					<div class="flex flex-col gap-2">
 						<select
 							v-model="draft.field"
-							aria-label="Field"
+							:aria-label="__('Field')"
 							class="h-9 rounded-lg border border-line bg-paper px-2.5 text-[13px]"
 						>
-							<option value="">Choose a field</option>
+							<option value="">{{ __("Choose a field") }}</option>
 							<option
 								v-for="df in filterableFields"
 								:key="df.fieldname"
@@ -197,7 +200,7 @@
 						<div class="flex gap-2">
 							<select
 								v-model="draft.op"
-								aria-label="Condition"
+								:aria-label="__('Condition')"
 								class="h-9 w-[130px] rounded-lg border border-line bg-paper px-2 text-[13px]"
 							>
 								<option v-for="o in OPERATORS" :key="o.value" :value="o.value">
@@ -208,8 +211,8 @@
 								v-if="!['is set', 'is not set'].includes(draft.op)"
 								v-model="draft.value"
 								type="text"
-								aria-label="Value"
-								placeholder="Value"
+								:aria-label="__('Value')"
+								:placeholder="__('Value')"
 								class="h-9 min-w-0 flex-grow rounded-lg border border-line bg-paper px-2.5 text-[13px]"
 								@keydown.enter="applyDraft"
 							/>
@@ -220,7 +223,7 @@
 							:disabled="!draft.field"
 							@click="applyDraft"
 						>
-							Add filter
+							{{ __("Add filter") }}
 						</button>
 					</div>
 				</div>
@@ -270,7 +273,7 @@
 				list.total === null ? "" : `${list.rows.length} of ${list.total}`
 			}}</span>
 			<ColumnPicker
-				v-if="list.meta"
+				v-if="list.meta && view === 'list'"
 				v-model="customColumns"
 				:fields="columnChoices"
 				:defaults="defaultColumns.map((f) => f.fieldname)"
@@ -299,10 +302,36 @@
 				class="text-[12.5px] text-mut hover:text-ink"
 				@click="list.clearFilters()"
 			>
-				Clear all
+				{{ __("Clear all") }}
 			</button>
 		</div>
 
+		<GanttView
+			v-if="view === 'gantt' && calendar"
+			:doctype="doctype"
+			:settings="calendar"
+			:filters="serverFilters()"
+		/>
+		<ImageView
+			v-if="view === 'image' && list.meta"
+			:doctype="doctype"
+			:meta="list.meta"
+			:filters="serverFilters()"
+		/>
+		<MapView
+			v-if="view === 'map' && list.meta"
+			:doctype="doctype"
+			:meta="list.meta"
+			:filters="serverFilters()"
+		/>
+		<ReportGrid
+			v-if="view === 'report' && list.meta"
+			:doctype="doctype"
+			:meta="list.meta"
+			:filters="serverFilters()"
+			:perms="list.perms"
+			@filters="applyReportFilters"
+		/>
 		<TreeView
 			v-if="view === 'tree' && tree"
 			:doctype="doctype"
@@ -331,7 +360,7 @@
 			class="flex flex-wrap items-center gap-2 rounded-xl bg-ink px-4 py-2.5 text-surf"
 		>
 			<span class="mr-2 text-[13.5px] font-semibold"
-				>{{ list.selected.length }} selected</span
+				>{{ list.selected.length }} {{ __("selected") }}</span
 			>
 			<button
 				v-if="list.perms.write && list.perms.bulk_actions"
@@ -339,7 +368,7 @@
 				class="bulk-btn"
 				@click="bulkEditOpen = true"
 			>
-				Edit
+				{{ __("Edit") }}
 			</button>
 			<button
 				v-if="list.meta?.is_submittable && list.perms.submit && list.perms.bulk_actions"
@@ -347,7 +376,7 @@
 				class="bulk-btn"
 				@click="confirmBulk('submit')"
 			>
-				Submit
+				{{ __("Submit") }}
 			</button>
 			<button
 				v-if="list.meta?.is_submittable && list.perms.cancel && list.perms.bulk_actions"
@@ -355,7 +384,7 @@
 				class="bulk-btn"
 				@click="confirmBulk('cancel')"
 			>
-				Cancel
+				{{ __("Cancel") }}
 			</button>
 			<button
 				v-if="list.perms.delete && list.perms.bulk_actions"
@@ -363,20 +392,22 @@
 				class="bulk-btn text-[#FFB4B4]"
 				@click="confirmBulk('delete')"
 			>
-				Delete
+				{{ __("Delete") }}
 			</button>
 			<template v-if="list.perms.bulk_actions">
 				<button type="button" class="bulk-btn" @click="bulkMode = 'assign'">
-					Assign to
+					{{ __("Assign to") }}
 				</button>
-				<button type="button" class="bulk-btn" @click="bulkMode = 'tags'">Add tags</button>
+				<button type="button" class="bulk-btn" @click="bulkMode = 'tags'">
+					{{ __("Add tags") }}
+				</button>
 				<button
 					v-if="list.perms.print"
 					type="button"
 					class="bulk-btn"
 					@click="bulkMode = 'print'"
 				>
-					Print
+					{{ __("Print") }}
 				</button>
 			</template>
 			<button
@@ -385,7 +416,7 @@
 				class="bulk-btn"
 				@click="exportRows('Excel', true)"
 			>
-				Export
+				{{ __("Export") }}
 			</button>
 			<button
 				v-for="b in actionItems"
@@ -401,7 +432,7 @@
 				class="ml-auto text-[13px] text-lime"
 				@click="list.selected = []"
 			>
-				Clear
+				{{ __("Clear") }}
 			</button>
 		</div>
 
@@ -428,7 +459,7 @@
 						<th class="w-10 px-3.5 py-2.5">
 							<input
 								type="checkbox"
-								aria-label="Select all"
+								:aria-label="__('Select all')"
 								:checked="allSelected"
 								:indeterminate.prop="list.selected.length && !allSelected"
 								class="h-4 w-4 rounded border-line text-acc focus:ring-acc"
@@ -443,7 +474,7 @@
 						>
 							{{ __(f.label) }}
 						</th>
-						<th :class="th">Status</th>
+						<th :class="th">{{ __("Status") }}</th>
 						<th v-if="list.settings?.button" :class="th" />
 					</tr>
 				</thead>
@@ -538,7 +569,7 @@
 				</p>
 			</div>
 			<div v-if="list.loading" class="px-6 py-6 text-center text-[13px] text-mut">
-				Loading…
+				{{ __("Loading…") }}
 			</div>
 		</div>
 
@@ -552,16 +583,16 @@
 			class="flex items-center justify-center gap-2"
 		>
 			<button type="button" class="btn-ghost" @click="list.reload(true)">
-				Load {{ list.pageLength }} more
+				{{ " " }}{{ __("Load") }} {{ list.pageLength }} {{ __("more") }}{{ " " }}
 			</button>
 			<select
 				v-model.number="list.pageLength"
-				aria-label="Page size"
+				:aria-label="__('Page size')"
 				class="h-9 rounded-lg border border-line bg-surf px-2 text-[13px]"
 			>
-				<option :value="20">20 at a time</option>
-				<option :value="100">100 at a time</option>
-				<option :value="500">500 at a time</option>
+				<option :value="20">{{ __("20 at a time") }}</option>
+				<option :value="100">{{ __("100 at a time") }}</option>
+				<option :value="500">{{ __("500 at a time") }}</option>
 			</select>
 		</div>
 
@@ -578,15 +609,15 @@
 				class="w-[440px] rounded-2xl border border-line bg-surf p-6 shadow-2xl"
 			>
 				<h2 id="bulk-edit-title" class="text-[21px]">
-					Edit {{ list.selected.length }} {{ label.toLowerCase() }}
+					{{ " " }}{{ __("Edit") }} {{ list.selected.length }} {{ label.toLowerCase() }}
 				</h2>
 				<div class="mt-4 flex flex-col gap-3">
 					<select
 						v-model="bulk.field"
-						aria-label="Field"
+						:aria-label="__('Field')"
 						class="h-9 rounded-lg border border-line bg-paper px-2.5 text-[13.5px]"
 					>
-						<option value="">Choose a field</option>
+						<option value="">{{ __("Choose a field") }}</option>
 						<option
 							v-for="df in editableFields"
 							:key="df.fieldname"
@@ -598,14 +629,14 @@
 					<input
 						v-model="bulk.value"
 						type="text"
-						aria-label="New value"
-						placeholder="New value"
+						:aria-label="__('New value')"
+						:placeholder="__('New value')"
 						class="h-9 rounded-lg border border-line bg-paper px-2.5 text-[13.5px]"
 					/>
 				</div>
 				<div class="mt-5 flex justify-end gap-2">
 					<button type="button" class="btn-ghost" @click="bulkEditOpen = false">
-						Back
+						{{ __("Back") }}
 					</button>
 					<button
 						type="button"
@@ -613,7 +644,7 @@
 						:disabled="!bulk.field"
 						@click="bulkAction('update')"
 					>
-						Update
+						{{ __("Update") }}
 					</button>
 				</div>
 			</div>
@@ -635,7 +666,7 @@
 				<p class="mt-2 text-[14px] text-ink-2">{{ confirming.body }}</p>
 				<div class="mt-5 flex justify-end gap-2">
 					<button type="button" class="btn-ghost" @click="confirming = null">
-						Back
+						{{ __("Back") }}
 					</button>
 					<button
 						type="button"
@@ -674,8 +705,13 @@ import GroupBy from "@/components/list/GroupBy.vue";
 import SavedFilters from "@/components/list/SavedFilters.vue";
 import CalendarView from "@/components/list/CalendarView.vue";
 import TreeView from "@/components/list/TreeView.vue";
+import ReportGrid from "@/components/list/ReportGrid.vue";
+import GanttView from "@/components/list/GanttView.vue";
+import ImageView from "@/components/list/ImageView.vue";
+import MapView from "@/components/list/MapView.vue";
 import BoardView from "@/components/list/BoardView.vue";
 import { useLiveCheck } from "@/composables/live";
+import { onListUpdate } from "@/composables/realtime";
 import { getMeta, isLayout, isTable, listFields, titleField } from "@/composables/api";
 import {
 	attachListScript,
@@ -712,9 +748,20 @@ const bulkEditOpen = ref(false);
 const bulkMode = ref(null);
 const calendar = ref(null); // the desk's calendar settings, when this type has a calendar
 const tree = ref(null); // the desk's tree settings, for record types kept as a tree
+const hasMap = computed(() => {
+	const f = list.meta?.fields || [];
+	return (
+		f.some((d) => d.fieldname === "location" && d.fieldtype === "Geolocation") ||
+		(f.some((d) => d.fieldname === "latitude") && f.some((d) => d.fieldname === "longitude"))
+	);
+});
 const views = computed(() => [
 	{ key: "list", label: "List", icon: "list" },
+	{ key: "report", label: "Report", icon: "table" },
 	...(calendar.value ? [{ key: "calendar", label: "Calendar", icon: "cal" }] : []),
+	...(calendar.value ? [{ key: "gantt", label: "Gantt", icon: "gantt" }] : []),
+	...(list.meta?.image_field ? [{ key: "image", label: "Image", icon: "image" }] : []),
+	...(hasMap.value ? [{ key: "map", label: "Map", icon: "pin" }] : []),
 	...(tree.value ? [{ key: "tree", label: "Tree", icon: "tree" }] : []),
 	...((list.meta?.fields || []).some((f) => f.fieldtype === "Select" && f.options && !f.hidden)
 		? [{ key: "board", label: "Board", icon: "board" }]
@@ -792,7 +839,7 @@ const defaultColumns = computed(() =>
 	list.meta
 		? listFields(list.meta).filter(
 				(f) => f.fieldname !== titleKey.value && f.fieldname !== "status",
-			)
+		  )
 		: [],
 );
 const columnChoices = computed(() =>
@@ -978,6 +1025,15 @@ function addFilter(f) {
 	list.filters.push(f);
 	load();
 }
+// A saved report's filters, stored the desk's way: [doctype, field, operator, value].
+function applyReportFilters(tuples) {
+	list.filters = tuples.map((t) => {
+		const [field, op, value] = t.length === 4 ? t.slice(1) : t;
+		if (op === "is")
+			return { field, op: value === "set" ? "is set" : "is not set", value: "" };
+		return { field, op, value };
+	});
+}
 function applySaved(filters) {
 	list.filters = filters;
 	load();
@@ -1044,7 +1100,7 @@ async function load(more = false) {
 			? [
 					[props.doctype, "name", "like", `%${q}%`],
 					...(titleKey.value ? [[props.doctype, titleKey.value, "like", `%${q}%`]] : []),
-				]
+			  ]
 			: null;
 		const [page, count] = await Promise.all([
 			call("frappe.client.get_list", {
@@ -1062,7 +1118,7 @@ async function load(more = false) {
 						doctype: props.doctype,
 						filters: serverFilters(),
 						or_filters: orFilters,
-					}).catch(() => null),
+				  }).catch(() => null),
 		]);
 		if (mine !== seq) return;
 		list.rows = more ? [...list.rows, ...page] : page;
@@ -1178,7 +1234,7 @@ async function bulkAction(action) {
 				? "Working on it in the background. Refresh in a minute to see the result."
 				: `${done} of ${names.length} done.${
 						failed?.length ? ` Not changed: ${failed.join(", ")}` : ""
-					}`;
+				  }`;
 		list.selected = [];
 		Object.assign(bulk, { field: "", value: "" });
 		await load();
@@ -1249,6 +1305,21 @@ useLiveCheck(async () => {
 	lastStamp = stamp;
 	if (changed && !list.selected.length && !menu.value && !bulkMode.value && !bulkEditOpen.value)
 		await load();
+});
+
+// Realtime: refresh as soon as a record of this type changes, with the same courtesy as above.
+let listTimer;
+const stopListUpdates = onListUpdate(props.doctype, () => {
+	clearTimeout(listTimer);
+	listTimer = setTimeout(() => {
+		if (!list.meta || list.loading || view.value !== "list") return;
+		if (list.selected.length || menu.value || bulkMode.value || bulkEditOpen.value) return;
+		load();
+	}, 400);
+});
+onBeforeUnmount(() => {
+	stopListUpdates();
+	clearTimeout(listTimer);
 });
 
 // ---- the user's columns, saved with their other list settings for this record type ----

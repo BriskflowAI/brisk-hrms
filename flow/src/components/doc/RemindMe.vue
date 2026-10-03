@@ -12,7 +12,7 @@
 			class="flex w-full max-w-[420px] flex-col gap-4 rounded-2xl border border-line bg-surf p-6 shadow-2xl"
 			@submit.prevent="save"
 		>
-			<h2 id="remind-title" class="text-[21px]">Remind me</h2>
+			<h2 id="remind-title" class="text-[21px]">{{ __("Remind me") }}</h2>
 			<div class="flex flex-wrap gap-1.5">
 				<button
 					v-for="q in quick"
@@ -25,11 +25,11 @@
 				</button>
 			</div>
 			<label class="flex flex-col gap-1">
-				<span class="text-[12.5px] font-semibold text-ink-2">When</span>
+				<span class="text-[12.5px] font-semibold text-ink-2">{{ __("When") }}</span>
 				<input v-model="when" type="datetime-local" required :class="cls" />
 			</label>
 			<label class="flex flex-col gap-1">
-				<span class="text-[12.5px] font-semibold text-ink-2">Note</span>
+				<span class="text-[12.5px] font-semibold text-ink-2">{{ __("Note") }}</span>
 				<textarea v-model="note" rows="2" :class="cls" />
 			</label>
 			<p
@@ -40,7 +40,9 @@
 				{{ error }}
 			</p>
 			<div class="flex justify-end gap-2">
-				<button type="button" class="btn-ghost" @click="open = false">Cancel</button>
+				<button type="button" class="btn-ghost" @click="open = false">
+					{{ __("Cancel") }}
+				</button>
 				<button type="submit" class="btn-ink" :disabled="!when || saving">
 					{{ saving ? "Saving…" : "Set reminder" }}
 				</button>

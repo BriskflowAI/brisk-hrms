@@ -3,7 +3,7 @@
  "creation": "2025-10-26 21:53:46.590129",
  "docstatus": 0,
  "doctype": "Workspace Sidebar",
- "header_icon": "non-profit",
+ "header_icon": "tree-palm",
  "idx": 0,
  "items": [
   {
@@ -221,9 +221,9 @@
    "type": "Link"
   }
  ],
- "modified": "2026-07-03 14:12:08.828397",
+ "modified": "2026-08-07 12:00:00.000000",
  "modified_by": "Administrator",
- "module": "HR",
+ "module": "Leaves",
  "name": "Leaves",
  "owner": "Administrator",
  "standard": 1,

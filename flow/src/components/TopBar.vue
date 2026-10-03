@@ -4,7 +4,7 @@
 	>
 		<button
 			type="button"
-			aria-label="Menu"
+			:aria-label="__('Menu')"
 			class="flex h-9 w-9 items-center justify-center rounded-lg text-ink-2 hover:bg-side md:hidden"
 			@click="$emit('menu')"
 		>
@@ -13,13 +13,13 @@
 		<button
 			v-if="collapsed"
 			type="button"
-			aria-label="Expand sidebar"
+			:aria-label="__('Expand sidebar')"
 			class="hidden h-8 w-8 md:flex items-center justify-center rounded-lg text-mut hover:bg-side"
 			@click="$emit('expand')"
 		>
 			<Icon name="expand" :size="16" />
 		</button>
-		<nav aria-label="Breadcrumb" class="min-w-0 flex-1 truncate text-[13px] text-mut">
+		<nav :aria-label="__('Breadcrumb')" class="min-w-0 flex-1 truncate text-[13px] text-mut">
 			<template v-for="(c, i) in crumbs" :key="i">
 				<span v-if="i" aria-hidden="true" class="mx-1.5 hidden md:inline">/</span>
 				<router-link
@@ -39,12 +39,14 @@
 		</nav>
 		<button
 			type="button"
-			aria-label="Search"
+			:aria-label="__('Search')"
 			class="flex h-[34px] w-9 shrink-0 items-center justify-center gap-2.5 rounded-[9px] border border-line bg-paper px-2.5 text-left text-[13.5px] text-mut hover:border-acc/40 md:w-[400px] md:justify-start"
 			@click="$emit('search')"
 		>
 			<Icon name="search" :size="15" />
-			<span class="hidden flex-grow md:inline">Search people, records, reports…</span>
+			<span class="hidden flex-grow md:inline">{{
+				__("Search people, records, reports…")
+			}}</span>
 			<kbd class="kbd hidden md:inline-flex">{{ modKey }}K</kbd>
 		</button>
 		<div class="flex items-center justify-end gap-2 md:flex-1">
@@ -52,7 +54,7 @@
 			<NotificationsMenu />
 			<a href="/app" class="btn-ghost hidden h-8 px-3 text-[13px] md:inline-flex">
 				<Icon name="ext" :size="14" />
-				Classic desk
+				{{ __("Classic desk") }}{{ " " }}
 			</a>
 		</div>
 	</header>

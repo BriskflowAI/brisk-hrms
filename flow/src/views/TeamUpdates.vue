@@ -2,16 +2,18 @@
 	<div class="flex max-w-[860px] flex-col gap-5 px-4 md:px-7 py-6">
 		<header class="flex flex-wrap items-end gap-3">
 			<div class="mr-auto">
-				<div class="kicker">People</div>
-				<h1 class="mt-1.5 text-[28px] leading-none md:text-[34px]">Team updates</h1>
+				<div class="kicker">{{ __("People") }}</div>
+				<h1 class="mt-1.5 text-[28px] leading-none md:text-[34px]">
+					{{ __("Team updates") }}
+				</h1>
 				<p class="mt-2 text-[13.5px] text-mut">
-					Replies to the daily work summary emails, newest first.
+					{{ __("Replies to the daily work summary emails, newest first.") }}
 				</p>
 			</div>
 			<router-link
 				:to="{ name: 'List', params: { doctype: 'Daily Work Summary Group' } }"
 				class="btn-ghost"
-				>Summary groups</router-link
+				>{{ __("Summary groups") }}</router-link
 			>
 		</header>
 
@@ -50,11 +52,15 @@
 		</section>
 
 		<p v-if="!loading && !items.length && !error" class="text-[13.5px] text-mut">
-			No updates yet. Set up a Daily Work Summary Group to ask your team what they worked on.
+			{{
+				__(
+					"No updates yet. Set up a Daily Work Summary Group to ask your team what they worked on.",
+				)
+			}}
 		</p>
-		<div v-if="loading" class="text-[13.5px] text-mut">Loading…</div>
+		<div v-if="loading" class="text-[13.5px] text-mut">{{ __("Loading…") }}</div>
 		<button v-else-if="more" type="button" class="btn-ghost self-start" @click="load">
-			Load more
+			{{ __("Load more") }}
 		</button>
 	</div>
 </template>

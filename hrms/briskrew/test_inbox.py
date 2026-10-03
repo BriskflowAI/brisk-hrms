@@ -14,6 +14,7 @@ LEAVE_TYPE = "_Test Leave Type"
 class TestInbox(HRMSTestSuite):
 	def setUp(self):
 		frappe.set_user("Administrator")
+		self.addCleanup(frappe.set_user, "Administrator")
 
 		self.manager_user = "inbox_manager@example.com"
 		self.manager = make_employee(self.manager_user, "_Test Company")
@@ -42,9 +43,6 @@ class TestInbox(HRMSTestSuite):
 			to_date=add_months(start, 11),
 			leaves=10,
 		)
-
-	def tearDown(self):
-		frappe.set_user("Administrator")
 
 	def _leave(self, employee=None, approver=None, days=2, offset=7):
 		from_date = add_days(nowdate(), offset)

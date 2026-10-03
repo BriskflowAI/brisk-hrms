@@ -10,6 +10,7 @@ lead@briskrew.demo / the password printed at the end.
 """
 
 import frappe
+from frappe import _
 from frappe.utils import add_days, add_months, getdate, nowdate
 
 DEMO_PASSWORD = "briskrew-demo-1"
@@ -33,7 +34,7 @@ def setup_site(
 	(company, fiscal year, chart of accounts) when no company exists yet, then seeds the demo team.
 	Used by the Codespaces setup in .devcontainer/."""
 	if not frappe.conf.developer_mode:
-		frappe.throw("Demo data is for test sites only. Enable developer_mode on the site first.")
+		frappe.throw(_("Demo data is for test sites only. Enable developer_mode on the site first."))
 
 	if not frappe.db.exists("Company", {}):
 		from frappe.desk.page.setup_wizard.setup_wizard import setup_complete
@@ -54,7 +55,7 @@ def setup_site(
 			}
 		)
 		if (res or {}).get("status") not in (None, "ok"):
-			frappe.throw(f"Setup wizard failed: {res}")
+			frappe.throw(_("Setup wizard failed: {0}").format(res))
 		frappe.db.commit()  # nosemgrep
 
 	result = seed(frappe.db.get_value("Company", {}, "name"))
@@ -64,11 +65,11 @@ def setup_site(
 
 def seed(company: str | None = None) -> dict:
 	if not frappe.conf.developer_mode and not frappe.flags.in_test:
-		frappe.throw("Demo data is for test sites only. Enable developer_mode on the site first.")
+		frappe.throw(_("Demo data is for test sites only. Enable developer_mode on the site first."))
 
 	company = company or frappe.db.get_value("Company", {}, "name")
 	if not company:
-		frappe.throw("Create a company first (finish the setup wizard).")
+		frappe.throw(_("Create a company first (finish the setup wizard)."))
 
 	department = _department(company)
 	holiday_list = _holiday_list()
@@ -112,7 +113,8 @@ def seed(company: str | None = None) -> dict:
 	_performance(company, lead, team, today)
 	_hiring(company, lead_user, today)
 
-	frappe.db.commit()
+	# Run from the command line, not inside a request, so nothing else commits for it.
+	frappe.db.commit()  # nosemgrep
 	return {
 		"login": lead_user,
 		"password": DEMO_PASSWORD,

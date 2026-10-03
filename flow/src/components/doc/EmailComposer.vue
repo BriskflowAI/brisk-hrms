@@ -20,7 +20,7 @@
 				</h2>
 				<button
 					type="button"
-					aria-label="Close"
+					:aria-label="__('Close')"
 					class="text-mut hover:text-ink"
 					@click="open = false"
 				>
@@ -37,7 +37,7 @@
 							class="ml-2 font-normal text-acc"
 							@click="showCc = true"
 						>
-							Cc / Bcc
+							{{ __("Cc / Bcc") }}
 						</button></label
 					>
 					<input
@@ -74,19 +74,23 @@
 				</div>
 				<div class="grid grid-cols-[1fr_200px] gap-3">
 					<label class="flex flex-col gap-1">
-						<span class="text-[12.5px] font-semibold text-ink-2">Subject</span>
+						<span class="text-[12.5px] font-semibold text-ink-2">{{
+							__("Subject")
+						}}</span>
 						<input v-model="draft.subject" type="text" :class="cls" />
 					</label>
 					<label class="flex flex-col gap-1">
-						<span class="text-[12.5px] font-semibold text-ink-2">Template</span>
+						<span class="text-[12.5px] font-semibold text-ink-2">{{
+							__("Template")
+						}}</span>
 						<select v-model="template" :class="cls" @change="applyTemplate">
-							<option value="">None</option>
+							<option value="">{{ __("None") }}</option>
 							<option v-for="t in templates" :key="t" :value="t">{{ t }}</option>
 						</select>
 					</label>
 				</div>
 				<label class="flex flex-col gap-1">
-					<span class="text-[12.5px] font-semibold text-ink-2">Message</span>
+					<span class="text-[12.5px] font-semibold text-ink-2">{{ __("Message") }}</span>
 					<textarea v-model="draft.message" rows="9" :class="cls" />
 				</label>
 				<div class="flex flex-wrap items-center gap-x-5 gap-y-2 text-[13px] text-ink-2">
@@ -96,15 +100,15 @@
 							type="checkbox"
 							class="rounded border-line text-acc"
 						/>
-						Attach as PDF
+						{{ __("Attach as PDF") }}{{ " " }}
 					</label>
 					<select
 						v-if="draft.attachPrint"
 						v-model="draft.printFormat"
-						aria-label="Print format"
+						:aria-label="__('Print format')"
 						class="h-8 rounded-md border border-line bg-paper px-2 text-[13px]"
 					>
-						<option value="">Standard</option>
+						<option value="">{{ __("Standard") }}</option>
 						<option v-for="p in printFormats" :key="p" :value="p">{{ p }}</option>
 					</select>
 					<label class="flex items-center gap-2">
@@ -113,7 +117,7 @@
 							type="checkbox"
 							class="rounded border-line text-acc"
 						/>
-						Send me a copy
+						{{ __("Send me a copy") }}{{ " " }}
 					</label>
 					<label class="flex items-center gap-2">
 						<input
@@ -121,12 +125,12 @@
 							type="checkbox"
 							class="rounded border-line text-acc"
 						/>
-						Ask for a read receipt
+						{{ __("Ask for a read receipt") }}{{ " " }}
 					</label>
 				</div>
 				<fieldset v-if="files.length" class="flex flex-col gap-1">
 					<legend class="mb-1 text-[12.5px] font-semibold text-ink-2">
-						Attach files from this record
+						{{ __("Attach files from this record") }}
 					</legend>
 					<label
 						v-for="a in files"
@@ -151,7 +155,9 @@
 				</p>
 			</div>
 			<div class="flex justify-end gap-2 border-t border-line-2 px-6 py-3.5">
-				<button type="button" class="btn-ghost" @click="open = false">Discard</button>
+				<button type="button" class="btn-ghost" @click="open = false">
+					{{ __("Discard") }}
+				</button>
 				<button type="submit" class="btn-ink" :disabled="sending || !draft.to.trim()">
 					<Icon name="mail" :size="15" /> {{ sending ? "Sending…" : "Send" }}
 				</button>
@@ -192,7 +198,7 @@ const addressFields = computed(() => [
 		? [
 				{ key: "cc", label: "Cc" },
 				{ key: "bcc", label: "Bcc" },
-			]
+		  ]
 		: []),
 ]);
 
