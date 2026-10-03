@@ -73,7 +73,20 @@ def apps() -> dict:
 	switcher. Mirrors the desk's app screen: public top-level workspaces the user's roles and
 	module settings allow, with the icon each app ships for its desk grid."""
 	from frappe.apps import get_apps
-	from frappe.utils.modules import is_module_visible
+
+	try:
+		from frappe.utils.modules import is_module_visible
+
+		permitted = None
+	except ImportError:
+		# Frappe v16: the desk's own list of workspaces this user may open (roles, blocked
+		# modules and domains already applied).
+		from frappe.desk.desktop import get_workspaces
+
+		permitted = {p.name for p in get_workspaces()["pages"]}
+
+		def is_module_visible(module):
+			return True
 
 	installed = frappe.get_installed_apps()
 	app_entries = get_apps()
@@ -99,6 +112,8 @@ def apps() -> dict:
 	groups = {}
 	for w in workspaces:
 		if w.get("parent_page"):
+			continue
+		if permitted is not None and w.name not in permitted:
 			continue
 		if w.module and not is_module_visible(w.module):
 			continue
@@ -184,6 +199,18 @@ def _desk_icon(app: str, label: str) -> str | None:
 		if os.path.exists(path):
 			return f"/assets/{app}/icons/desktop_icons/{style}/{name}"
 	return None
+
+
+@frappe.whitelist(methods=["GET"])
+def translations(lang: str | None = None) -> dict:
+	"""Frappe's translations for a language (the apps' catalogues plus the site's Translation
+	records), for briskrew's own text. Newer Frappe serves these as
+	frappe.translate.get_boot_translations; v16 only sends them inside the desk's boot."""
+	from frappe.translate import get_all_languages, get_all_translations
+
+	if not lang or lang not in get_all_languages():
+		lang = frappe.local.lang
+	return get_all_translations(lang)
 
 
 @frappe.whitelist()

@@ -1,7 +1,8 @@
 import { reactive, ref } from "vue";
 
 // Frappe's translations for the user's language, the same catalogue the desk uses (apps plus
-// the site's own Translation records). English needs nothing loaded.
+// the site's own Translation records), through briskrew's endpoint so it works on Frappe v16 and
+// newer. English needs nothing loaded.
 const messages = reactive({});
 export const lang = ref("en");
 const RTL = ["ar", "he", "fa", "ur", "ps", "ku", "dv", "yi"];
@@ -14,7 +15,7 @@ export async function loadTranslations(code) {
 	if (base === "en") return;
 	try {
 		const res = await fetch(
-			`/api/method/frappe.translate.get_boot_translations?lang=${encodeURIComponent(
+			`/api/method/hrms.briskrew.api.translations?lang=${encodeURIComponent(
 				lang.value,
 			)}`,
 		);
