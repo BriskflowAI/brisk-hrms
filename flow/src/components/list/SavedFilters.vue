@@ -1,10 +1,10 @@
 <template>
 	<!-- Saved filters are Frappe "List Filter" records, so they're shared with the classic desk. -->
-	<Dropdown label="Saved" icon="star" :width="'w-[300px]'" @click.capture="load">
+	<Dropdown :label="__('Saved')" icon="star" :width="'w-[300px]'" @click.capture="load">
 		<template #default="{ close }">
-			<div v-if="loading" class="px-3 py-2 text-[13px] text-mut">Loading…</div>
+			<div v-if="loading" class="px-3 py-2 text-[13px] text-mut">{{ __("Loading…") }}</div>
 			<div v-else-if="!saved.length" class="px-3 py-2 text-[13px] text-mut">
-				No saved filters yet.
+				{{ __("No saved filters yet.") }}
 			</div>
 			<div
 				v-for="s in saved"
@@ -17,7 +17,9 @@
 					@click="(apply(s), close())"
 				>
 					{{ s.filter_name }}
-					<span v-if="!s.for_user" class="text-[11.5px] text-mut">· everyone</span>
+					<span v-if="!s.for_user" class="text-[11.5px] text-mut">{{
+						__("· everyone")
+					}}</span>
 				</button>
 				<button
 					v-if="s.owner === user || s.for_user === user"
@@ -34,14 +36,14 @@
 				class="mt-1 flex flex-col gap-2 border-t border-line-2 px-3 pb-2 pt-2.5"
 				@submit.prevent="save"
 			>
-				<label class="text-[12px] font-semibold text-ink-2" for="saved-filter-name"
-					>Save the current filters</label
-				>
+				<label class="text-[12px] font-semibold text-ink-2" for="saved-filter-name">{{
+					__("Save the current filters")
+				}}</label>
 				<input
 					id="saved-filter-name"
 					v-model="name"
 					type="text"
-					placeholder="Name, e.g. Pending in Sales"
+					:placeholder="__('Name, e.g. Pending in Sales')"
 					class="h-8 rounded-md border border-line bg-paper px-2 text-[13px]"
 				/>
 				<label class="flex items-center gap-2 text-[12.5px] text-ink-2">
@@ -50,11 +52,11 @@
 						type="checkbox"
 						class="rounded border-line text-acc"
 					/>
-					Everyone can use it
+					{{ __("Everyone can use it") }}{{ " " }}
 				</label>
 				<p v-if="error" class="text-[12px] text-neg">{{ error }}</p>
 				<button type="submit" class="btn-ink h-8 self-end" :disabled="!name.trim()">
-					Save
+					{{ __("Save") }}
 				</button>
 			</form>
 		</template>

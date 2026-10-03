@@ -1,11 +1,18 @@
 <template>
 	<!-- The desk's Gantt view: each record as a bar from its start to its end date, using the same
 	     calendar settings (dates, title, events method) as the Calendar view. -->
-	<section aria-label="Gantt" class="overflow-hidden rounded-xl border border-line bg-surf">
+	<section
+		:aria-label="__('Gantt')"
+		class="overflow-hidden rounded-xl border border-line bg-surf"
+	>
 		<div class="flex flex-wrap items-center gap-2 border-b border-line-2 px-4 py-3">
 			<h2 class="mr-auto text-[19px]">{{ title }}</h2>
-			<span v-if="loading" class="text-[12.5px] text-mut">Loading…</span>
-			<div role="group" aria-label="Zoom" class="flex rounded-lg border border-line p-0.5">
+			<span v-if="loading" class="text-[12.5px] text-mut">{{ __("Loading…") }}</span>
+			<div
+				role="group"
+				:aria-label="__('Zoom')"
+				class="flex rounded-lg border border-line p-0.5"
+			>
 				<button
 					v-for="z in zooms"
 					:key="z.key"
@@ -19,12 +26,12 @@
 				</button>
 			</div>
 			<button type="button" class="btn-ghost h-8 px-3 text-[13px]" @click="go(0)">
-				Today
+				{{ __("Today") }}
 			</button>
 			<button
 				type="button"
 				class="btn-ghost h-8 w-8 justify-center px-0"
-				aria-label="Earlier"
+				:aria-label="__('Earlier')"
 				@click="go(-1)"
 			>
 				‹
@@ -32,7 +39,7 @@
 			<button
 				type="button"
 				class="btn-ghost h-8 w-8 justify-center px-0"
-				aria-label="Later"
+				:aria-label="__('Later')"
 				@click="go(1)"
 			>
 				›
@@ -99,7 +106,7 @@
 					v-if="!loading && !bars.length"
 					class="px-4 py-10 text-center text-[13.5px] text-mut"
 				>
-					Nothing in this period.
+					{{ __("Nothing in this period.") }}
 				</p>
 			</div>
 		</div>

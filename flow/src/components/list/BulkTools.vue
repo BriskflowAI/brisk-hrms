@@ -17,7 +17,7 @@
 
 			<template v-if="mode === 'assign'">
 				<div class="flex flex-col gap-1">
-					<span class="text-[12.5px] font-semibold text-ink-2">People</span>
+					<span class="text-[12.5px] font-semibold text-ink-2">{{ __("People") }}</span>
 					<div v-if="assign.users.length" class="flex flex-wrap gap-1.5">
 						<span
 							v-for="u in assign.users"
@@ -39,8 +39,8 @@
 						:key="assign.users.length"
 						doctype="User"
 						:get-query="() => ({ filters: { enabled: 1, user_type: 'System User' } })"
-						label="Add a person"
-						placeholder="Find a person…"
+						:label="__('Add a person')"
+						:placeholder="__('Find a person…')"
 						:input-class="cls"
 						@update:model-value="
 							(u) => u && !assign.users.includes(u) && assign.users.push(u)
@@ -49,54 +49,66 @@
 				</div>
 				<div class="grid grid-cols-2 gap-3">
 					<label class="flex flex-col gap-1">
-						<span class="text-[12.5px] font-semibold text-ink-2">Due by</span>
+						<span class="text-[12.5px] font-semibold text-ink-2">{{
+							__("Due by")
+						}}</span>
 						<input v-model="assign.date" type="date" :class="cls" />
 					</label>
 					<label class="flex flex-col gap-1">
-						<span class="text-[12.5px] font-semibold text-ink-2">Priority</span>
+						<span class="text-[12.5px] font-semibold text-ink-2">{{
+							__("Priority")
+						}}</span>
 						<select v-model="assign.priority" :class="cls">
-							<option>Low</option>
-							<option>Medium</option>
-							<option>High</option>
+							<option>{{ __("Low") }}</option>
+							<option>{{ __("Medium") }}</option>
+							<option>{{ __("High") }}</option>
 						</select>
 					</label>
 				</div>
 				<label class="flex flex-col gap-1">
-					<span class="text-[12.5px] font-semibold text-ink-2">Note</span>
+					<span class="text-[12.5px] font-semibold text-ink-2">{{ __("Note") }}</span>
 					<textarea v-model="assign.description" rows="2" :class="cls" />
 				</label>
 			</template>
 
 			<template v-else-if="mode === 'tags'">
 				<label class="flex flex-col gap-1">
-					<span class="text-[12.5px] font-semibold text-ink-2">Tags</span>
+					<span class="text-[12.5px] font-semibold text-ink-2">{{ __("Tags") }}</span>
 					<input
 						v-model="tags"
 						type="text"
-						placeholder="urgent, q4 review"
+						:placeholder="__('urgent, q4 review')"
 						:class="cls"
 						autofocus
 					/>
-					<span class="text-[12px] text-mut">Separate tags with commas.</span>
+					<span class="text-[12px] text-mut">{{
+						__("Separate tags with commas.")
+					}}</span>
 				</label>
 			</template>
 
 			<template v-else-if="mode === 'print'">
 				<label class="flex flex-col gap-1">
-					<span class="text-[12.5px] font-semibold text-ink-2">Print format</span>
+					<span class="text-[12.5px] font-semibold text-ink-2">{{
+						__("Print format")
+					}}</span>
 					<select v-model="print.format" :class="cls">
-						<option value="">Standard</option>
+						<option value="">{{ __("Standard") }}</option>
 						<option v-for="f in print.formats" :key="f" :value="f">{{ f }}</option>
 					</select>
 				</label>
 				<label class="flex flex-col gap-1">
-					<span class="text-[12.5px] font-semibold text-ink-2">Letter head</span>
+					<span class="text-[12.5px] font-semibold text-ink-2">{{
+						__("Letter head")
+					}}</span>
 					<select v-model="print.letterhead" :class="cls">
-						<option value="">No letter head</option>
+						<option value="">{{ __("No letter head") }}</option>
 						<option v-for="l in print.letterheads" :key="l" :value="l">{{ l }}</option>
 					</select>
 				</label>
-				<p class="text-[12.5px] text-mut">One PDF with every selected record.</p>
+				<p class="text-[12.5px] text-mut">
+					{{ __("One PDF with every selected record.") }}
+				</p>
 			</template>
 
 			<p
@@ -107,7 +119,7 @@
 				{{ error }}
 			</p>
 			<div class="flex justify-end gap-2">
-				<button type="button" class="btn-ghost" @click="close">Cancel</button>
+				<button type="button" class="btn-ghost" @click="close">{{ __("Cancel") }}</button>
 				<button type="submit" class="btn-ink" :disabled="busy || !ready">
 					{{ busy ? "Working…" : cta }}
 				</button>

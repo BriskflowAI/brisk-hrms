@@ -11,7 +11,7 @@
 			<button
 				v-if="!embedded"
 				type="button"
-				aria-label="Collapse sidebar"
+				:aria-label="__('Collapse sidebar')"
 				class="flex h-7 w-7 items-center justify-center rounded-md text-mut hover:bg-surf"
 				@click="$emit('collapse')"
 			>

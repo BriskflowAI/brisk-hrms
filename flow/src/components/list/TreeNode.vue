@@ -27,7 +27,7 @@
 				>{{ label }}</router-link
 			>
 			<span v-else class="truncate font-semibold">{{ label }}</span>
-			<span v-if="loading" class="text-[12px] text-mut">Loading…</span>
+			<span v-if="loading" class="text-[12px] text-mut">{{ __("Loading…") }}</span>
 			<router-link
 				v-if="canCreate && node.expandable && (node.value || node.isRoot)"
 				:to="{
@@ -36,7 +36,7 @@
 					query: node.value ? { [parentField]: node.value } : {},
 				}"
 				class="ml-auto hidden text-[12.5px] font-semibold text-acc group-hover:inline group-focus-within:inline"
-				>+ Add child</router-link
+				>{{ __("+ Add child") }}</router-link
 			>
 		</div>
 		<ul v-if="open && kids.length" role="group">
@@ -57,7 +57,7 @@
 			class="py-1 text-[12.5px] text-mut"
 			:style="{ paddingLeft: `${46 + (depth + 1) * 22}px` }"
 		>
-			Nothing under {{ label }}
+			{{ " " }}{{ __("Nothing under") }} {{ label }}
 		</div>
 	</li>
 </template>

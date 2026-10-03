@@ -19,7 +19,7 @@
 		<ul
 			v-if="people.length"
 			role="listbox"
-			aria-label="People to mention"
+			:aria-label="__('People to mention')"
 			class="absolute left-0 right-0 top-full z-20 mt-1 max-h-56 overflow-y-auto rounded-lg border border-line bg-surf py-1 shadow-xl"
 		>
 			<li
@@ -33,7 +33,7 @@
 			>
 				<Avatar :label="p.value" :size="20" />
 				<span class="font-semibold">{{ p.value }}</span>
-				<span v-if="p.is_group" class="text-[11.5px] text-mut">group</span>
+				<span v-if="p.is_group" class="text-[11.5px] text-mut">{{ __("group") }}</span>
 			</li>
 		</ul>
 		<div v-if="text.trim() || cancellable" class="flex gap-2">
@@ -51,11 +51,11 @@
 				class="h-8 px-2 text-[13px] text-mut hover:text-ink"
 				@click="$emit('cancel')"
 			>
-				Cancel
+				{{ __("Cancel") }}
 			</button>
-			<span v-else class="self-center text-[11.5px] text-mut"
-				>Type @ to mention someone</span
-			>
+			<span v-else class="self-center text-[11.5px] text-mut">{{
+				__("Type @ to mention someone")
+			}}</span>
 		</div>
 	</div>
 </template>

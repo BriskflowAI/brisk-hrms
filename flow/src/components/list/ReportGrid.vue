@@ -1,31 +1,33 @@
 <template>
 	<!-- The desk's Report view: a spreadsheet of any columns, edited in place, grouped with totals.
 	     Settings stay per user; "Save as report" makes a Report Builder report the desk opens too. -->
-	<section aria-label="Report view" class="flex flex-col gap-3">
+	<section :aria-label="__('Report view')" class="flex flex-col gap-3">
 		<div class="flex flex-wrap items-center gap-2">
 			<ColumnPicker v-model="chosen" :fields="columnChoices" :defaults="defaultColumns" />
 			<div
 				class="flex items-center gap-1.5 rounded-lg border border-line bg-surf px-2.5 py-1"
 			>
-				<label for="rg-group" class="text-[12.5px] font-semibold text-ink-2"
-					>Group by</label
-				>
+				<label for="rg-group" class="text-[12.5px] font-semibold text-ink-2">{{
+					__("Group by")
+				}}</label>
 				<select id="rg-group" v-model="group.field" :class="sel">
-					<option value="">None</option>
+					<option value="">{{ __("None") }}</option>
 					<option v-for="f in groupable" :key="f.fieldname" :value="f.fieldname">
 						{{ __(f.label) }}
 					</option>
 				</select>
 				<template v-if="group.field">
-					<select v-model="group.fn" aria-label="Summary" :class="sel">
-						<option value="count">Count</option>
-						<option value="sum" :disabled="!numeric.length">Sum of</option>
-						<option value="avg" :disabled="!numeric.length">Average of</option>
+					<select v-model="group.fn" :aria-label="__('Summary')" :class="sel">
+						<option value="count">{{ __("Count") }}</option>
+						<option value="sum" :disabled="!numeric.length">{{ __("Sum of") }}</option>
+						<option value="avg" :disabled="!numeric.length">
+							{{ __("Average of") }}
+						</option>
 					</select>
 					<select
 						v-if="group.fn !== 'count'"
 						v-model="group.on"
-						aria-label="Of"
+						:aria-label="__('Of')"
 						:class="sel"
 					>
 						<option v-for="f in numeric" :key="f.fieldname" :value="f.fieldname">
@@ -36,19 +38,19 @@
 			</div>
 			<label class="flex items-center gap-2 text-[13px] text-ink-2">
 				<input v-model="totals" type="checkbox" class="rounded border-line text-acc" />
-				Totals row
+				{{ __("Totals row") }}{{ " " }}
 			</label>
 			<span class="ml-auto text-[12.5px] text-mut">
-				<template v-if="canEditAny && !group.field"
-					>Double-click a cell to edit it.</template
-				>
+				<template v-if="canEditAny && !group.field">{{
+					__("Double-click a cell to edit it.")
+				}}</template>
 			</span>
 			<form v-if="saving" class="flex items-center gap-1.5" @submit.prevent="saveReport">
 				<input
 					v-model="reportName"
 					type="text"
-					aria-label="Report name"
-					placeholder="Report name"
+					:aria-label="__('Report name')"
+					:placeholder="__('Report name')"
 					class="h-8 rounded-md border border-line bg-surf px-2 text-[13px]"
 				/>
 				<button
@@ -56,18 +58,18 @@
 					class="btn-ink h-8 px-3 text-[13px]"
 					:disabled="!reportName.trim()"
 				>
-					Save
+					{{ __("Save") }}
 				</button>
 				<button
 					type="button"
 					class="btn-ghost h-8 px-3 text-[13px]"
 					@click="saving = false"
 				>
-					Cancel
+					{{ __("Cancel") }}
 				</button>
 			</form>
 			<button v-else type="button" class="btn-ghost h-9" @click="saving = true">
-				Save as report
+				{{ __("Save as report") }}
 			</button>
 		</div>
 		<p
@@ -186,7 +188,7 @@
 							class="whitespace-nowrap border-r border-line-2 px-3 py-2 last:border-r-0"
 							:class="isNum(c) && 'text-right tabular-nums'"
 						>
-							<template v-if="ci === 0 && !isNum(c)">Total</template>
+							<template v-if="ci === 0 && !isNum(c)">{{ __("Total") }}</template>
 							<FieldValue
 								v-else-if="isNum(c)"
 								:field="c"
@@ -200,9 +202,11 @@
 				v-if="!loading && !rows.length"
 				class="px-6 py-12 text-center text-[13.5px] text-mut"
 			>
-				Nothing to show for these filters.
+				{{ __("Nothing to show for these filters.") }}
 			</div>
-			<div v-if="loading" class="px-6 py-5 text-center text-[13px] text-mut">Loading…</div>
+			<div v-if="loading" class="px-6 py-5 text-center text-[13px] text-mut">
+				{{ __("Loading…") }}
+			</div>
 		</div>
 		<button
 			v-if="!group.field && rows.length && rows.length % pageLength === 0 && !exhausted"
@@ -210,7 +214,7 @@
 			class="btn-ghost self-center"
 			@click="load(true)"
 		>
-			Load {{ pageLength }} more
+			{{ " " }}{{ __("Load") }} {{ pageLength }} {{ __("more") }}{{ " " }}
 		</button>
 	</section>
 </template>

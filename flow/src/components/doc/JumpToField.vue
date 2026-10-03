@@ -7,15 +7,15 @@
 		<div
 			role="dialog"
 			aria-modal="true"
-			aria-label="Jump to field"
+			:aria-label="__('Jump to field')"
 			class="w-full max-w-[460px] overflow-hidden rounded-2xl border border-line bg-surf shadow-2xl"
 		>
 			<input
 				ref="input"
 				v-model="query"
 				type="text"
-				placeholder="Jump to field…"
-				aria-label="Jump to field"
+				:placeholder="__('Jump to field…')"
+				:aria-label="__('Jump to field')"
 				class="w-full border-0 border-b border-line-2 bg-transparent px-4 py-3.5 text-[15px] focus:ring-0"
 				@keydown.down.prevent="move(1)"
 				@keydown.up.prevent="move(-1)"
@@ -37,7 +37,7 @@
 					<span class="ml-auto truncate text-[12px] text-mut">{{ m.where }}</span>
 				</li>
 				<li v-if="!matches.length" class="px-4 py-3 text-[13px] text-mut">
-					No field matches
+					{{ __("No field matches") }}
 				</li>
 			</ul>
 		</div>

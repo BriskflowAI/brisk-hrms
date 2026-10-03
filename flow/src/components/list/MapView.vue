@@ -1,7 +1,7 @@
 <template>
 	<!-- The desk's Map view, for types with a location or latitude/longitude, on the same Leaflet
 	     bundle and OpenStreetMap tiles the desk uses. -->
-	<section aria-label="Map" class="flex flex-col gap-2">
+	<section :aria-label="__('Map')" class="flex flex-col gap-2">
 		<p
 			v-if="error"
 			role="alert"
@@ -10,8 +10,8 @@
 			{{ error }}
 		</p>
 		<p class="text-[12.5px] text-mut">
-			{{ placed }} of {{ total }} shown on the map<template v-if="total > placed"
-				>; the others have no location</template
+			{{ placed }} {{ __("of") }} {{ total }} {{ __("shown on the map")
+			}}<template v-if="total > placed">{{ __("; the others have no location") }}</template
 			>.
 		</p>
 		<div

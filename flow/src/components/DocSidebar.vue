@@ -7,7 +7,7 @@
 				v-if="!adding.assign"
 				type="button"
 				class="text-acc"
-				aria-label="Assign"
+				:aria-label="__('Assign')"
 				@click="adding.assign = true"
 			>
 				+
@@ -31,7 +31,7 @@
 				</button>
 			</li>
 			<li v-if="!assignments.length && !adding.assign" class="text-[13px] text-mut">
-				Nobody
+				{{ __("Nobody") }}
 			</li>
 		</ul>
 		<LinkInput
@@ -39,8 +39,8 @@
 			class="mt-2"
 			doctype="User"
 			:get-query="() => ({ filters: { enabled: 1, user_type: 'System User' } })"
-			label="Assign to"
-			placeholder="Find a person…"
+			:label="__('Assign to')"
+			:placeholder="__('Find a person…')"
 			:input-class="inputCls"
 			@update:model-value="(u) => u && form.assign([u]).then(() => (adding.assign = false))"
 		/>
@@ -50,7 +50,7 @@
 	<section>
 		<div class="kicker mb-2 flex items-center">
 			<span class="flex-grow">{{ __("Attachments") }}</span>
-			<label class="cursor-pointer text-acc" aria-label="Attach a file">
+			<label class="cursor-pointer text-acc" :aria-label="__('Attach a file')">
 				+
 				<input type="file" class="sr-only" @change="upload" />
 			</label>
@@ -65,7 +65,7 @@
 					class="flex-grow truncate font-medium text-acc"
 					>{{ a.file_name }}</a
 				>
-				<span v-if="a.is_private" class="text-[11px] text-mut">private</span>
+				<span v-if="a.is_private" class="text-[11px] text-mut">{{ __("private") }}</span>
 				<button
 					type="button"
 					class="text-mut hover:text-neg"
@@ -75,7 +75,7 @@
 					✕
 				</button>
 			</li>
-			<li v-if="!attachments.length" class="text-[13px] text-mut">None</li>
+			<li v-if="!attachments.length" class="text-[13px] text-mut">{{ __("None") }}</li>
 		</ul>
 	</section>
 
@@ -97,8 +97,8 @@
 			<input
 				v-model="newTag"
 				type="text"
-				aria-label="Add a tag"
-				placeholder="Add tag"
+				:aria-label="__('Add a tag')"
+				:placeholder="__('Add tag')"
 				class="w-24 rounded-md border border-transparent bg-transparent px-1.5 py-0.5 text-[12.5px] focus:border-line focus:ring-0"
 				@keydown.enter.prevent="addTag"
 			/>
@@ -113,7 +113,7 @@
 				v-if="!adding.share"
 				type="button"
 				class="text-acc"
-				aria-label="Share"
+				:aria-label="__('Share')"
 				@click="adding.share = true"
 			>
 				+
@@ -128,7 +128,7 @@
 				>
 			</li>
 			<li v-if="!shared.length && !adding.share" class="text-[13px] text-mut">
-				Only people with access
+				{{ __("Only people with access") }}
 			</li>
 		</ul>
 		<LinkInput
@@ -136,8 +136,8 @@
 			class="mt-2"
 			doctype="User"
 			:get-query="() => ({ filters: { enabled: 1 } })"
-			label="Share with"
-			placeholder="Share with…"
+			:label="__('Share with')"
+			:placeholder="__('Share with…')"
 			:input-class="inputCls"
 			@update:model-value="(u) => u && form.share(u).then(() => (adding.share = false))"
 		/>
@@ -189,7 +189,7 @@
 				class="flex items-center gap-1 normal-case tracking-normal text-acc"
 				@click="compose()"
 			>
-				<Icon name="mail" :size="13" /> New email
+				<Icon name="mail" :size="13" /> {{ __("New email") }}{{ " " }}
 			</button>
 		</div>
 		<CommentBox @submit="postComment" />
@@ -229,14 +229,14 @@
 								class="hover:text-ink"
 								@click="editing = item.key"
 							>
-								Edit
+								{{ __("Edit") }}
 							</button>
 							<button
 								type="button"
 								class="hover:text-neg"
 								@click="deleteComment(item)"
 							>
-								Delete
+								{{ __("Delete") }}
 							</button>
 						</template>
 						<template v-if="item.kind === 'email'">
@@ -254,7 +254,7 @@
 								class="hover:text-ink"
 								@click="reply(item)"
 							>
-								Reply
+								{{ __("Reply") }}
 							</button>
 							<button
 								v-if="canEmail && item.cc"
@@ -262,7 +262,7 @@
 								class="hover:text-ink"
 								@click="reply(item, true)"
 							>
-								Reply all
+								{{ __("Reply all") }}
 							</button>
 						</template>
 					</div>

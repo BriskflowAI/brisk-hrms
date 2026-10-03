@@ -1,6 +1,6 @@
 <template>
 	<nav
-		aria-label="Areas"
+		:aria-label="__('Areas')"
 		class="flex w-[68px] shrink-0 flex-col items-center gap-0.5 bg-ink px-0 pb-3.5 pt-3"
 	>
 		<router-link
@@ -40,13 +40,13 @@
 				class="flex w-14 flex-col items-center gap-[3px] rounded-[10px] pb-1.5 pt-[7px] text-[10.5px] font-medium text-ink-navtext hover:bg-ink-nav/60"
 			>
 				<Icon name="gear" :size="20" />
-				Setup
+				{{ __("Setup") }}{{ " " }}
 			</a>
 			<div class="relative" @keydown.esc="menuOpen = false">
 				<button
 					ref="avatarBtn"
 					type="button"
-					aria-label="Your account"
+					:aria-label="__('Your account')"
 					aria-haspopup="menu"
 					:aria-expanded="menuOpen"
 					class="inline-flex rounded-full ring-2 ring-lime"
@@ -58,7 +58,7 @@
 				<div
 					v-if="menuOpen"
 					role="menu"
-					aria-label="Your account"
+					:aria-label="__('Your account')"
 					class="absolute bottom-0 left-full z-50 ml-3 w-60 overflow-hidden rounded-xl border border-line bg-surf py-1.5 text-[13.5px] text-ink shadow-xl"
 				>
 					<div class="border-b border-line-2 px-3.5 pb-2.5 pt-1.5">
@@ -70,7 +70,7 @@
 						role="menuitem"
 						class="block px-3.5 py-2 hover:bg-side"
 						@click="menuOpen = false"
-						>My settings</router-link
+						>{{ __("My settings") }}</router-link
 					>
 					<button
 						type="button"
@@ -78,7 +78,7 @@
 						class="block w-full px-3.5 py-2 text-left hover:bg-side"
 						@click="openSessionDefaults"
 					>
-						Session defaults
+						{{ __("Session defaults") }}
 					</button>
 					<button
 						type="button"
@@ -86,18 +86,18 @@
 						class="hidden w-full px-3.5 py-2 text-left hover:bg-side md:block"
 						@click="((menuOpen = false), (shortcutsOpen = true))"
 					>
-						Keyboard shortcuts
+						{{ __("Keyboard shortcuts") }}
 					</button>
 					<router-link
 						to="/about"
 						role="menuitem"
 						class="block px-3.5 py-2 hover:bg-side"
 						@click="menuOpen = false"
-						>About and licences</router-link
+						>{{ __("About and licences") }}</router-link
 					>
-					<a href="/app" role="menuitem" class="block px-3.5 py-2 hover:bg-side"
-						>Classic desk</a
-					>
+					<a href="/app" role="menuitem" class="block px-3.5 py-2 hover:bg-side">{{
+						__("Classic desk")
+					}}</a>
 					<button
 						type="button"
 						role="menuitem"

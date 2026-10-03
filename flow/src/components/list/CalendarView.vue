@@ -1,15 +1,18 @@
 <template>
-	<section aria-label="Calendar" class="overflow-hidden rounded-xl border border-line bg-surf">
+	<section
+		:aria-label="__('Calendar')"
+		class="overflow-hidden rounded-xl border border-line bg-surf"
+	>
 		<div class="flex items-center gap-2 border-b border-line-2 px-4 py-3">
 			<h2 class="mr-auto text-[19px]">{{ month.format("MMMM YYYY") }}</h2>
-			<span v-if="loading" class="text-[12.5px] text-mut">Loading…</span>
+			<span v-if="loading" class="text-[12.5px] text-mut">{{ __("Loading…") }}</span>
 			<button type="button" class="btn-ghost h-8 px-3 text-[13px]" @click="go(0)">
-				Today
+				{{ __("Today") }}
 			</button>
 			<button
 				type="button"
 				class="btn-ghost h-8 w-8 justify-center px-0"
-				aria-label="Previous month"
+				:aria-label="__('Previous month')"
 				@click="go(-1)"
 			>
 				‹
@@ -17,7 +20,7 @@
 			<button
 				type="button"
 				class="btn-ghost h-8 w-8 justify-center px-0"
-				aria-label="Next month"
+				:aria-label="__('Next month')"
 				@click="go(1)"
 			>
 				›
@@ -87,7 +90,7 @@
 						@mousedown.stop
 						@click.stop="expanded = day.key"
 					>
-						{{ day.events.length - limit }} more
+						{{ day.events.length - limit }} {{ __("more") }}{{ " " }}
 					</button>
 				</div>
 			</div>

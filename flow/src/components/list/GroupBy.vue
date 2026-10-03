@@ -1,9 +1,9 @@
 <template>
 	<!-- Counts per value, like the desk's list sidebar; picking one filters the list. -->
-	<Dropdown label="Group by" icon="chart" width="w-[300px]">
+	<Dropdown :label="__('Group by')" icon="chart" width="w-[300px]">
 		<template #default="{ close }">
 			<template v-if="!field">
-				<div class="kicker px-3 pb-1 pt-1.5">Count by</div>
+				<div class="kicker px-3 pb-1 pt-1.5">{{ __("Count by") }}</div>
 				<button
 					v-for="o in options"
 					:key="o.fieldname"
@@ -22,10 +22,12 @@
 				>
 					← {{ field.label }}
 				</button>
-				<div v-if="loading" class="px-3 py-2 text-[13px] text-mut">Counting…</div>
+				<div v-if="loading" class="px-3 py-2 text-[13px] text-mut">
+					{{ __("Counting…") }}
+				</div>
 				<div v-else-if="error" class="px-3 py-2 text-[13px] text-neg">{{ error }}</div>
 				<div v-else-if="!counts.length" class="px-3 py-2 text-[13px] text-mut">
-					Nothing to count.
+					{{ __("Nothing to count.") }}
 				</div>
 				<button
 					v-for="c in counts"

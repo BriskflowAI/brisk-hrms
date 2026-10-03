@@ -11,7 +11,7 @@
 		<header>
 			<div class="kicker">{{ dateLine }}</div>
 			<h1 class="mt-2 text-[38px] leading-none md:text-[52px]">
-				Good {{ partOfDay }}<span class="text-acc">.</span>
+				{{ " " }}{{ __("Good") }} {{ partOfDay }}<span class="text-acc">.</span>
 			</h1>
 			<p
 				v-if="data"
@@ -23,16 +23,16 @@
 						class="sentence-link"
 						>{{ plural(awayToday.length, "person", "people") }}</router-link
 					>
-					{{ awayToday.length === 1 ? "is" : "are" }} away today,
+					{{ awayToday.length === 1 ? "is" : "are" }} {{ __("away today,") }}{{ " " }}
 				</template>
 				<router-link to="/inbox" class="sentence-link">{{
 					plural(data.inbox.items.length, "request")
 				}}</router-link>
-				{{ data.inbox.items.length === 1 ? "is" : "are" }} waiting on you<template
-					v-if="data.payroll"
-					>, and
+				{{ data.inbox.items.length === 1 ? "is" : "are" }} {{ __("waiting on you")
+				}}<template v-if="data.payroll"
+					>{{ __(", and") }}
 					<router-link :to="payrollLink" class="sentence-link"
-						>{{ monthName }} payroll</router-link
+						>{{ monthName }} {{ __("payroll") }}</router-link
 					>
 					{{ payrollSentence }}</template
 				>.
@@ -42,12 +42,14 @@
 		<!-- The week -->
 		<section
 			v-if="data"
-			aria-label="This week"
+			:aria-label="__('This week')"
 			class="overflow-x-auto rounded-2xl border border-line bg-surf px-5 pb-4 pt-4"
 		>
 			<div class="mb-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-				<h2 class="text-[22px]">The week</h2>
-				<span class="text-[13px] text-mut">Who's away, what's due, what to celebrate</span>
+				<h2 class="text-[22px]">{{ __("The week") }}</h2>
+				<span class="text-[13px] text-mut">{{
+					__("Who's away, what's due, what to celebrate")
+				}}</span>
 			</div>
 			<!-- Phones scroll the week sideways rather than squeezing seven days. -->
 			<div class="relative min-w-[680px]">
@@ -134,9 +136,9 @@
 					</div>
 					<div v-if="!bars.length" class="grid h-8 grid-cols-[110px_1fr] items-center">
 						<div class="text-[11.5px] font-semibold uppercase tracking-wider text-mut">
-							Away
+							{{ __("Away") }}
 						</div>
-						<div class="text-[13px] text-mut">Nobody this week</div>
+						<div class="text-[13px] text-mut">{{ __("Nobody this week") }}</div>
 					</div>
 
 					<div class="my-1.5 h-px bg-line-2" />
@@ -146,7 +148,7 @@
 						<div
 							class="pt-1.5 text-[11.5px] font-semibold uppercase tracking-wider text-mut"
 						>
-							Moments
+							{{ __("Moments") }}
 						</div>
 						<div v-for="d in days" :key="d.iso" class="flex flex-col gap-1 px-1">
 							<router-link
@@ -169,9 +171,9 @@
 			v-if="data"
 			class="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,0.8fr)]"
 		>
-			<section aria-label="Waiting on you">
+			<section :aria-label="__('Waiting on you')">
 				<div class="mb-1.5 flex items-baseline gap-2.5">
-					<h2 class="text-[22px]">Waiting on you</h2>
+					<h2 class="text-[22px]">{{ __("Waiting on you") }}</h2>
 					<span class="text-[13px] text-mut">{{
 						data.inbox.items.length
 							? `${Math.min(4, data.inbox.items.length)} of ${
@@ -179,15 +181,15 @@
 								}`
 							: ""
 					}}</span>
-					<router-link to="/inbox" class="ml-auto text-[13px] font-semibold text-acc"
-						>Open inbox →</router-link
-					>
+					<router-link to="/inbox" class="ml-auto text-[13px] font-semibold text-acc">{{
+						__("Open inbox →")
+					}}</router-link>
 				</div>
 				<p
 					v-if="!data.inbox.items.length"
 					class="border-t border-line-2 py-3 text-[13.5px] text-mut"
 				>
-					All clear.
+					{{ __("All clear.") }}
 				</p>
 				<div
 					v-for="item in data.inbox.items.slice(0, 4)"
@@ -206,7 +208,7 @@
 						to="/inbox"
 						:aria-label="`Review ${item.employee_name}'s request`"
 						class="flex h-8 items-center rounded-lg border border-line px-2.5 text-[12.5px] font-semibold hover:bg-side"
-						>Review</router-link
+						>{{ __("Review") }}</router-link
 					>
 					<button
 						type="button"
@@ -220,9 +222,9 @@
 				</div>
 			</section>
 
-			<section v-if="data.payroll" aria-label="Payroll">
+			<section v-if="data.payroll" :aria-label="__('Payroll')">
 				<div class="flex items-baseline gap-2.5">
-					<h2 class="text-[22px]">{{ monthName }} payroll</h2>
+					<h2 class="text-[22px]">{{ monthName }} {{ __("payroll") }}</h2>
 					<span
 						class="chip ml-auto"
 						:class="
@@ -253,7 +255,7 @@
 						money(data.payroll.totals.net)
 					}}</span>
 					<span class="text-[13px] text-mut"
-						>net · {{ data.payroll.totals.slips }} slips</span
+						>{{ __("net ·") }} {{ data.payroll.totals.slips }} {{ __("slips") }}</span
 					>
 				</div>
 				<router-link
@@ -265,10 +267,10 @@
 				>
 			</section>
 
-			<section v-if="data.headcount" aria-label="Headcount">
+			<section v-if="data.headcount" :aria-label="__('Headcount')">
 				<div class="mb-2.5 flex flex-col">
 					<span class="font-display text-[22px] font-bold"
-						>{{ totalPeople }} people</span
+						>{{ totalPeople }} {{ __("people") }}</span
 					>
 					<span class="text-[13px] text-mut">{{
 						data.joining_soon
@@ -301,7 +303,7 @@
 			</section>
 		</div>
 
-		<div v-if="!data && !error" class="text-[13.5px] text-mut">Loading…</div>
+		<div v-if="!data && !error" class="text-[13.5px] text-mut">{{ __("Loading…") }}</div>
 	</div>
 </template>
 

@@ -1,6 +1,6 @@
 <template>
 	<!-- The desk's Image view: a card per record with its picture, for types that have one. -->
-	<section aria-label="Image view" class="flex flex-col gap-3">
+	<section :aria-label="__('Image view')" class="flex flex-col gap-3">
 		<p
 			v-if="error"
 			role="alert"
@@ -34,9 +34,11 @@
 				</router-link>
 			</li>
 		</ul>
-		<div v-if="loading" class="py-6 text-center text-[13px] text-mut">Loading…</div>
+		<div v-if="loading" class="py-6 text-center text-[13px] text-mut">
+			{{ __("Loading…") }}
+		</div>
 		<p v-else-if="!rows.length" class="py-10 text-center text-[13.5px] text-mut">
-			Nothing to show for these filters.
+			{{ __("Nothing to show for these filters.") }}
 		</p>
 		<button
 			v-if="!loading && rows.length && !done"
@@ -44,7 +46,7 @@
 			class="btn-ghost self-center"
 			@click="load(true)"
 		>
-			Load more
+			{{ __("Load more") }}
 		</button>
 	</section>
 </template>

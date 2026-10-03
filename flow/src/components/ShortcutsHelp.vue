@@ -17,7 +17,7 @@
 				</h2>
 				<button
 					type="button"
-					aria-label="Close"
+					:aria-label="__('Close')"
 					class="text-mut hover:text-ink"
 					@click="open = false"
 				>

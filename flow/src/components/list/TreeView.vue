@@ -1,5 +1,5 @@
 <template>
-	<section aria-label="Tree" class="rounded-xl border border-line bg-surf">
+	<section :aria-label="__('Tree')" class="rounded-xl border border-line bg-surf">
 		<div
 			v-if="filters.length"
 			class="flex flex-wrap items-end gap-3 border-b border-line-2 px-4 py-3"
@@ -25,10 +25,10 @@
 					type="checkbox"
 					class="rounded border-line text-acc"
 				/>
-				Show disabled
+				{{ __("Show disabled") }}{{ " " }}
 			</label>
 			<button type="button" class="btn-ghost ml-auto h-9" @click="expandAll">
-				Expand all
+				{{ __("Expand all") }}
 			</button>
 		</div>
 		<p v-if="error" role="alert" class="bg-neg-tint px-4 py-2 text-[13px] text-neg">

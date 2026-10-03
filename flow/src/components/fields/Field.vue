@@ -25,7 +25,8 @@
 	<!-- Tables span the full width -->
 	<div v-else-if="df.fieldtype === 'Table'" class="flex flex-col gap-2">
 		<div class="text-[13px] font-semibold text-ink-2">
-			{{ __(df.label) }}<span v-if="required" class="text-neg" aria-label="required">*</span>
+			{{ __(df.label)
+			}}<span v-if="required" class="text-neg" :aria-label="__('required')">*</span>
 		</div>
 		<TableField :form="form" :df="df" />
 	</div>
@@ -37,7 +38,8 @@
 			:for="id"
 			class="text-[12.5px] font-semibold text-ink-2"
 		>
-			{{ __(df.label) }}<span v-if="required" class="text-neg" aria-label="required">*</span>
+			{{ __(df.label)
+			}}<span v-if="required" class="text-neg" :aria-label="__('required')">*</span>
 		</label>
 
 		<div class="min-w-0">
@@ -131,7 +133,9 @@
 				/>
 				<span class="text-[13.5px] font-semibold text-ink-2"
 					>{{ __(df.label)
-					}}<span v-if="required" class="text-neg" aria-label="required">*</span></span
+					}}<span v-if="required" class="text-neg" :aria-label="__('required')"
+						>*</span
+					></span
 				>
 			</label>
 			<textarea
@@ -197,11 +201,11 @@
 					class="text-[12.5px] text-mut hover:text-neg"
 					@click="set(null)"
 				>
-					Remove
+					{{ __("Remove") }}
 				</button>
-				<span v-if="form.isNew" class="text-[12px] text-mut"
-					>Save first to attach files</span
-				>
+				<span v-if="form.isNew" class="text-[12px] text-mut">{{
+					__("Save first to attach files")
+				}}</span>
 			</div>
 			<div
 				v-else-if="df.fieldtype === 'Rating'"

@@ -34,9 +34,9 @@
 			role="listbox"
 			class="absolute left-0 right-0 top-full z-30 mt-1 max-h-72 overflow-y-auto rounded-lg border border-line bg-surf py-1 shadow-xl"
 		>
-			<li v-if="loading" class="px-3 py-2 text-[13px] text-mut">Searching…</li>
+			<li v-if="loading" class="px-3 py-2 text-[13px] text-mut">{{ __("Searching…") }}</li>
 			<li v-else-if="!results.length" class="px-3 py-2 text-[13px] text-mut">
-				No {{ doctype }} matches
+				{{ " " }}{{ __("No") }} {{ doctype }} {{ __("matches") }}{{ " " }}
 			</li>
 			<li
 				v-for="(r, i) in results"
@@ -62,7 +62,7 @@
 					class="w-full px-3 py-1.5 text-left text-[12.5px] text-mut hover:text-neg"
 					@mousedown.prevent="clear"
 				>
-					Clear
+					{{ __("Clear") }}
 				</button>
 			</li>
 		</ul>

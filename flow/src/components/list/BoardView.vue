@@ -1,11 +1,11 @@
 <template>
 	<!-- Kanban boards are Frappe "Kanban Board" records, shared with the classic desk. -->
-	<section aria-label="Board" class="flex flex-col gap-3">
+	<section :aria-label="__('Board')" class="flex flex-col gap-3">
 		<div class="flex flex-wrap items-center gap-2">
 			<select
 				v-if="boards.length"
 				v-model="boardName"
-				aria-label="Board"
+				:aria-label="__('Board')"
 				class="h-9 rounded-lg border border-line bg-surf py-0 pl-2.5 pr-8 text-[13.5px] font-semibold"
 			>
 				<option v-for="b in boards" :key="b.name" :value="b.name">{{ b.name }}</option>
@@ -15,10 +15,10 @@
 				class="flex flex-wrap items-center gap-2"
 				@submit.prevent="createBoard"
 			>
-				<span class="text-[13px] text-ink-2">New board by</span>
+				<span class="text-[13px] text-ink-2">{{ __("New board by") }}</span>
 				<select
 					v-model="draft.field"
-					aria-label="Group cards by"
+					:aria-label="__('Group cards by')"
 					class="h-9 rounded-lg border border-line bg-surf py-0 pl-2.5 pr-8 text-[13.5px]"
 				>
 					<option v-for="f in selectFields" :key="f.fieldname" :value="f.fieldname">
@@ -28,8 +28,8 @@
 				<input
 					v-model="draft.name"
 					type="text"
-					aria-label="Board name"
-					placeholder="Board name"
+					:aria-label="__('Board name')"
+					:placeholder="__('Board name')"
 					class="h-9 rounded-lg border border-line bg-surf px-2.5 text-[13.5px]"
 				/>
 				<button
@@ -37,7 +37,7 @@
 					class="btn-ink h-9"
 					:disabled="!draft.field || !draft.name.trim()"
 				>
-					Create board
+					{{ __("Create board") }}
 				</button>
 				<button
 					v-if="boards.length"
@@ -45,18 +45,19 @@
 					class="btn-ghost h-9"
 					@click="creating = false"
 				>
-					Cancel
+					{{ __("Cancel") }}
 				</button>
 			</form>
 			<button v-else type="button" class="btn-ghost h-9" @click="startCreate">
-				New board
+				{{ __("New board") }}
 			</button>
 			<span v-if="board" class="ml-auto text-[12.5px] text-mut"
-				>Cards grouped by {{ fieldLabel }}. Drag a card to change it.</span
+				>{{ __("Cards grouped by") }} {{ fieldLabel
+				}}{{ __(". Drag a card to change it.") }}</span
 			>
 		</div>
 		<p v-if="!selectFields.length" class="text-[13.5px] text-mut">
-			{{ doctype }} has no choice fields to make a board from.
+			{{ doctype }} {{ __("has no choice fields to make a board from.") }}{{ " " }}
 		</p>
 		<p
 			v-if="error"
@@ -118,7 +119,9 @@
 							class="text-[12.5px] font-semibold text-acc"
 							@click="more(col)"
 						>
-							Show {{ Math.min(50, col.total - col.cards.length) }} more
+							{{ " " }}{{ __("Show") }}
+							{{ Math.min(50, col.total - col.cards.length) }} {{ __("more")
+							}}{{ " " }}
 						</button>
 					</li>
 				</ol>

@@ -10,6 +10,7 @@ import { reactive } from "vue";
 import { call } from "frappe-ui";
 import { getMeta, isLayout, isTable } from "@/composables/api";
 import { useSession } from "@/composables/session";
+import { __ } from "@/composables/i18n";
 
 const LOCAL_PREFIX = "new-";
 let localCounter = 0;
@@ -769,8 +770,11 @@ function docPerms(docinfo) {
 }
 
 export function messageOf(e, fallback) {
-	const text = e?.messages?.filter(Boolean).join(" ") || e?.message || fallback;
-	return humanError(String(text).replace(/<[^>]+>/g, ""), fallback);
+	// Server messages arrive in the user's language already; briskrew's own fallbacks go through
+	// the same catalogue (and the site's Translation records).
+	const own = fallback ? __(fallback) : fallback;
+	const text = e?.messages?.filter(Boolean).join(" ") || e?.message || own;
+	return humanError(String(text).replace(/<[^>]+>/g, ""), own);
 }
 
 // Server errors arrive as "frappe.exceptions.ValidationError: …" or with a Python traceback;

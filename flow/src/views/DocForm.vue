@@ -51,7 +51,9 @@
 						</svg>
 						<span v-if="likedBy.length">{{ likedBy.length }}</span>
 					</button>
-					<span v-if="form.dirty" class="chip bg-warn-tint text-warn">Not saved</span>
+					<span v-if="form.dirty" class="chip bg-warn-tint text-warn">{{
+						__("Not saved")
+					}}</span>
 					<span v-if="form.indicator" class="chip" :class="tone(form.indicator.color)">{{
 						form.indicator.label
 					}}</span>
@@ -109,7 +111,7 @@
 						<button
 							type="button"
 							class="btn-ghost px-2.5"
-							aria-label="More actions"
+							:aria-label="__('More actions')"
 							:aria-expanded="menu === 'more'"
 							@click="menu = menu === 'more' ? null : 'more'"
 						>
@@ -123,7 +125,7 @@
 								<div
 									class="px-3 pb-1 pt-1.5 text-[11px] font-semibold uppercase tracking-wide text-mut"
 								>
-									Print
+									{{ __("Print") }}
 								</div>
 								<a
 									v-for="p in form.printFormats"
@@ -138,11 +140,11 @@
 								<a
 									:href="form.pdfUrl()"
 									class="block px-3 py-1.5 text-[13.5px] hover:bg-acc-tint"
-									>Download PDF</a
+									>{{ __("Download PDF") }}</a
 								>
 								<div class="my-1 border-t border-line-2" />
 								<button type="button" class="menu-item" @click="duplicate">
-									Duplicate
+									{{ __("Duplicate") }}
 								</button>
 								<button
 									v-if="form.meta.allow_rename && form.perms?.write"
@@ -150,10 +152,10 @@
 									class="menu-item"
 									@click="askRename"
 								>
-									Rename
+									{{ __("Rename") }}
 								</button>
 								<button type="button" class="menu-item" @click="copyLink">
-									Copy link
+									{{ __("Copy link") }}
 								</button>
 								<button
 									type="button"
@@ -165,7 +167,7 @@
 									}}
 								</button>
 								<button type="button" class="menu-item" @click="reload">
-									Reload
+									{{ __("Reload") }}
 								</button>
 								<button
 									v-if="form.undoStack.length"
@@ -173,7 +175,7 @@
 									class="menu-item"
 									@click="((menu = null), form.undo())"
 								>
-									Undo last change
+									{{ __("Undo last change") }}
 								</button>
 								<button
 									v-if="form.redoStack.length"
@@ -181,21 +183,21 @@
 									class="menu-item"
 									@click="((menu = null), form.redo())"
 								>
-									Redo
+									{{ __("Redo") }}
 								</button>
 								<button
 									type="button"
 									class="menu-item"
 									@click="((menu = null), (jumpOpen = true))"
 								>
-									Jump to field
+									{{ __("Jump to field") }}
 								</button>
 								<button
 									type="button"
 									class="menu-item"
 									@click="((remindOpen = true), (menu = null))"
 								>
-									Remind me
+									{{ __("Remind me") }}
 								</button>
 								<router-link
 									v-if="form.meta.allow_auto_repeat"
@@ -226,7 +228,7 @@
 									}}</router-link
 								>
 								<button type="button" class="menu-item" @click="copyJson">
-									Copy to clipboard
+									{{ __("Copy to clipboard") }}
 								</button>
 								<router-link
 									v-if="form.perms?.create"
@@ -238,7 +240,7 @@
 									v-if="isSystemManager"
 									:href="`/app/customize-form?doc_type=${encodeURIComponent(doctype)}`"
 									class="menu-item"
-									>Customize</a
+									>{{ __("Customize") }}</a
 								>
 								<button
 									v-if="form.perms?.delete && form.docstatus !== 1"
@@ -246,7 +248,7 @@
 									class="menu-item text-neg"
 									@click="confirmAction('delete')"
 								>
-									Delete
+									{{ __("Delete") }}
 								</button>
 								<div class="my-1 border-t border-line-2" />
 							</template>
@@ -256,7 +258,7 @@
 									(form.isNew ? '/new' : '')
 								"
 								class="block px-3 py-1.5 text-[13.5px] hover:bg-acc-tint"
-								>Open in classic desk</a
+								>{{ __("Open in classic desk") }}</a
 							>
 						</div>
 					</div>
@@ -288,7 +290,7 @@
 
 				<nav
 					v-if="layout.length > 1"
-					aria-label="Sections"
+					:aria-label="__('Sections')"
 					class="-mb-px flex gap-6 overflow-x-auto text-[14px]"
 				>
 					<button
@@ -317,15 +319,15 @@
 					class="flex flex-wrap items-center gap-3 rounded-lg bg-warn-tint px-4 py-2.5 text-[13.5px] text-ink"
 				>
 					<span class="flex-grow"
-						><b>{{ changedBy }}</b> changed this record while you were editing
-						it.</span
+						><b>{{ changedBy }}</b>
+						{{ __("changed this record while you were editing it.") }}</span
 					>
 					<button
 						type="button"
 						class="btn-ghost h-8 px-3 text-[13px]"
 						@click="reloadLatest"
 					>
-						Load their changes
+						{{ __("Load their changes") }}
 					</button>
 				</div>
 				<p
@@ -353,15 +355,15 @@
 					v-if="form.unsupported.length"
 					class="rounded-lg bg-line-2 px-4 py-2.5 text-[12.5px] text-ink-2"
 				>
-					A few parts of this form's script ({{
-						form.unsupported.slice(0, 3).join(", ")
-					}}) run only in the classic desk.
+					{{ " " }}{{ __("A few parts of this form's script (")
+					}}{{ form.unsupported.slice(0, 3).join(", ")
+					}}{{ __(") run only in the classic desk.") }}
 					<a
 						:href="classicUrl(doctype, form.isNew ? null : form.doc.name)"
 						class="font-semibold text-acc"
-						>Open there</a
+						>{{ __("Open there") }}</a
 					>
-					if something seems missing.
+					{{ __("if something seems missing.") }}{{ " " }}
 				</p>
 				<details
 					v-for="sec in form.sections"
@@ -436,7 +438,7 @@
 			</div>
 		</template>
 
-		<div v-else class="px-4 md:px-7 py-10 text-[13.5px] text-mut">Loading…</div>
+		<div v-else class="px-4 md:px-7 py-10 text-[13.5px] text-mut">{{ __("Loading…") }}</div>
 
 		<!-- Confirm -->
 		<div
@@ -462,7 +464,7 @@
 				</label>
 				<div class="mt-5 flex justify-end gap-2">
 					<button type="button" class="btn-ghost" @click="confirming = null">
-						Back
+						{{ __("Back") }}
 					</button>
 					<button
 						type="button"
