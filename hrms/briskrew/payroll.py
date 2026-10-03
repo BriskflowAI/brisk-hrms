@@ -31,7 +31,8 @@ def get_run_review(payroll_entry: str) -> dict:
 	):
 		cur, prev = current.get(emp), previous.get(emp)
 		lines = _diff_lines(prev, cur)
-		change = flt(cur.net_pay if cur else 0) - flt(prev.net_pay if prev else 0)
+		# No slip yet means nothing to compare, not a 100% drop.
+		change = (flt(cur.net_pay) - flt(prev.net_pay if prev else 0)) if cur else None
 		people.append(
 			{
 				"employee": emp,
@@ -44,7 +45,9 @@ def get_run_review(payroll_entry: str) -> dict:
 				"net": flt(cur.net_pay) if cur else None,
 				"previous_net": flt(prev.net_pay) if prev else None,
 				"change": change,
-				"change_pct": (change / flt(prev.net_pay) * 100) if prev and flt(prev.net_pay) else None,
+				"change_pct": (change / flt(prev.net_pay) * 100)
+				if cur and prev and flt(prev.net_pay)
+				else None,
 				"lines": lines,
 				"changed": any(line["kind"] != "same" for line in lines) or not prev or not cur,
 				"new": bool(cur and not prev),

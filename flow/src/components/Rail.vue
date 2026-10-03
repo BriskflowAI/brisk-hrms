@@ -12,7 +12,7 @@
 		</router-link>
 
 		<router-link
-			v-for="area in areas"
+			v-for="area in visibleAreas"
 			:key="area.key"
 			:to="entryFor(area)"
 			:aria-current="area.key === active ? 'page' : undefined"
@@ -24,7 +24,7 @@
 			"
 		>
 			<Icon :name="area.icon" :size="20" :class="area.key === active ? 'text-lime' : ''" />
-			{{ area.label }}
+			{{ __(area.label) }}
 			<span
 				v-if="area.key === 'inbox' && inboxCount"
 				class="absolute right-2 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-lime px-1 text-[10px] font-extrabold text-ink"
@@ -35,35 +35,103 @@
 
 		<div class="mt-auto flex flex-col items-center gap-2.5">
 			<a
+				v-if="canReadDoctype('HR Settings')"
 				href="/app/hr-settings"
 				class="flex w-14 flex-col items-center gap-[3px] rounded-[10px] pb-1.5 pt-[7px] text-[10.5px] font-medium text-ink-navtext hover:bg-ink-nav/60"
 			>
 				<Icon name="gear" :size="20" />
 				Setup
 			</a>
-			<router-link
-				to="/about"
-				aria-label="About and licences"
-				class="inline-flex rounded-full ring-2 ring-lime"
-			>
-				<Avatar :label="fullName" :size="32" />
-			</router-link>
+			<div class="relative" @keydown.esc="menuOpen = false">
+				<button
+					ref="avatarBtn"
+					type="button"
+					aria-label="Your account"
+					aria-haspopup="menu"
+					:aria-expanded="menuOpen"
+					class="inline-flex rounded-full ring-2 ring-lime"
+					@click="menuOpen = !menuOpen"
+				>
+					<Avatar :label="fullName" :size="32" />
+				</button>
+				<div v-if="menuOpen" class="fixed inset-0 z-40" @click="menuOpen = false" />
+				<div
+					v-if="menuOpen"
+					role="menu"
+					aria-label="Your account"
+					class="absolute bottom-0 left-full z-50 ml-3 w-60 overflow-hidden rounded-xl border border-line bg-surf py-1.5 text-[13.5px] text-ink shadow-xl"
+				>
+					<div class="border-b border-line-2 px-3.5 pb-2.5 pt-1.5">
+						<div class="truncate font-bold">{{ fullName }}</div>
+						<div class="truncate text-[12px] text-mut">{{ user }}</div>
+					</div>
+					<router-link
+						:to="{ name: 'Form', params: { doctype: 'User', name: user } }"
+						role="menuitem"
+						class="block px-3.5 py-2 hover:bg-side"
+						@click="menuOpen = false"
+						>My settings</router-link
+					>
+					<button
+						type="button"
+						role="menuitem"
+						class="block w-full px-3.5 py-2 text-left hover:bg-side"
+						@click="openSessionDefaults"
+					>
+						Session defaults
+					</button>
+					<router-link
+						to="/about"
+						role="menuitem"
+						class="block px-3.5 py-2 hover:bg-side"
+						@click="menuOpen = false"
+						>About and licences</router-link
+					>
+					<a href="/app" role="menuitem" class="block px-3.5 py-2 hover:bg-side"
+						>Classic desk</a
+					>
+					<button
+						type="button"
+						role="menuitem"
+						class="block w-full border-t border-line-2 px-3.5 py-2 text-left font-semibold text-neg hover:bg-neg-tint"
+						:disabled="loggingOut"
+						@click="logout"
+					>
+						{{ loggingOut ? "Logging out…" : "Log out" }}
+					</button>
+				</div>
+			</div>
 		</div>
+		<SessionDefaults v-model="sessionDefaultsOpen" />
 	</nav>
 </template>
 
 <script setup>
 import Icon from "./Icon.vue";
 import Avatar from "./Avatar.vue";
-import { areas } from "@/nav";
+import SessionDefaults from "./SessionDefaults.vue";
+import { canReadDoctype, visibleAreas } from "@/composables/access";
 import { brand } from "@/brand";
-import { useSession } from "@/composables/session";
+import { logout as signOut, useSession } from "@/composables/session";
 import { inboxCount, fetchInbox } from "@/composables/inbox";
-import { onMounted } from "vue";
+import { onMounted, ref } from "vue";
 
 defineProps({ active: { type: String, default: null } });
 
-const { fullName } = useSession();
+const { fullName, user } = useSession();
+const menuOpen = ref(false);
+const loggingOut = ref(false);
+const sessionDefaultsOpen = ref(false);
+
+function openSessionDefaults() {
+	menuOpen.value = false;
+	sessionDefaultsOpen.value = true;
+}
+
+async function logout() {
+	loggingOut.value = true;
+	await signOut();
+}
 
 onMounted(() => fetchInbox().catch(() => {}));
 

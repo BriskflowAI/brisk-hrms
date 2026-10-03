@@ -1,5 +1,5 @@
 <template>
-	<div class="flex max-w-[1240px] flex-col gap-6 px-9 py-7">
+	<div class="flex max-w-[1240px] flex-col gap-6 px-4 md:px-9 py-7">
 		<p
 			v-if="error"
 			role="alert"
@@ -10,16 +10,21 @@
 
 		<header>
 			<div class="kicker">{{ dateLine }}</div>
-			<h1 class="mt-2 text-[52px] leading-none">
+			<h1 class="mt-2 text-[38px] leading-none md:text-[52px]">
 				Good {{ partOfDay }}<span class="text-acc">.</span>
 			</h1>
-			<p v-if="data" class="mt-3.5 max-w-[860px] text-[19px] leading-relaxed text-ink-2">
-				<router-link
-					:to="{ name: 'People', query: { view: 'away' } }"
-					class="sentence-link"
-					>{{ plural(awayToday.length, "person", "people") }}</router-link
-				>
-				{{ awayToday.length === 1 ? "is" : "are" }} away today,
+			<p
+				v-if="data"
+				class="mt-3.5 max-w-[860px] text-[16px] leading-relaxed text-ink-2 md:text-[19px]"
+			>
+				<template v-if="data.headcount">
+					<router-link
+						:to="{ name: 'People', query: { view: 'away' } }"
+						class="sentence-link"
+						>{{ plural(awayToday.length, "person", "people") }}</router-link
+					>
+					{{ awayToday.length === 1 ? "is" : "are" }} away today,
+				</template>
 				<router-link to="/inbox" class="sentence-link">{{
 					plural(data.inbox.items.length, "request")
 				}}</router-link>
@@ -38,13 +43,14 @@
 		<section
 			v-if="data"
 			aria-label="This week"
-			class="rounded-2xl border border-line bg-surf px-5 pb-4 pt-4"
+			class="overflow-x-auto rounded-2xl border border-line bg-surf px-5 pb-4 pt-4"
 		>
-			<div class="mb-3 flex items-baseline gap-3">
+			<div class="mb-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
 				<h2 class="text-[22px]">The week</h2>
 				<span class="text-[13px] text-mut">Who's away, what's due, what to celebrate</span>
 			</div>
-			<div class="relative">
+			<!-- Phones scroll the week sideways rather than squeezing seven days. -->
+			<div class="relative min-w-[680px]">
 				<div
 					class="grid grid-cols-[110px_repeat(7,minmax(0,1fr))] border-b border-line-2 pb-2"
 				>
@@ -78,22 +84,27 @@
 							d.today
 								? 'rounded-lg bg-acc-tint/50'
 								: d.holiday
-								  ? 'bg-[repeating-linear-gradient(90deg,transparent_0_3px,theme(colors.line.2)_3px_4px)] opacity-60'
-								  : ''
+									? 'bg-[repeating-linear-gradient(90deg,transparent_0_3px,theme(colors.line.2)_3px_4px)] opacity-60'
+									: ''
 						"
 					/>
 				</div>
 
 				<div class="relative flex flex-col gap-0.5 pt-2">
 					<div
-						v-for="(bar, i) in bars"
-						:key="bar.name"
+						v-for="(lane, i) in lanes"
+						:key="i"
 						class="grid h-8 grid-cols-[110px_repeat(7,minmax(0,1fr))] items-center"
 					>
-						<div class="text-[11.5px] font-semibold uppercase tracking-wider text-mut">
+						<div
+							class="text-[11.5px] font-semibold uppercase tracking-wider text-mut"
+							style="grid-column: 1; grid-row: 1"
+						>
 							{{ i === 0 ? "Away" : "" }}
 						</div>
 						<router-link
+							v-for="bar in lane"
+							:key="bar.name"
 							:to="{
 								name: 'Form',
 								params: { doctype: 'Leave Application', name: bar.name },
@@ -104,7 +115,10 @@
 									? 'border-[1.5px] border-dashed border-acc bg-surf text-acc'
 									: 'bg-acc-tint text-acc'
 							"
-							:style="{ gridColumn: `${bar.start + 2} / ${bar.end + 3}` }"
+							:style="{
+								gridColumn: `${bar.start + 2} / ${bar.end + 3}`,
+								gridRow: 1,
+							}"
 							:title="`${bar.employee_name} · ${bar.leave_type}${
 								bar.status === 'Open' ? ' (waiting for approval)' : ''
 							}`"
@@ -153,7 +167,7 @@
 		<!-- Bottom row -->
 		<div
 			v-if="data"
-			class="grid grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,0.8fr)] gap-8"
+			class="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,0.8fr)]"
 		>
 			<section aria-label="Waiting on you">
 				<div class="mb-1.5 flex items-baseline gap-2.5">
@@ -162,7 +176,7 @@
 						data.inbox.items.length
 							? `${Math.min(4, data.inbox.items.length)} of ${
 									data.inbox.items.length
-							  }`
+								}`
 							: ""
 					}}</span>
 					<router-link to="/inbox" class="ml-auto text-[13px] font-semibold text-acc"
@@ -251,7 +265,7 @@
 				>
 			</section>
 
-			<section aria-label="Headcount">
+			<section v-if="data.headcount" aria-label="Headcount">
 				<div class="mb-2.5 flex flex-col">
 					<span class="font-display text-[22px] font-bold"
 						>{{ totalPeople }} people</span
@@ -280,7 +294,7 @@
 							class="h-2 w-2 rounded-sm"
 							:style="{ background: palette[i % palette.length] }"
 						/>
-						<span class="flex-grow truncate">{{ h.department }}</span>
+						<span class="flex-grow truncate">{{ dept(h.department) }}</span>
 						<span class="tabular-nums text-mut">{{ h.count }}</span>
 					</li>
 				</ul>
@@ -292,6 +306,7 @@
 </template>
 
 <script setup>
+import { dept } from "@/composables/format";
 import { computed, onMounted, ref } from "vue";
 import { call } from "frappe-ui";
 import dayjs from "dayjs";
@@ -352,6 +367,15 @@ const bars = computed(() => {
 		end: Math.min(6, dayjs(a.to_date).diff(start, "day")),
 	}));
 });
+// Bars that don't overlap share a row, so the week stays compact.
+const lanes = computed(() => {
+	const out = [];
+	for (const bar of [...bars.value].sort((a, b) => a.start - b.start)) {
+		const lane = out.find((l) => l[l.length - 1].end < bar.start);
+		lane ? lane.push(bar) : out.push([bar]);
+	}
+	return out;
+});
 const awayToday = computed(() =>
 	(data.value?.away || []).filter(
 		(a) => a.from_date <= data.value.today && a.to_date >= data.value.today,
@@ -364,7 +388,7 @@ const payrollLink = computed(() =>
 		? {
 				name: "Form",
 				params: { doctype: "Payroll Entry", name: data.value.payroll.entry.name },
-		  }
+			}
 		: { name: "Form", params: { doctype: "Payroll Entry", name: "new" } },
 );
 const stageIndex = computed(

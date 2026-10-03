@@ -1,9 +1,9 @@
 <template>
-	<div class="flex flex-col gap-4 px-7 py-6">
+	<div class="flex flex-col gap-4 px-4 md:px-7 py-6">
 		<header class="flex flex-wrap items-end gap-2">
 			<div class="mr-auto">
 				<div class="kicker">Report</div>
-				<h1 class="mt-1.5 text-[34px] leading-none">{{ name }}</h1>
+				<h1 class="mt-1.5 text-[28px] leading-none md:text-[34px]">{{ name }}</h1>
 			</div>
 			<button
 				v-for="b in report.buttons"
@@ -14,17 +14,86 @@
 			>
 				{{ b.label }}
 			</button>
-			<button
-				type="button"
-				class="btn-ghost"
-				:disabled="!report.rows.length"
-				@click="exportReport('Excel')"
-			>
-				Export
-			</button>
-			<a :href="`/app/query-report/${encodeURIComponent(name)}`" class="btn-ghost"
-				><Icon name="ext" :size="15" /> Classic desk</a
-			>
+			<ColumnPicker
+				v-if="report.columns.length"
+				v-model="shownNames"
+				:fields="report.columns"
+				:defaults="report.columns.map((c) => c.fieldname)"
+			/>
+			<div class="relative" @keydown.esc="menu = false">
+				<button
+					type="button"
+					class="btn-ghost px-2.5"
+					aria-label="More"
+					:aria-expanded="menu"
+					@click="menu = !menu"
+				>
+					•••
+				</button>
+				<div v-if="menu" class="fixed inset-0 z-20" @click="menu = false" />
+				<div
+					v-if="menu"
+					class="absolute right-0 top-full z-30 mt-1 w-[230px] rounded-lg border border-line bg-surf py-1 shadow-xl"
+					@click="menu = false"
+				>
+					<button
+						v-if="chart"
+						type="button"
+						class="menu-item"
+						@click="chartHidden = !chartHidden"
+					>
+						{{ chartHidden ? "Show chart" : "Hide chart" }}
+					</button>
+					<button
+						type="button"
+						class="menu-item"
+						:disabled="!report.rows.length"
+						@click="printReport"
+					>
+						Print
+					</button>
+					<button
+						type="button"
+						class="menu-item"
+						:disabled="!report.rows.length"
+						@click="pdfReport"
+					>
+						Download PDF
+					</button>
+					<button
+						type="button"
+						class="menu-item"
+						:disabled="!report.rows.length"
+						@click="exportReport('Excel')"
+					>
+						Export to Excel
+					</button>
+					<button
+						type="button"
+						class="menu-item"
+						:disabled="!report.rows.length"
+						@click="exportReport('CSV')"
+					>
+						Export to CSV
+					</button>
+					<div class="my-1 border-t border-line-2" />
+					<button type="button" class="menu-item" @click="saveAsOpen = true">
+						Save as…
+					</button>
+					<router-link
+						:to="{
+							name: 'Form',
+							params: { doctype: 'Auto Email Report', name: 'new' },
+							query: { report: name },
+						}"
+						class="menu-item"
+						>Email this regularly</router-link
+					>
+					<a :href="`/app/query-report/${encodeURIComponent(name)}`" class="menu-item"
+						>Open in classic desk</a
+					>
+				</div>
+			</div>
 			<button type="button" class="btn-ink" :disabled="report.loading" @click="report.run()">
 				{{ report.loading ? "Running…" : "Refresh" }}
 			</button>
@@ -82,12 +151,46 @@
 			</div>
 		</div>
 
+		<section
+			v-if="chart && !chartHidden && report.rows.length"
+			aria-label="Chart"
+			class="rounded-xl border border-line bg-surf px-5 py-4"
+		>
+			<ReportChart :chart="chart" :title="`${name} chart`" />
+		</section>
+
+		<form
+			v-if="saveAsOpen"
+			class="flex flex-wrap items-center gap-2 rounded-xl border border-line bg-surf px-4 py-3"
+			@submit.prevent="saveAs"
+		>
+			<label for="save-as-name" class="text-[13px] font-semibold text-ink-2"
+				>Save these filters and columns as</label
+			>
+			<input
+				id="save-as-name"
+				v-model="saveAsName"
+				type="text"
+				placeholder="Report name"
+				class="h-9 min-w-[240px] flex-grow rounded-lg border border-line bg-paper px-2.5 text-[13.5px]"
+			/>
+			<button type="submit" class="btn-ink" :disabled="!saveAsName.trim()">Save</button>
+			<button type="button" class="btn-ghost" @click="saveAsOpen = false">Cancel</button>
+		</form>
+		<p
+			v-if="notice"
+			role="status"
+			class="rounded-lg bg-acc-tint px-4 py-2.5 text-[13.5px] text-ink"
+		>
+			{{ notice }}
+		</p>
+
 		<div class="overflow-auto rounded-xl border border-line bg-surf">
 			<table class="w-full border-collapse text-[13px]">
 				<thead class="sticky top-0 bg-paper">
 					<tr>
 						<th
-							v-for="c in report.columns"
+							v-for="c in shownColumns"
 							:key="c.fieldname"
 							class="whitespace-nowrap border-b border-line px-3 py-2 font-semibold text-mut"
 							:class="isNum(c) ? 'text-right' : 'text-left'"
@@ -104,7 +207,7 @@
 						:class="row.__total && 'bg-paper font-bold'"
 					>
 						<td
-							v-for="c in report.columns"
+							v-for="c in shownColumns"
 							:key="c.fieldname"
 							class="desk-html whitespace-nowrap px-3 py-1.5"
 							:class="isNum(c) ? 'text-right tabular-nums' : ''"
@@ -149,11 +252,14 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, watch } from "vue";
+import { computed, onMounted, reactive, ref, watch } from "vue";
 import { call } from "frappe-ui";
 import Icon from "@/components/Icon.vue";
 import Field from "@/components/fields/Field.vue";
 import CompatDialogs from "@/components/CompatDialogs.vue";
+import ColumnPicker from "@/components/list/ColumnPicker.vue";
+import ReportChart from "@/components/charts/ReportChart.vue";
+import { useRouter } from "vue-router";
 import { attachReportScript, reportCell } from "@/engine/compat";
 import { messageOf } from "@/engine/form";
 
@@ -188,6 +294,20 @@ const report = reactive({
 	setValue: (f, v) => (report.form ? report.form.setValue(f, v) : (report.values[f] = v)),
 	run: () => run(),
 });
+
+const router = useRouter();
+const menu = ref(false);
+const chart = ref(null);
+const chartHidden = ref(false);
+const shownNames = ref(null); // the user's column choice for this report; null shows all
+const saveAsOpen = ref(false);
+const saveAsName = ref("");
+const notice = ref("");
+const shownColumns = computed(() =>
+	shownNames.value
+		? report.columns.filter((c) => shownNames.value.includes(c.fieldname))
+		: report.columns,
+);
 
 const visibleFilters = computed(() =>
 	report.filters.filter((f) => report.form?.visible(report.form.df(f.fieldname) || f)),
@@ -246,12 +366,13 @@ async function run() {
 				total[c.fieldname] = isNum(c)
 					? rows.reduce((a, r) => a + (Number(r[c.fieldname]) || 0), 0)
 					: i === 0
-					  ? "Total"
-					  : "";
+						? "Total"
+						: "";
 			});
 			rows.push(total);
 		}
 		report.rows = rows;
+		chart.value = chartFor(res, rows);
 		report.message = res?.message || report.message;
 		report.summary = (res?.report_summary || []).map((s) => ({
 			...s,
@@ -262,6 +383,132 @@ async function run() {
 			report.error = messageOf(e, "The report couldn't run with these filters.");
 	} finally {
 		if (mine === seq) report.loading = false;
+	}
+}
+
+// The report's own chart, or the one its script builds from the data, as the desk does.
+function chartFor(res, rows) {
+	let c = res?.chart;
+	if ((!c || !c.data) && typeof report.settings?.get_chart_data === "function") {
+		try {
+			c = report.settings.get_chart_data(res.columns, res.result);
+		} catch {
+			c = null;
+		}
+	}
+	return c?.data?.labels?.length && rows.length ? c : null;
+}
+
+// ---- columns, kept in the user's settings for this report ----
+let savedColumns = null;
+async function loadColumnChoice() {
+	try {
+		const raw = await call("frappe.model.utils.user_settings.get", { doctype: props.name });
+		const saved = (typeof raw === "string" ? JSON.parse(raw || "{}") : raw || {})
+			.briskrew_columns;
+		shownNames.value = Array.isArray(saved) && saved.length ? saved : null;
+	} catch {
+		shownNames.value = null;
+	}
+	savedColumns = JSON.stringify(shownNames.value);
+}
+watch(shownNames, (cols) => {
+	if (savedColumns === null || JSON.stringify(cols) === savedColumns) return;
+	savedColumns = JSON.stringify(cols);
+	call("frappe.model.utils.user_settings.save", {
+		doctype: props.name,
+		user_settings: JSON.stringify({ briskrew_columns: cols }),
+	}).catch(() => {});
+});
+
+// ---- print and PDF: a plain table of what's on screen, with the filters used ----
+const esc = (t) =>
+	String(t ?? "")
+		.replace(/&/g, "&amp;")
+		.replace(/</g, "&lt;")
+		.replace(/>/g, "&gt;");
+const plain = (html) =>
+	new DOMParser().parseFromString(String(html ?? ""), "text/html").body.textContent;
+function printableHtml() {
+	const filters = report.filters
+		.filter((f) => !["", null, undefined].includes(report.values[f.fieldname]))
+		.map((f) => `${esc(f.label)}: <b>${esc(report.values[f.fieldname])}</b>`)
+		.join(" &nbsp;·&nbsp; ");
+	const head = shownColumns.value
+		.map((c) => `<th style="text-align:${isNum(c) ? "right" : "left"}">${esc(c.label)}</th>`)
+		.join("");
+	const body = report.rows
+		.map(
+			(r) =>
+				`<tr${r.__total ? ' style="font-weight:700"' : ""}>${shownColumns.value
+					.map(
+						(c) =>
+							`<td style="text-align:${isNum(c) ? "right" : "left"}">${esc(
+								plain(cell(r, c)),
+							)}</td>`,
+					)
+					.join("")}</tr>`,
+		)
+		.join("");
+	return `<!doctype html><html><head><meta charset="utf-8"><title>${esc(props.name)}</title>
+<style>body{font-family:Geist,Inter,Arial,sans-serif;font-size:11px;color:#0B1020;margin:24px}
+h1{font-size:18px;margin:0 0 4px}p{color:#4A5068;margin:0 0 14px}
+table{width:100%;border-collapse:collapse}th,td{padding:4px 6px;border-bottom:1px solid #E6E8F0}
+th{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#6B7083}</style></head>
+<body><h1>${esc(props.name)}</h1><p>${filters}</p><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></body></html>`;
+}
+function printReport() {
+	const w = window.open("", "_blank");
+	if (!w) {
+		report.error = "Allow pop-ups for this site to print.";
+		return;
+	}
+	w.document.write(printableHtml());
+	w.document.close();
+	w.focus();
+	setTimeout(() => w.print(), 300);
+}
+async function pdfReport() {
+	try {
+		const res = await fetch("/api/method/frappe.utils.print_format.report_to_pdf", {
+			method: "POST",
+			headers: { "X-Frappe-CSRF-Token": window.csrf_token || "" },
+			body: new URLSearchParams({ html: printableHtml(), orientation: "Landscape" }),
+		});
+		if (!res.ok) throw new Error("Couldn't make the PDF.");
+		const blob = await res.blob();
+		const a = document.createElement("a");
+		a.href = URL.createObjectURL(blob);
+		a.download = `${props.name}.pdf`;
+		a.click();
+		setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+	} catch (e) {
+		report.error = messageOf(e, "Couldn't make the PDF.");
+	}
+}
+
+// ---- save as a custom report (the desk's "Save As") ----
+async function saveAs() {
+	try {
+		const saved = await call("frappe.desk.query_report.save_report", {
+			reference_report: report.reference || props.name,
+			report_name: saveAsName.value.trim(),
+			columns: JSON.stringify(
+				shownColumns.value.map(({ fieldname, label, fieldtype, options, width }) => ({
+					fieldname,
+					label,
+					fieldtype,
+					options,
+					width,
+				})),
+			),
+			filters: JSON.stringify(report.values),
+		});
+		saveAsOpen.value = false;
+		saveAsName.value = "";
+		router.push({ name: "Report", params: { name: saved } });
+	} catch (e) {
+		report.error = messageOf(e, "Couldn't save the report.");
 	}
 }
 
@@ -300,10 +547,16 @@ watch(
 
 onMounted(async () => {
 	try {
-		await attachReportScript(report);
+		await Promise.all([attachReportScript(report), loadColumnChoice()]);
 		await run();
 	} catch (e) {
 		report.error = messageOf(e, `Couldn't open ${props.name}.`);
 	}
 });
 </script>
+
+<style scoped>
+.menu-item {
+	@apply block w-full px-3 py-1.5 text-left text-[13.5px] hover:bg-acc-tint disabled:opacity-40;
+}
+</style>

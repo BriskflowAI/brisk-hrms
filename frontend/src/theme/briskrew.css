@@ -1,11 +1,11 @@
 /* briskrew look for the employee app (Cobalt & Lime). Colours only: screens and features are unchanged.
    Overrides the colour tokens frappe-ui components and Ionic read. */
-@import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&family=Figtree:wght@400..700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@400..800&display=swap");
 
 :root {
 	/* Ionic */
 	--ion-background-color: #f2f4f9;
-	--ion-font-family: "Figtree", system-ui, sans-serif;
+	--ion-font-family: Geist, system-ui, sans-serif;
 	--ion-tab-bar-color-selected: #0e1433;
 	--ion-tab-bar-background-focused: #e2e6ff;
 	--ion-color-primary: #2b3fe0;
@@ -55,14 +55,14 @@
 }
 
 body {
-	font-family: "Figtree", system-ui, sans-serif;
+	font-family: Geist, system-ui, sans-serif;
 	color: #0e1433;
 }
 
 h1,
 h2,
 .font-display {
-	font-family: "Bricolage Grotesque", "Figtree", system-ui, sans-serif;
+	font-family: Geist, system-ui, sans-serif;
 	letter-spacing: -0.01em;
 }
 

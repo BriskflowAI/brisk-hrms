@@ -17,13 +17,22 @@ def boot() -> dict:
 	"""Session context the classic desk keeps in `frappe.boot`, needed to run desk form scripts."""
 	user = frappe.session.user
 	defaults = frappe.defaults.get_defaults() or {}
+	employee = frappe.db.get_value("Employee", {"user_id": user}, ["name", "company"], as_dict=True)
+	if not defaults.get("company"):
+		# Desk scripts and report filters start from the user's company; fall back sensibly.
+		companies = frappe.get_all("Company", pluck="name", limit=2)
+		defaults["company"] = (
+			(employee and employee.company)
+			or frappe.db.get_single_value("Global Defaults", "default_company")
+			or (companies[0] if len(companies) == 1 else None)
+		)
 	companies = frappe.get_all("Company", fields=["name", "default_currency", "abbr"])
 	return {
 		"user": user,
 		"user_fullname": frappe.utils.get_fullname(user),
 		"user_email": frappe.db.get_value("User", user, "email") or user,
 		"roles": frappe.get_roles(user),
-		"employee": frappe.db.get_value("Employee", {"user_id": user}, "name"),
+		"employee": employee and employee.name,
 		"defaults": defaults,
 		"sysdefaults": {
 			"currency": frappe.db.get_default("currency"),
@@ -38,6 +47,23 @@ def boot() -> dict:
 		},
 		"companies": {c.name: {"currency": c.default_currency, "abbr": c.abbr} for c in companies},
 	}
+
+
+@frappe.whitelist()
+def access() -> dict:
+	"""What the current user can open, so menus only offer what will work."""
+	user = frappe.get_user()
+	return {
+		"can_read": sorted(set(user.get_can_read())),
+		"reports": sorted(user.get_all_reports()),
+		"lang": frappe.local.lang or "en",
+	}
+
+
+@frappe.whitelist()
+def unread_notifications() -> int:
+	"""Unread notifications for the bell, without loading them."""
+	return frappe.db.count("Notification Log", {"for_user": frappe.session.user, "read": 0})
 
 
 @frappe.whitelist()

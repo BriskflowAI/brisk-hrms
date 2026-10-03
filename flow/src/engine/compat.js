@@ -12,6 +12,7 @@
 // form.unsupported (shown to the user with a link to the classic desk) instead of
 // failing silently.
 
+import { __ } from "@/composables/i18n";
 import { markRaw, reactive } from "vue";
 import dayjs from "dayjs";
 import isBetween from "dayjs/plugin/isBetween";
@@ -23,7 +24,7 @@ import duration from "dayjs/plugin/duration";
 import weekday from "dayjs/plugin/weekday";
 import jQuery from "jquery";
 import { getMeta, metaFromCache } from "@/composables/api";
-import { localDocs, localName, messageOf } from "./form";
+import { humanError, localDocs, localName, messageOf } from "./form";
 
 import hrmsUtils from "../../../hrms/public/js/utils/index.js?raw";
 import hrmsLeaveUtils from "../../../hrms/public/js/utils/leave_utils.js?raw";
@@ -147,11 +148,7 @@ const cint = (v) => {
 };
 const cstr = (v) => (v === null || v === undefined ? "" : String(v));
 const in_list = (list, item) => (list || []).includes(item);
-const translate = (text, args) => {
-	let s = String(text ?? "");
-	if (args) for (const [i, a] of [].concat(args).entries()) s = s.replaceAll(`{${i}}`, a);
-	return s;
-};
+const translate = (text, args, context) => __(text, args, context);
 const escapeHtml = (s) =>
 	String(s ?? "").replace(
 		/[&<>"']/g,
@@ -221,7 +218,9 @@ async function rawCall(method, args = {}) {
 	const messages = serverMessages(data);
 	if (!res.ok) {
 		const err = new Error(
-			messages.map((m) => m.message).join(" ") || data.exception || `${method} failed`,
+			humanError(
+				messages.map((m) => m.message).join(" ") || data.exception || `${method} failed`,
+			),
 		);
 		err.messages = messages.map((m) => m.message);
 		err.response = data;
@@ -307,7 +306,15 @@ function frappeCall(opts, args, callback) {
 				r = await rawCall(o.method, o.args);
 				if (r.docs) syncDocs(r.docs);
 			}
-			if (o.callback) await o.callback(r);
+			if (o.callback) {
+				// A bug inside the script's own callback is the script's, not the server's:
+				// like the desk, log it rather than interrupt the user.
+				try {
+					await o.callback(r);
+				} catch (scriptError) {
+					console.error(`[briskrew] ${o.method} callback:`, scriptError);
+				}
+			}
 			return r;
 		} catch (e) {
 			if (o.error) o.error(e.response || e);
@@ -748,8 +755,8 @@ function routeTo(args) {
 		kind === "query-report"
 			? `/app/query-report/${encodeURIComponent(doctype)}`
 			: kind === "Tree"
-			  ? `/app/${slug(doctype)}/view/tree`
-			  : `/app/${parts
+				? `/app/${slug(doctype)}/view/tree`
+				: `/app/${parts
 						.map((p) => (/^[A-Z]/.test(p) ? slug(p) : encodeURIComponent(p)))
 						.join("/")}`;
 	const q = new URLSearchParams(query).toString();
@@ -980,8 +987,13 @@ function buildFrappe() {
 		defaults: lenient(
 			{
 				get_default: (k) => (b.defaults || {})[k] ?? (b.sysdefaults || {})[k] ?? null,
-				get_user_default: (k) => (b.defaults || {})[k] ?? null,
-				get_user_defaults: (k) => [].concat((b.defaults || {})[k] ?? []),
+				// Keys are stored lower-case ("company"); scripts ask for "Company".
+				get_user_default: (k) =>
+					(b.defaults || {})[k] ?? (b.defaults || {})[String(k).toLowerCase()] ?? null,
+				get_user_defaults: (k) =>
+					[].concat(
+						(b.defaults || {})[k] ?? (b.defaults || {})[String(k).toLowerCase()] ?? [],
+					),
 				get_global_default: (k) => (b.sysdefaults || {})[k] ?? null,
 			},
 			"frappe.defaults",
@@ -1414,7 +1426,14 @@ function buildErpnext() {
 			"erpnext.accounts",
 		),
 		utils: lenient(
-			{ get_fiscal_year: (d) => booted?.defaults?.fiscal_year, add_dimensions: () => {} },
+			{
+				get_fiscal_year: (d) => booted?.defaults?.fiscal_year,
+				add_dimensions: () => {},
+				// Tree screens offer the companies and default to the user's own.
+				get_tree_options: (key) =>
+					key === "company" ? Object.keys(booted?.companies || {}) : [],
+				get_tree_default: (key) => booted?.defaults?.[key] || "",
+			},
 			"erpnext.utils",
 		),
 		setup: lenient({ utils: {} }, "erpnext.setup"),
@@ -1441,7 +1460,7 @@ function fieldHandle(form, fieldname, table = "") {
 							};
 							return true;
 						},
-				  })
+					})
 				: null;
 		},
 		get value() {
@@ -2306,7 +2325,13 @@ export async function attachReportScript(report) {
 	} catch (e) {
 		report.unsupported.push(`report script: ${e.message}`);
 	}
-	const settings = window.frappe.query_reports[report.name] || {};
+	// A saved ("custom") report runs its reference report's script, with its own saved filters.
+	const reference = res?.custom_report_name;
+	report.reference = reference && reference !== report.name ? reference : null;
+	const settings =
+		window.frappe.query_reports[report.name] ||
+		(report.reference && window.frappe.query_reports[report.reference]) ||
+		{};
 	report.settings = settings;
 	report.filters = (settings.filters || []).map((f) => ({
 		...f,
@@ -2320,6 +2345,18 @@ export async function attachReportScript(report) {
 		report.values[f.fieldname] = d;
 		// Report filters use on_change(query_report); the dialog form calls onchange().
 		if (f.on_change && !f.onchange) f.onchange = () => f.on_change(window.frappe.query_report);
+	}
+	if (report.reference) {
+		const saved = await call("frappe.client.get_value", {
+			doctype: "Report",
+			filters: { name: report.name },
+			fieldname: "json",
+		}).catch(() => null);
+		try {
+			Object.assign(report.values, JSON.parse(saved?.json || "{}").filters || {});
+		} catch {
+			/* no saved filters */
+		}
 	}
 	// A dialog-style form so filters render with the same field controls as records.
 	const dlg = new Dialog({ fields: report.filters });
@@ -2349,4 +2386,27 @@ export function reportCell(report, value, column, row) {
 		}
 	}
 	return def(value, column, {}, row);
+}
+
+// The desk's calendar for a record type (its *_calendar.js): which fields hold the dates and
+// title, and the server method that returns events. Null when the type has no calendar.
+export async function calendarSettings(meta) {
+	if (!meta?.__calendar_js) return null;
+	await install();
+	const views = window.frappe.views;
+	views.calendar ||= {};
+	delete views.calendar[meta.name];
+	runScript(meta.__calendar_js, `${meta.name} calendar`);
+	return views.calendar[meta.name] || null;
+}
+
+// The desk's tree settings for a record type (its *_tree.js): the method that returns child
+// nodes, the filters above the tree, and whether to look up the root first.
+export async function treeSettings(meta) {
+	if (!meta?.is_tree) return null;
+	await install();
+	window.frappe.treeview_settings ||= {};
+	delete window.frappe.treeview_settings[meta.name];
+	runScript(meta.__tree_js, `${meta.name} tree`);
+	return window.frappe.treeview_settings[meta.name] || {};
 }

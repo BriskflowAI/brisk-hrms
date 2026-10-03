@@ -1,8 +1,9 @@
 <template>
-	<div class="flex h-screen overflow-hidden bg-paper font-body text-ink">
-		<Rail :active="area?.key" />
+	<div class="flex h-[100dvh] overflow-hidden bg-paper font-body text-ink">
+		<Rail class="hidden md:flex" :active="area?.key" />
 		<ContextSidebar
 			v-if="area?.sections.length && !collapsed"
+			class="hidden md:flex"
 			:area="area"
 			@collapse="collapsed = true"
 		/>
@@ -12,11 +13,13 @@
 				:collapsed="!!area?.sections.length && collapsed"
 				@search="paletteOpen = true"
 				@expand="collapsed = false"
+				@menu="phoneMenu = true"
 			/>
-			<main class="relative min-h-0 flex-grow overflow-y-auto">
+			<main class="relative min-h-0 flex-grow overflow-y-auto pb-[60px] md:pb-0">
 				<router-view :key="$route.fullPath" />
 			</main>
 		</div>
+		<PhoneNav v-model:open="phoneMenu" :active="area?.key" />
 		<CommandPalette v-model="paletteOpen" />
 	</div>
 </template>
@@ -28,16 +31,22 @@ import Rail from "@/components/Rail.vue";
 import ContextSidebar from "@/components/ContextSidebar.vue";
 import TopBar from "@/components/TopBar.vue";
 import CommandPalette from "@/components/CommandPalette.vue";
-import { areas, areaForDoctype } from "@/nav";
+import PhoneNav from "@/components/PhoneNav.vue";
+import { areaForDoctype } from "@/nav";
+import { loadAccess, visibleAreas } from "@/composables/access";
 import { brand } from "@/brand";
 
 const route = useRoute();
 const paletteOpen = ref(false);
+const phoneMenu = ref(false);
 const collapsed = ref(localPref("flow.sidebarCollapsed") === "1");
 
 watch(collapsed, (v) => savePref("flow.sidebarCollapsed", v ? "1" : "0"));
 
+loadAccess();
+
 const area = computed(() => {
+	const areas = visibleAreas.value;
 	if (route.name === "Home") return areas[0];
 	if (route.name === "Report")
 		return (
@@ -46,11 +55,15 @@ const area = computed(() => {
 			) || areas.find((a) => a.key === "reports")
 		);
 	if (route.name === "PayrollReview") return areas.find((a) => a.key === "pay");
-	if (route.name === "People") return areas.find((a) => a.key === "people");
+	if (["People", "OrgChart", "TeamUpdates"].includes(route.name))
+		return areas.find((a) => a.key === "people");
 	if (route.name === "LeavePolicies") return areas.find((a) => a.key === "time");
 	if (route.name === "Overview") return areas.find((a) => a.key === route.params.area);
 	if (route.name === "Inbox") return areas.find((a) => a.key === "inbox");
-	if (route.params.doctype) return areaForDoctype(route.params.doctype) || null;
+	if (route.params.doctype) {
+		const key = areaForDoctype(route.params.doctype)?.key;
+		return areas.find((a) => a.key === key) || null;
+	}
 	return null;
 });
 
@@ -63,10 +76,12 @@ const crumbs = computed(() => {
 			label: route.params.doctype,
 			to: { name: "List", params: { doctype: route.params.doctype } },
 		});
-		out.push({ label: route.params.name });
+		out.push({ label: route.params.name === "new" ? "New" : route.params.name });
 	}
 	if (route.name === "About") out.push({ label: "About" });
 	if (route.name === "LeavePolicies") out.push({ label: "Leave policies" });
+	if (route.name === "OrgChart") out.push({ label: "Org chart" });
+	if (route.name === "TeamUpdates") out.push({ label: "Team updates" });
 	if (route.name === "Overview") out.push({ label: "Overview" });
 	if (route.name === "Inbox") out.push({ label: "Decide" });
 	if (route.name === "PayrollReview") out.push({ label: "Runs" }, { label: route.params.name });

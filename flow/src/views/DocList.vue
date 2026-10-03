@@ -1,10 +1,10 @@
 <template>
-	<div class="flex flex-col gap-4 px-7 py-6">
+	<div class="flex flex-col gap-4 px-4 md:px-7 py-6">
 		<!-- Header -->
 		<header class="flex flex-wrap items-end gap-2">
 			<div class="mr-auto">
 				<div class="kicker">{{ area?.label || list.meta?.module }}</div>
-				<h1 class="mt-1.5 text-[34px] leading-none">{{ label }}</h1>
+				<h1 class="mt-1.5 text-[28px] leading-none md:text-[34px]">{{ __(label) }}</h1>
 			</div>
 
 			<template v-for="g in buttonGroups" :key="g.group">
@@ -41,6 +41,25 @@
 					</div>
 				</div>
 			</template>
+
+			<div
+				v-if="views.length > 1"
+				role="group"
+				aria-label="View"
+				class="flex h-9 rounded-lg border border-line bg-surf p-0.5"
+			>
+				<button
+					v-for="v in views"
+					:key="v.key"
+					type="button"
+					:aria-pressed="view === v.key"
+					class="flex items-center gap-1.5 rounded-md px-2.5 text-[13px] font-semibold"
+					:class="view === v.key ? 'bg-ink text-surf' : 'text-ink-2 hover:bg-side'"
+					@click="setView(v.key)"
+				>
+					<Icon :name="v.icon" :size="14" /> {{ __(v.label) }}
+				</button>
+			</div>
 
 			<div class="relative">
 				<button
@@ -90,7 +109,7 @@
 				:to="{ name: 'Form', params: { doctype, name: 'new' }, query: prefill }"
 				class="btn-ink"
 			>
-				<Icon name="plus" :size="15" /> New {{ singular }}
+				<Icon name="plus" :size="15" /> {{ __("New {0}", [__(doctype)]) }}
 			</router-link>
 		</header>
 
@@ -125,9 +144,9 @@
 					class="h-9 rounded-lg border border-line bg-surf py-0 pl-2.5 pr-8 text-[13px]"
 					@change="setQuick(df, $event.target.value)"
 				>
-					<option value="">{{ df.label }}: any</option>
+					<option value="">{{ __(df.label) }}: {{ __("any") }}</option>
 					<option v-for="o in quickOptions(df)" :key="o.value" :value="o.value">
-						{{ df.label }}: {{ o.label }}
+						{{ __(df.label) }}: {{ __(o.label) }}
 					</option>
 				</select>
 				<LinkInput
@@ -172,7 +191,7 @@
 								:key="df.fieldname"
 								:value="df.fieldname"
 							>
-								{{ df.label }}
+								{{ __(df.label) }}
 							</option>
 						</select>
 						<div class="flex gap-2">
@@ -233,9 +252,29 @@
 				</div>
 			</div>
 
+			<GroupBy
+				v-if="list.meta"
+				:doctype="doctype"
+				:options="groupByOptions"
+				:filters="serverFilters"
+				@filter="addFilter"
+			/>
+			<SavedFilters
+				v-if="list.meta"
+				:doctype="doctype"
+				:filters="list.filters"
+				@apply="applySaved"
+			/>
+
 			<span class="ml-auto text-[13px] tabular-nums text-mut">{{
 				list.total === null ? "" : `${list.rows.length} of ${list.total}`
 			}}</span>
+			<ColumnPicker
+				v-if="list.meta"
+				v-model="customColumns"
+				:fields="columnChoices"
+				:defaults="defaultColumns.map((f) => f.fieldname)"
+			/>
 		</div>
 
 		<div v-if="list.filters.length" class="flex flex-wrap gap-1.5">
@@ -264,9 +303,31 @@
 			</button>
 		</div>
 
+		<TreeView
+			v-if="view === 'tree' && tree"
+			:doctype="doctype"
+			:meta="list.meta"
+			:settings="tree"
+			:can-create="!!canCreate"
+		/>
+		<BoardView
+			v-if="view === 'board'"
+			:doctype="doctype"
+			:meta="list.meta"
+			:filters="serverFilters()"
+			:can-write="!!list.perms.write"
+		/>
+		<CalendarView
+			v-if="view === 'calendar' && calendar"
+			:doctype="doctype"
+			:settings="calendar"
+			:filters="serverFilters()"
+			:can-create="!!canCreate"
+		/>
+
 		<!-- Bulk bar -->
 		<div
-			v-if="list.selected.length"
+			v-if="list.selected.length && view === 'list'"
 			class="flex flex-wrap items-center gap-2 rounded-xl bg-ink px-4 py-2.5 text-surf"
 		>
 			<span class="mr-2 text-[13.5px] font-semibold"
@@ -304,6 +365,20 @@
 			>
 				Delete
 			</button>
+			<template v-if="list.perms.bulk_actions">
+				<button type="button" class="bulk-btn" @click="bulkMode = 'assign'">
+					Assign to
+				</button>
+				<button type="button" class="bulk-btn" @click="bulkMode = 'tags'">Add tags</button>
+				<button
+					v-if="list.perms.print"
+					type="button"
+					class="bulk-btn"
+					@click="bulkMode = 'print'"
+				>
+					Print
+				</button>
+			</template>
 			<button
 				v-if="list.perms.export"
 				type="button"
@@ -346,7 +421,7 @@
 		</p>
 
 		<!-- Table -->
-		<div class="overflow-x-auto rounded-xl border border-line bg-surf">
+		<div v-if="view === 'list'" class="overflow-x-auto rounded-xl border border-line bg-surf">
 			<table class="w-full border-collapse">
 				<thead>
 					<tr>
@@ -360,13 +435,13 @@
 								@change="toggleAll"
 							/>
 						</th>
-						<th :class="th">{{ titleLabel }}</th>
+						<th :class="th">{{ __(titleLabel) }}</th>
 						<th
 							v-for="f in columns"
 							:key="f.fieldname"
 							:class="[th, isNum(f) && 'text-right']"
 						>
-							{{ f.label }}
+							{{ __(f.label) }}
 						</th>
 						<th :class="th">Status</th>
 						<th v-if="list.settings?.button" :class="th" />
@@ -401,7 +476,7 @@
 								<span class="font-semibold">{{ row[titleKey] || row.name }}</span>
 								<span
 									v-if="titleKey && row[titleKey] && row[titleKey] !== row.name"
-									class="text-[12px] text-mut"
+									class="hidden whitespace-nowrap text-[12px] text-mut md:inline"
 									>{{ row.name }}</span
 								>
 							</span>
@@ -421,7 +496,11 @@
 								:class="tone(indicator(row).color)"
 								>{{ indicator(row).label }}</span
 							>
-							<StatusChip v-else :doc="row" />
+							<StatusChip
+								v-else
+								:doc="row"
+								:submittable="!!list.meta?.is_submittable"
+							/>
 						</td>
 						<td
 							v-if="list.settings?.button"
@@ -464,7 +543,12 @@
 		</div>
 
 		<div
-			v-if="!list.loading && list.total !== null && list.rows.length < list.total"
+			v-if="
+				view === 'list' &&
+				!list.loading &&
+				list.total !== null &&
+				list.rows.length < list.total
+			"
 			class="flex items-center justify-center gap-2"
 		>
 			<button type="button" class="btn-ghost" @click="list.reload(true)">
@@ -564,6 +648,12 @@
 			</div>
 		</div>
 
+		<BulkTools
+			v-model="bulkMode"
+			:doctype="doctype"
+			:names="list.selected"
+			@done="onBulkDone"
+		/>
 		<CompatDialogs />
 	</div>
 </template>
@@ -578,8 +668,23 @@ import FieldValue from "@/components/FieldValue.vue";
 import StatusChip from "@/components/StatusChip.vue";
 import LinkInput from "@/components/fields/LinkInput.vue";
 import CompatDialogs from "@/components/CompatDialogs.vue";
+import BulkTools from "@/components/list/BulkTools.vue";
+import ColumnPicker from "@/components/list/ColumnPicker.vue";
+import GroupBy from "@/components/list/GroupBy.vue";
+import SavedFilters from "@/components/list/SavedFilters.vue";
+import CalendarView from "@/components/list/CalendarView.vue";
+import TreeView from "@/components/list/TreeView.vue";
+import BoardView from "@/components/list/BoardView.vue";
+import { useLiveCheck } from "@/composables/live";
 import { getMeta, isLayout, isTable, listFields, titleField } from "@/composables/api";
-import { attachListScript, detachListScript, listIndicator, loadPerms } from "@/engine/compat";
+import {
+	attachListScript,
+	calendarSettings,
+	treeSettings,
+	detachListScript,
+	listIndicator,
+	loadPerms,
+} from "@/engine/compat";
 import { messageOf } from "@/engine/form";
 import { allNavItems, areaForDoctype, classicUrl } from "@/nav";
 
@@ -604,6 +709,30 @@ const OPERATORS = [
 const menu = ref(null);
 const draft = reactive({ field: "", op: "=", value: "" });
 const bulkEditOpen = ref(false);
+const bulkMode = ref(null);
+const calendar = ref(null); // the desk's calendar settings, when this type has a calendar
+const tree = ref(null); // the desk's tree settings, for record types kept as a tree
+const views = computed(() => [
+	{ key: "list", label: "List", icon: "list" },
+	...(calendar.value ? [{ key: "calendar", label: "Calendar", icon: "cal" }] : []),
+	...(tree.value ? [{ key: "tree", label: "Tree", icon: "tree" }] : []),
+	...((list.meta?.fields || []).some((f) => f.fieldtype === "Select" && f.options && !f.hidden)
+		? [{ key: "board", label: "Board", icon: "board" }]
+		: []),
+]);
+const viewChoice = ref(route.query.view || "list");
+const view = computed(() =>
+	views.value.some((v) => v.key === viewChoice.value) ? viewChoice.value : "list",
+);
+// Kept out of the router so switching doesn't reload the screen and drop the filters.
+function setView(v) {
+	viewChoice.value = v;
+	const url = new URL(window.location.href);
+	if (v === "list") url.searchParams.delete("view");
+	else url.searchParams.set("view", v);
+	window.history.replaceState(window.history.state, "", url);
+}
+const customColumns = ref(null); // the user's own column choice, kept in their list settings
 const bulk = reactive({ field: "", value: "" });
 const confirming = ref(null);
 
@@ -659,13 +788,47 @@ const titleKey = computed(() => (list.meta ? titleField(list.meta) : null));
 const titleLabel = computed(
 	() => list.meta?.fields.find((f) => f.fieldname === titleKey.value)?.label || "ID",
 );
-const columns = computed(() =>
+const defaultColumns = computed(() =>
 	list.meta
 		? listFields(list.meta).filter(
 				(f) => f.fieldname !== titleKey.value && f.fieldname !== "status",
-		  )
+			)
 		: [],
 );
+const columnChoices = computed(() =>
+	(list.meta?.fields || []).filter(
+		(f) =>
+			!isLayout(f) &&
+			!isTable(f) &&
+			![
+				"Text Editor",
+				"HTML Editor",
+				"Code",
+				"Attach Image",
+				"Signature",
+				"Password",
+			].includes(f.fieldtype) &&
+			f.fieldname !== titleKey.value &&
+			f.fieldname !== "status" &&
+			f.label,
+	),
+);
+const columns = computed(() =>
+	customColumns.value
+		? customColumns.value
+				.map((n) => columnChoices.value.find((f) => f.fieldname === n))
+				.filter(Boolean)
+		: defaultColumns.value,
+);
+const groupByOptions = computed(() => [
+	{ fieldname: "assigned_to", label: "Assigned to" },
+	{ fieldname: "owner", label: "Created by" },
+	...fields.value.filter(
+		(d) =>
+			(d.fieldname === "status" || d.in_standard_filter) &&
+			["Link", "Select", "Check"].includes(d.fieldtype),
+	),
+]);
 const canCreate = computed(
 	() => list.meta && !list.meta.issingle && !list.meta.istable && list.perms.create,
 );
@@ -693,6 +856,9 @@ const filterableFields = computed(() => [
 	...fields.value,
 	{ fieldname: "modified", label: "Last updated", fieldtype: "Datetime" },
 	{ fieldname: "creation", label: "Created on", fieldtype: "Datetime" },
+	{ fieldname: "owner", label: "Created by" },
+	{ fieldname: "_assign", label: "Assigned to" },
+	{ fieldname: "_user_tags", label: "Tags" },
 ]);
 const editableFields = computed(() =>
 	fields.value.filter(
@@ -808,6 +974,19 @@ function applyDraft() {
 	menu.value = null;
 	load();
 }
+function addFilter(f) {
+	list.filters.push(f);
+	load();
+}
+function applySaved(filters) {
+	list.filters = filters;
+	load();
+}
+function onBulkDone(message) {
+	list.notice = message;
+	list.selected = [];
+	load();
+}
 function removeFilter(i) {
 	list.filters.splice(i, 1);
 	load();
@@ -865,7 +1044,7 @@ async function load(more = false) {
 			? [
 					[props.doctype, "name", "like", `%${q}%`],
 					...(titleKey.value ? [[props.doctype, titleKey.value, "like", `%${q}%`]] : []),
-			  ]
+				]
 			: null;
 		const [page, count] = await Promise.all([
 			call("frappe.client.get_list", {
@@ -883,7 +1062,7 @@ async function load(more = false) {
 						doctype: props.doctype,
 						filters: serverFilters(),
 						or_filters: orFilters,
-				  }).catch(() => null),
+					}).catch(() => null),
 		]);
 		if (mine !== seq) return;
 		list.rows = more ? [...list.rows, ...page] : page;
@@ -999,7 +1178,7 @@ async function bulkAction(action) {
 				? "Working on it in the background. Refresh in a minute to see the result."
 				: `${done} of ${names.length} done.${
 						failed?.length ? ` Not changed: ${failed.join(", ")}` : ""
-				  }`;
+					}`;
 		list.selected = [];
 		Object.assign(bulk, { field: "", value: "" });
 		await load();
@@ -1050,6 +1229,51 @@ watch(
 	() => load(),
 );
 
+// ---- live: refresh when records change, unless the user is in the middle of something ----
+let lastStamp = null;
+useLiveCheck(async () => {
+	if (!list.meta || list.loading || view.value !== "list") return;
+	const [latest] = await call("frappe.client.get_list", {
+		doctype: props.doctype,
+		fields: ["modified"],
+		filters: serverFilters(),
+		order_by: "modified desc",
+		limit_page_length: 1,
+	});
+	const count = await call("frappe.client.get_count", {
+		doctype: props.doctype,
+		filters: serverFilters(),
+	});
+	const stamp = `${latest?.modified || ""}|${count}`;
+	const changed = lastStamp !== null && stamp !== lastStamp;
+	lastStamp = stamp;
+	if (changed && !list.selected.length && !menu.value && !bulkMode.value && !bulkEditOpen.value)
+		await load();
+});
+
+// ---- the user's columns, saved with their other list settings for this record type ----
+let savedColumns = null; // JSON of what's stored, so loading it doesn't save it again
+async function loadColumnChoice() {
+	try {
+		const raw = await call("frappe.model.utils.user_settings.get", { doctype: props.doctype });
+		const saved = (typeof raw === "string" ? JSON.parse(raw || "{}") : raw || {})
+			.briskrew_columns;
+		customColumns.value = Array.isArray(saved) && saved.length ? saved : null;
+	} catch {
+		customColumns.value = null;
+	}
+	savedColumns = JSON.stringify(customColumns.value);
+}
+watch(customColumns, (cols) => {
+	if (savedColumns === null || JSON.stringify(cols) === savedColumns) return;
+	savedColumns = JSON.stringify(cols);
+	call("frappe.model.utils.user_settings.save", {
+		doctype: props.doctype,
+		user_settings: JSON.stringify({ briskrew_columns: cols }),
+	}).catch(() => {});
+	load();
+});
+
 onMounted(async () => {
 	try {
 		const [m, perms] = await Promise.all([getMeta(props.doctype), loadPerms(props.doctype)]);
@@ -1063,7 +1287,12 @@ onMounted(async () => {
 			return;
 		}
 		list.filters = filtersFromRoute();
+		await loadColumnChoice();
 		await attachListScript(list, router);
+		[calendar.value, tree.value] = await Promise.all([
+			calendarSettings(list.meta).catch(() => null),
+			treeSettings(list.meta).catch(() => null),
+		]);
 		await load();
 	} catch (e) {
 		list.error = messageOf(e, `Couldn't open ${props.doctype}.`);

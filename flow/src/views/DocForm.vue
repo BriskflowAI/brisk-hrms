@@ -10,18 +10,18 @@
 		<template v-else-if="form.ready && form.doc">
 			<!-- Header -->
 			<header
-				class="sticky top-0 z-20 flex flex-col gap-3 border-b border-line bg-surf px-7 pt-5"
+				class="sticky top-0 z-20 flex flex-col gap-3 border-b border-line bg-surf px-4 md:px-7 pt-5"
 			>
-				<div class="flex items-end gap-3">
+				<div class="flex flex-wrap items-end gap-3">
 					<Avatar v-if="doctype === 'Employee'" :label="form.titleValue" :size="52" />
-					<div class="min-w-0 flex-grow">
+					<div class="min-w-0 flex-grow basis-[calc(100%-70px)] md:basis-auto">
 						<router-link
 							:to="{ name: 'List', params: { doctype } }"
 							class="kicker hover:text-acc"
-							>{{ doctype }}</router-link
+							>{{ __(doctype) }}</router-link
 						>
-						<h1 class="mt-1.5 truncate text-[30px] leading-none">
-							{{ form.isNew ? `New ${doctype}` : form.titleValue }}
+						<h1 class="mt-1.5 truncate text-[24px] leading-none md:text-[30px]">
+							{{ form.isNew ? __("New {0}", [__(doctype)]) : form.titleValue }}
 						</h1>
 						<div
 							v-if="!form.isNew && form.titleValue !== form.doc.name"
@@ -30,6 +30,27 @@
 							{{ form.doc.name }}
 						</div>
 					</div>
+					<button
+						v-if="!form.isNew"
+						type="button"
+						class="flex h-7 items-center gap-1 rounded-full px-2 text-[12.5px] font-semibold transition-colors"
+						:class="liked ? 'text-neg' : 'text-mut hover:text-neg'"
+						:aria-pressed="liked"
+						:aria-label="liked ? 'Unlike' : 'Like'"
+						:title="likedBy.length ? `Liked by ${likedBy.join(', ')}` : 'Like'"
+						@click="toggleLike"
+					>
+						<svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true">
+							<path
+								d="M12 20s-7-4.4-9.2-8.6C1.3 8.5 3 5 6.4 5c2 0 3.3 1.1 4.1 2.3h3C14.3 6.1 15.6 5 17.6 5 21 5 22.7 8.5 21.2 11.4 19 15.6 12 20 12 20z"
+								:fill="liked ? 'currentColor' : 'none'"
+								stroke="currentColor"
+								stroke-width="1.8"
+								stroke-linejoin="round"
+							/>
+						</svg>
+						<span v-if="likedBy.length">{{ likedBy.length }}</span>
+					</button>
 					<span v-if="form.dirty" class="chip bg-warn-tint text-warn">Not saved</span>
 					<span v-if="form.indicator" class="chip" :class="tone(form.indicator.color)">{{
 						form.indicator.label
@@ -37,7 +58,11 @@
 					<span v-else-if="form.workflowState" class="chip bg-acc-tint text-acc">{{
 						form.workflowState
 					}}</span>
-					<StatusChip v-else-if="!form.isNew" :doc="form.doc" />
+					<StatusChip
+						v-else-if="!form.isNew"
+						:doc="form.doc"
+						:submittable="!!form.meta?.is_submittable"
+					/>
 
 					<!-- Buttons added by the form's own script, grouped like the desk -->
 					<div v-for="g in buttonGroups" :key="g.group" class="relative">
@@ -50,7 +75,7 @@
 								:disabled="!!form.busy"
 								@click="runButton(b)"
 							>
-								{{ b.label }}
+								{{ __(b.label) }}
 							</button>
 						</template>
 						<template v-else>
@@ -60,7 +85,7 @@
 								:aria-expanded="menu === g.group"
 								@click="menu = menu === g.group ? null : g.group"
 							>
-								{{ g.group }} <Icon name="chev" :size="14" />
+								{{ __(g.group) }} <Icon name="chev" :size="14" />
 							</button>
 							<div
 								v-if="menu === g.group"
@@ -73,7 +98,7 @@
 									class="block w-full px-3 py-1.5 text-left text-[13.5px] hover:bg-acc-tint"
 									@click="runButton(b)"
 								>
-									{{ b.label }}
+									{{ __(b.label) }}
 								</button>
 							</div>
 						</template>
@@ -143,6 +168,56 @@
 									Reload
 								</button>
 								<button
+									type="button"
+									class="menu-item"
+									@click="((remindOpen = true), (menu = null))"
+								>
+									Remind me
+								</button>
+								<router-link
+									v-if="form.meta.allow_auto_repeat"
+									:to="
+										form.doc.auto_repeat
+											? {
+													name: 'Form',
+													params: {
+														doctype: 'Auto Repeat',
+														name: form.doc.auto_repeat,
+													},
+												}
+											: {
+													name: 'Form',
+													params: {
+														doctype: 'Auto Repeat',
+														name: 'new',
+													},
+													query: {
+														reference_doctype: doctype,
+														reference_document: form.doc.name,
+													},
+												}
+									"
+									class="menu-item"
+									>{{
+										form.doc.auto_repeat ? "Repeat settings" : "Repeat"
+									}}</router-link
+								>
+								<button type="button" class="menu-item" @click="copyJson">
+									Copy to clipboard
+								</button>
+								<router-link
+									v-if="form.perms?.create"
+									:to="{ name: 'Form', params: { doctype, name: 'new' } }"
+									class="menu-item"
+									>{{ __("New {0}", [__(doctype)]) }}</router-link
+								>
+								<a
+									v-if="isSystemManager"
+									:href="`/app/customize-form?doc_type=${encodeURIComponent(doctype)}`"
+									class="menu-item"
+									>Customize</a
+								>
+								<button
 									v-if="form.perms?.delete && form.docstatus !== 1"
 									type="button"
 									class="menu-item text-neg"
@@ -183,10 +258,8 @@
 						:disabled="!!form.busy"
 						@click="primary.run()"
 					>
-						{{ form.busy || primary.label }}
-						<kbd v-if="primary.label === 'Save'" class="ml-1 text-[11px] opacity-60"
-							>⌘S</kbd
-						>
+						{{ form.busy || __(primary.label) }}
+						<kbd v-if="primary.label === 'Save'" class="kbd">{{ modKey }}S</kbd>
 					</button>
 				</div>
 
@@ -207,14 +280,31 @@
 						"
 						@click="tab = i"
 					>
-						{{ t.label }}
+						{{ __(t.label) }}
 					</button>
 				</nav>
 				<div v-else class="h-1" />
 			</header>
 
 			<!-- Messages -->
-			<div class="flex flex-col gap-2 px-7 pt-4 empty:hidden">
+			<div class="flex flex-col gap-2 px-4 md:px-7 pt-4 empty:hidden">
+				<div
+					v-if="changedBy"
+					role="status"
+					class="flex flex-wrap items-center gap-3 rounded-lg bg-warn-tint px-4 py-2.5 text-[13.5px] text-ink"
+				>
+					<span class="flex-grow"
+						><b>{{ changedBy }}</b> changed this record while you were editing
+						it.</span
+					>
+					<button
+						type="button"
+						class="btn-ghost h-8 px-3 text-[13px]"
+						@click="reloadLatest"
+					>
+						Load their changes
+					</button>
+				</div>
 				<p
 					v-if="form.error"
 					role="alert"
@@ -267,12 +357,12 @@
 						:key="d.label"
 						class="chip"
 						:class="tone(d.color)"
-						>{{ d.label }}</span
+						>{{ __(d.label) }}</span
 					>
 				</div>
 			</div>
 
-			<div class="flex min-h-0 flex-grow gap-6 px-7 py-5">
+			<div class="flex min-h-0 flex-grow flex-col gap-6 px-4 py-5 md:px-7 lg:flex-row">
 				<!-- Fields -->
 				<div class="flex min-w-0 flex-grow flex-col gap-5">
 					<section
@@ -287,7 +377,7 @@
 							:aria-expanded="!collapsed[s.key]"
 							@click="collapsed[s.key] = !collapsed[s.key]"
 						>
-							<h2 class="flex-grow text-[16px]">{{ s.label }}</h2>
+							<h2 class="flex-grow text-[16px]">{{ __(s.label) }}</h2>
 							<Icon
 								v-if="s.collapsible"
 								:name="collapsed[s.key] ? 'chevr' : 'chev'"
@@ -297,10 +387,8 @@
 						</button>
 						<div
 							v-if="!collapsed[s.key]"
-							class="grid gap-x-8"
-							:style="{
-								gridTemplateColumns: `repeat(${s.columns.length}, minmax(0, 1fr))`,
-							}"
+							class="form-cols grid gap-x-8 gap-y-2.5"
+							:style="{ '--cols': s.columns.length }"
 						>
 							<div
 								v-for="(col, ci) in s.columns"
@@ -319,13 +407,13 @@
 				</div>
 
 				<!-- Sidebar -->
-				<aside v-if="!form.isNew" class="flex w-[280px] shrink-0 flex-col gap-5">
+				<aside v-if="!form.isNew" class="flex w-full shrink-0 flex-col gap-5 lg:w-[280px]">
 					<DocSidebar :form="form" />
 				</aside>
 			</div>
 		</template>
 
-		<div v-else class="px-7 py-10 text-[13.5px] text-mut">Loading…</div>
+		<div v-else class="px-4 md:px-7 py-10 text-[13.5px] text-mut">Loading…</div>
 
 		<!-- Confirm -->
 		<div
@@ -364,12 +452,25 @@
 			</div>
 		</div>
 
+		<RemindMe
+			v-if="!form.isNew && form.doc"
+			v-model="remindOpen"
+			:doctype="doctype"
+			:name="form.doc.name"
+			:title="form.titleValue"
+			@done="(m) => (form.headline = m)"
+		/>
 		<CompatDialogs />
 	</div>
 </template>
 
 <script setup>
+import { modKey } from "@/composables/platform";
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
+import { useLiveCheck } from "@/composables/live";
+import { call } from "frappe-ui";
+import { useSession } from "@/composables/session";
+import RemindMe from "@/components/doc/RemindMe.vue";
 import { onBeforeRouteLeave, useRouter } from "vue-router";
 import Icon from "@/components/Icon.vue";
 import Avatar from "@/components/Avatar.vue";
@@ -377,7 +478,7 @@ import StatusChip from "@/components/StatusChip.vue";
 import Field from "@/components/fields/Field.vue";
 import DocSidebar from "@/components/DocSidebar.vue";
 import CompatDialogs from "@/components/CompatDialogs.vue";
-import { createForm } from "@/engine/form";
+import { createForm, messageOf } from "@/engine/form";
 import { attachFormScript, detachFormScript } from "@/engine/compat";
 import { classicUrl } from "@/nav";
 
@@ -602,6 +703,77 @@ const tone = (c) =>
 		blue: "bg-acc-tint text-acc",
 	})[c] || "bg-line-2 text-ink-2";
 
+// ---- likes, reminders, copy ----
+const remindOpen = ref(false);
+const { user: me } = useSession();
+const isSystemManager = computed(() =>
+	(window.frappe?.user_roles || window.frappe?.boot?.user?.roles || []).includes(
+		"System Manager",
+	),
+);
+const likedBy = computed(() => {
+	try {
+		return JSON.parse(form.doc?._liked_by || "[]") || [];
+	} catch {
+		return [];
+	}
+});
+const liked = computed(() => likedBy.value.includes(me));
+async function toggleLike() {
+	const add = !liked.value;
+	const next = add ? [...likedBy.value, me] : likedBy.value.filter((u) => u !== me);
+	form.doc._liked_by = JSON.stringify(next);
+	try {
+		await call("frappe.desk.like.toggle_like", {
+			doctype: props.doctype,
+			name: form.doc.name,
+			add: add ? "Yes" : "No",
+		});
+	} catch (e) {
+		form.error = messageOf(e, "Couldn't save your like.");
+	}
+}
+async function copyJson() {
+	menu.value = null;
+	await navigator.clipboard?.writeText(JSON.stringify(form.doc, null, 2)).catch(() => {});
+	form.headline = "Copied this record to the clipboard.";
+}
+
+// ---- live: pick up changes others make while this record is open ----
+const changedBy = ref("");
+useLiveCheck(async () => {
+	if (!form.ready || form.isNew || !form.doc?.modified) return;
+	const latest = await call("frappe.client.get_value", {
+		doctype: props.doctype,
+		filters: { name: form.doc.name },
+		fieldname: ["modified", "modified_by"],
+	});
+	if (!latest?.modified || latest.modified === form.doc.modified) return;
+	// Someone typing in a field counts as editing even before the field reports its value.
+	const el = document.activeElement;
+	const typing = el && (el.matches?.("input, textarea, select") || el.isContentEditable);
+	if (form.dirty || typing) {
+		const who = await call("frappe.client.get_value", {
+			doctype: "User",
+			filters: { name: latest.modified_by },
+			fieldname: "full_name",
+		}).catch(() => null);
+		changedBy.value = who?.full_name || latest.modified_by;
+	} else {
+		await form.reloadDoc();
+	}
+});
+async function reloadLatest() {
+	changedBy.value = "";
+	document.activeElement?.blur?.();
+	form.dirty = false;
+	await form.reloadDoc();
+}
+watch(
+	() => form.doc?.modified,
+	(modified, before) => before && modified !== before && !form.dirty && (changedBy.value = ""),
+);
+
 function onKey(e) {
 	if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
 		e.preventDefault();
@@ -640,6 +812,15 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+/* Section columns side by side on wider screens, one under another on phones. */
+.form-cols {
+	grid-template-columns: minmax(0, 1fr);
+}
+@media (min-width: 768px) {
+	.form-cols {
+		grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+	}
+}
 .menu-item {
 	@apply block w-full px-3 py-1.5 text-left text-[13.5px] hover:bg-acc-tint;
 }

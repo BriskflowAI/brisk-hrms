@@ -24,8 +24,9 @@ export default {
 				warn: { DEFAULT: "#8A5700", tint: "#FFEFC4" },
 			},
 			fontFamily: {
-				display: ["'Bricolage Grotesque'", "system-ui", "sans-serif"],
-				body: ["Figtree", "system-ui", "sans-serif"],
+				// Geist, bundled with the app (no Google Fonts request).
+				display: ["'Geist Variable'", "system-ui", "sans-serif"],
+				body: ["'Geist Variable'", "system-ui", "sans-serif"],
 			},
 		},
 	},

@@ -1,5 +1,15 @@
 <template>
+	<img
+		v-if="image && !broken"
+		:src="image"
+		:alt="label"
+		:title="label"
+		class="shrink-0 rounded-full object-cover"
+		:style="{ width: `${size}px`, height: `${size}px` }"
+		@error="broken = true"
+	/>
 	<span
+		v-else
 		class="inline-flex shrink-0 items-center justify-center rounded-full font-display font-bold leading-none"
 		:style="{
 			width: `${size}px`,
@@ -15,12 +25,14 @@
 </template>
 
 <script setup>
-import { computed } from "vue";
+import { computed, ref } from "vue";
 
 const props = defineProps({
 	label: { type: String, default: "" },
 	size: { type: Number, default: 28 },
+	image: { type: String, default: "" },
 });
+const broken = ref(false);
 
 // Stable colour per person, picked from the team palette.
 const tones = [

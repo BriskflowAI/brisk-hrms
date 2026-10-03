@@ -20,6 +20,12 @@ const routes = [
 		name: "LeavePolicies",
 		component: () => import("@/views/LeavePolicies.vue"),
 	},
+	{ path: "/org-chart", name: "OrgChart", component: () => import("@/views/OrgChart.vue") },
+	{
+		path: "/team-updates",
+		name: "TeamUpdates",
+		component: () => import("@/views/TeamUpdates.vue"),
+	},
 	{ path: "/inbox", name: "Inbox", component: () => import("@/views/Inbox.vue") },
 	{
 		path: "/report/:name",

@@ -3,10 +3,11 @@
 		<!-- Queue -->
 		<section
 			aria-label="Requests"
-			class="flex w-[340px] shrink-0 flex-col gap-3 border-r border-line px-3.5 pt-6"
+			class="w-full shrink-0 flex-col gap-3 border-r border-line px-3.5 pt-6 md:flex md:w-[340px]"
+			:class="phoneDetail ? 'hidden' : 'flex'"
 		>
 			<div class="flex items-baseline gap-2.5 px-2">
-				<h1 class="text-[36px] leading-none">Inbox</h1>
+				<h1 class="text-[28px] leading-none md:text-[36px]">Inbox</h1>
 				<span class="text-[13px] text-mut">{{
 					loading ? "Loading…" : `${pending.length} to decide`
 				}}</span>
@@ -57,10 +58,10 @@
 				class="mx-2 flex items-center gap-2 rounded-[10px] bg-acc-tint px-3 py-2 text-[12.5px] text-ink"
 			>
 				<Icon name="check" :size="15" :stroke="2.2" class="text-acc" />
-				<span class="flex-grow">Approve the ones that pass every check</span>
+				<span class="min-w-0 flex-grow">Approve all that pass every check</span>
 				<button
 					type="button"
-					class="font-bold text-acc hover:text-acc-hover"
+					class="shrink-0 whitespace-nowrap font-bold text-acc hover:text-acc-hover"
 					@click="confirmBulk = true"
 				>
 					Review {{ visible.length }}
@@ -86,10 +87,10 @@
 						class="flex w-full gap-2.5 rounded-[10px] px-3 py-2.5 text-left"
 						:class="
 							key(item) === key(current)
-								? 'bg-surf shadow-[0_0_0_1.5px] shadow-ink'
+								? 'bg-surf shadow-[inset_0_0_0_1.5px] shadow-ink'
 								: 'hover:bg-surf/70'
 						"
-						@click="select(item)"
+						@click="(select(item), (phoneDetail = true))"
 					>
 						<Avatar :label="item.employee_name" :size="30" />
 						<span class="min-w-0 flex-grow">
@@ -112,7 +113,18 @@
 		</section>
 
 		<!-- Decision -->
-		<section aria-label="Decision" class="flex min-w-0 flex-grow flex-col">
+		<section
+			aria-label="Decision"
+			class="min-w-0 flex-grow flex-col md:flex"
+			:class="phoneDetail ? 'flex' : 'hidden'"
+		>
+			<button
+				type="button"
+				class="flex items-center gap-1.5 border-b border-line px-4 py-2.5 text-[13.5px] font-semibold text-acc md:hidden"
+				@click="phoneDetail = false"
+			>
+				← All requests
+			</button>
 			<div
 				v-if="!current"
 				class="flex flex-grow items-center justify-center p-10 text-center"
@@ -128,7 +140,7 @@
 			</div>
 
 			<template v-else>
-				<div class="min-h-0 flex-grow overflow-y-auto px-11 pb-6 pt-8">
+				<div class="min-h-0 flex-grow overflow-y-auto px-4 pb-6 pt-5 md:px-11 md:pt-8">
 					<p
 						v-if="error"
 						class="mb-5 rounded-lg bg-neg-tint px-4 py-2.5 text-[13.5px] text-neg"
@@ -138,7 +150,9 @@
 					<div class="kicker text-acc">
 						{{ current.kind }} request · sent {{ ago(current.creation) }} ago
 					</div>
-					<h2 class="mt-3 max-w-[640px] text-[40px] leading-[1.05]">{{ headline }}</h2>
+					<h2 class="mt-3 max-w-[640px] text-[28px] leading-[1.05] md:text-[40px]">
+						{{ headline }}
+					</h2>
 					<p
 						v-if="subline"
 						class="mt-3 max-w-[620px] text-[15.5px] leading-relaxed text-ink-2"
@@ -183,7 +197,7 @@
 							</div>
 							<div v-if="ctx.team.members.length">
 								<div class="mb-2.5 text-[13px] font-bold">
-									{{ current.department }} those days
+									{{ dept(current.department) }} those days
 								</div>
 								<div class="overflow-x-auto">
 									<table class="border-separate border-spacing-1 text-[12px]">
@@ -219,8 +233,8 @@
 															isHoliday(d.date)
 																? 'Holiday'
 																: d.away.includes(m.name)
-																  ? 'Away'
-																  : 'In'
+																	? 'Away'
+																	: 'In'
 														"
 													/>
 												</td>
@@ -319,18 +333,20 @@
 					</div>
 				</div>
 
-				<div class="flex items-center gap-2 border-t border-line bg-surf px-11 py-3.5">
+				<div
+					class="flex flex-wrap items-center gap-2 border-t border-line bg-surf px-4 py-3 md:px-11 md:py-3.5"
+				>
 					<button
 						type="button"
 						class="btn border-transparent text-ink hover:bg-side"
 						@click="openNote('Comment')"
 					>
 						<Icon name="file" :size="15" /> Comment
-						<kbd class="ml-1 text-[11px] opacity-70">C</kbd>
+						<kbd class="kbd hidden md:inline-flex">C</kbd>
 					</button>
 					<a
 						:href="classicUrl(current.doctype, current.name)"
-						class="btn border-transparent text-ink-2 hover:bg-side"
+						class="btn hidden border-transparent text-ink-2 hover:bg-side md:inline-flex"
 					>
 						<Icon name="ext" :size="15" /> Classic desk
 					</a>
@@ -346,7 +362,7 @@
 							@click="act(a.action)"
 						>
 							{{ a.action }}
-							<kbd v-if="isReject(a)" class="ml-1 text-[11px] opacity-70">R</kbd>
+							<kbd v-if="isReject(a)" class="kbd hidden md:inline-flex">R</kbd>
 						</button>
 						<button
 							v-if="primaryAction"
@@ -356,7 +372,7 @@
 							@click="act(primaryAction.action)"
 						>
 							{{ primaryAction.action }} &amp; next
-							<kbd class="ml-1 text-[11px] opacity-70">A</kbd>
+							<kbd class="kbd hidden md:inline-flex">A</kbd>
 						</button>
 						<span v-if="!ctx.actions.length" class="text-[13px] text-mut"
 							>You can view this request but not decide it.</span
@@ -370,7 +386,7 @@
 		<aside
 			v-if="current && ctx"
 			aria-label="About the requester"
-			class="flex w-[290px] shrink-0 flex-col gap-5 overflow-y-auto border-l border-line bg-surf px-5 py-6"
+			class="hidden w-[290px] lg:flex shrink-0 flex-col gap-5 overflow-y-auto border-l border-line bg-surf px-5 py-6"
 		>
 			<div class="flex items-center gap-3">
 				<Avatar :label="ctx.employee.employee_name" :size="46" />
@@ -391,7 +407,7 @@
 			</div>
 			<div class="flex flex-wrap gap-1.5">
 				<span v-if="ctx.employee.department" class="chip bg-acc-tint text-acc">{{
-					ctx.employee.department
+					dept(ctx.employee.department)
 				}}</span>
 				<span v-if="ctx.employee.date_of_joining" class="chip bg-line-2 text-ink-2"
 					>Joined {{ date(ctx.employee.date_of_joining) }}</span
@@ -469,6 +485,7 @@
 </template>
 
 <script setup>
+import { dept } from "@/composables/format";
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import dayjs from "dayjs";
 import Icon from "@/components/Icon.vue";
@@ -491,6 +508,7 @@ const loading = ref(true);
 const tab = ref("decide");
 const kind = ref("all");
 const current = ref(null);
+const phoneDetail = ref(false); // phones show the list or one request, not both
 const ctx = ref(null);
 const error = ref("");
 const busy = ref(false);

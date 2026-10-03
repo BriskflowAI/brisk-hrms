@@ -1,12 +1,25 @@
 <template>
 	<div class="h-full overflow-y-auto">
-		<header class="flex flex-wrap items-end gap-3 px-7 pb-2 pt-5">
+		<header class="flex flex-wrap items-end gap-3 px-4 md:px-7 pb-2 pt-5">
 			<div class="mr-auto">
 				<div class="kicker">{{ data?.title || "" }} · Overview</div>
-				<h1 class="mt-1.5 text-[36px] leading-none">
+				<h1 class="mt-1.5 text-[28px] leading-none md:text-[36px]">
 					{{ data?.title || "Overview" }} at a glance
 				</h1>
 			</div>
+			<label v-if="data?.companies?.length > 1" class="flex items-center gap-2 text-[13px]">
+				<span class="font-semibold text-ink-2">Company</span>
+				<select
+					:value="data.company"
+					class="h-9 rounded-lg border border-line bg-surf py-0 pl-3 pr-8 text-[13.5px] font-semibold text-ink focus:border-acc focus:ring-1 focus:ring-acc"
+					@change="
+						company = $event.target.value;
+						load();
+					"
+				>
+					<option v-for="c in data.companies" :key="c" :value="c">{{ c }}</option>
+				</select>
+			</label>
 			<button type="button" class="btn-ghost" :disabled="loading" @click="load">
 				{{ loading ? "Refreshing…" : "Refresh" }}
 			</button>
@@ -19,9 +32,9 @@
 		>
 			{{ error }}
 		</p>
-		<div v-else-if="!data" class="px-7 py-10 text-[13.5px] text-mut">Loading…</div>
+		<div v-else-if="!data" class="px-4 md:px-7 py-10 text-[13.5px] text-mut">Loading…</div>
 
-		<div v-else class="px-7 pb-10 transition-opacity" :class="loading && 'opacity-60'">
+		<div v-else class="px-4 md:px-7 pb-10 transition-opacity" :class="loading && 'opacity-60'">
 			<!-- headline numbers -->
 			<section
 				v-if="data.cards.length"
@@ -136,7 +149,12 @@
 							:aria-label="ch.label"
 						/>
 						<p
-							v-if="hasData(ch) && !ch.error && !tables[ch.name] && ch.datasets.length > 3"
+							v-if="
+								hasData(ch) &&
+								!ch.error &&
+								!tables[ch.name] &&
+								ch.datasets.length > 3
+							"
 							class="mt-2 text-[12px] text-mut"
 						>
 							Showing 3 of {{ ch.datasets.length }} series. The table has them all.
@@ -161,13 +179,17 @@ const props = defineProps({ area: { type: String, required: true } });
 const data = ref(null);
 const error = ref("");
 const loading = ref(false);
+const company = ref(null); // the company picked on screen; the server picks one when empty
 const tables = reactive({});
 
 async function load() {
 	loading.value = true;
 	error.value = "";
 	try {
-		data.value = await call("hrms.briskrew.dashboards.get_overview", { area: props.area });
+		data.value = await call("hrms.briskrew.dashboards.get_overview", {
+			area: props.area,
+			company: company.value,
+		});
 	} catch (e) {
 		error.value = messageOf(e, "Couldn't load this overview.");
 	} finally {

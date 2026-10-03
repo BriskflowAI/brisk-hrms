@@ -1,6 +1,6 @@
 <template>
 	<div class="relative" @keydown.esc="open = false">
-		<div class="flex items-center gap-1">
+		<div class="relative">
 			<input
 				:id="inputId || undefined"
 				ref="input"
@@ -11,7 +11,7 @@
 				role="combobox"
 				:aria-expanded="open"
 				autocomplete="off"
-				:class="inputClass"
+				:class="[inputClass, modelValue && doctype ? 'pr-9' : '']"
 				@focus="onFocus"
 				@input="onInput($event.target.value)"
 				@keydown.down.prevent="move(1)"
@@ -23,7 +23,7 @@
 				v-if="modelValue && doctype"
 				:to="{ name: 'Form', params: { doctype, name: modelValue } }"
 				:aria-label="`Open ${modelValue}`"
-				class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-mut hover:bg-side hover:text-acc"
+				class="absolute right-1.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-mut hover:bg-side hover:text-acc"
 				tabindex="-1"
 			>
 				<Icon name="ext" :size="14" />

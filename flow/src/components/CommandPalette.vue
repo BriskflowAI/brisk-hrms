@@ -56,12 +56,14 @@
 </template>
 
 <script setup>
+import { dept } from "@/composables/format";
 import { computed, nextTick, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import Icon from "./Icon.vue";
 import Avatar from "./Avatar.vue";
 import { allNavItems } from "@/nav";
 import { searchDoctypes, searchEmployees } from "@/composables/api";
+import { canOpen, canReadDoctype } from "@/composables/access";
 
 const open = defineModel({ type: Boolean, default: false });
 const router = useRouter();
@@ -74,6 +76,7 @@ const nav = allNavItems();
 const local = computed(() => {
 	const q = query.value.trim().toLowerCase();
 	return nav
+		.filter(canOpen)
 		.filter(
 			(i) =>
 				!q ||
@@ -120,17 +123,19 @@ watch(query, (q) => {
 				key: `emp:${p.name}`,
 				kind: "person",
 				label: p.employee_name || p.name,
-				hint: [p.designation, p.department].filter(Boolean).join(" · "),
+				hint: [p.designation, dept(p.department)].filter(Boolean).join(" · "),
 				doctype: "Employee",
 				name: p.name,
 			})),
-			...doctypes.map((d) => ({
-				key: `dt:${d.name}`,
-				kind: "doctype",
-				label: d.name,
-				hint: d.module,
-				doctype: d.name,
-			})),
+			...doctypes
+				.filter((d) => canReadDoctype(d.name))
+				.map((d) => ({
+					key: `dt:${d.name}`,
+					kind: "doctype",
+					label: d.name,
+					hint: d.module,
+					doctype: d.name,
+				})),
 		];
 	}, 180);
 });

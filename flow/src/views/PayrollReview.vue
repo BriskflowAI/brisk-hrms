@@ -9,13 +9,13 @@
 		</p>
 
 		<template v-else-if="data">
-			<header class="flex flex-col gap-3 border-b border-line px-7 pt-5">
+			<header class="flex flex-col gap-3 border-b border-line px-4 md:px-7 pt-5">
 				<div class="flex flex-wrap items-end gap-3">
 					<div class="mr-auto">
 						<div class="kicker">
 							Payroll · {{ data.entry.name }} · {{ data.entry.payroll_frequency }}
 						</div>
-						<h1 class="mt-1.5 text-[36px] leading-none">
+						<h1 class="mt-1.5 text-[28px] leading-none md:text-[36px]">
 							{{ period }} <span class="font-medium text-mut">vs previous</span>
 						</h1>
 					</div>
@@ -47,11 +47,13 @@
 				</nav>
 			</header>
 
-			<div class="flex min-h-0 flex-grow">
+			<div
+				class="flex min-h-0 flex-grow flex-col overflow-y-auto md:flex-row md:overflow-visible"
+			>
 				<!-- people -->
 				<aside
 					aria-label="Employees"
-					class="flex w-[240px] shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-line px-3 py-4"
+					class="flex max-h-[40vh] w-full shrink-0 flex-col gap-0.5 overflow-y-auto border-b border-line px-3 py-4 md:max-h-none md:w-[240px] md:border-b-0 md:border-r"
 				>
 					<div class="px-2 pb-2 text-[12.5px] text-mut">
 						{{ changed.length }} changed ·
@@ -64,7 +66,7 @@
 						class="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-left"
 						:class="
 							focus === p.employee
-								? 'bg-surf shadow-[0_0_0_1px] shadow-line'
+								? 'bg-surf shadow-[inset_0_0_0_1px] shadow-line'
 								: 'hover:bg-surf/70'
 						"
 						@click="scrollTo(p.employee)"
@@ -82,7 +84,14 @@
 				</aside>
 
 				<!-- diffs -->
-				<div class="min-w-0 flex-grow overflow-y-auto px-6 py-5">
+				<div class="min-w-0 flex-grow shrink-0 md:shrink md:overflow-y-auto px-6 py-5">
+					<p
+						v-if="!data.totals.slips"
+						class="mb-4 rounded-xl bg-acc-tint px-4 py-3 text-[13.5px] text-ink"
+					>
+						Salary slips for this run haven't been created yet. Create them on the
+						payroll run; this page then compares each one with the previous period.
+					</p>
 					<p
 						v-if="!shown.length"
 						class="rounded-xl border border-line bg-surf px-6 py-10 text-center text-[14px] text-mut"
@@ -110,7 +119,7 @@
 								>{{ p.employee_name }}</router-link
 							>
 							<span v-if="p.department" class="chip bg-acc-tint text-acc">{{
-								p.department
+								dept(p.department)
 							}}</span>
 							<span v-if="p.new" class="chip bg-pos-tint text-pos"
 								>First payslip</span
@@ -135,7 +144,11 @@
 									<th class="w-9 py-1.5"><span class="sr-only">Change</span></th>
 									<th class="py-1.5 text-left font-semibold">Component</th>
 									<th class="px-4 py-1.5 text-right font-semibold">Previous</th>
-									<th class="px-4 py-1.5 text-right font-semibold">This run</th>
+									<th
+										class="whitespace-nowrap px-4 py-1.5 text-right font-semibold"
+									>
+										This run
+									</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -223,7 +236,7 @@
 				<!-- totals & checks -->
 				<aside
 					aria-label="Totals and checks"
-					class="flex w-[290px] shrink-0 flex-col gap-5 overflow-y-auto border-l border-line bg-surf px-5 py-5"
+					class="flex w-full shrink-0 flex-col gap-5 overflow-y-auto border-t border-line bg-surf px-5 py-5 md:w-[290px] md:border-l md:border-t-0"
 				>
 					<section>
 						<div class="kicker mb-2">Totals</div>
@@ -272,8 +285,8 @@
 											c.ok
 												? 'mt-0.5 text-pos'
 												: c.warning
-												  ? 'mt-0.5 text-warn'
-												  : 'mt-0.5 text-neg'
+													? 'mt-0.5 text-warn'
+													: 'mt-0.5 text-neg'
 										"
 									/>
 									<span>{{ c.label }}</span>
@@ -298,11 +311,12 @@
 			</div>
 		</template>
 
-		<div v-else class="px-7 py-10 text-[13.5px] text-mut">Loading…</div>
+		<div v-else class="px-4 md:px-7 py-10 text-[13.5px] text-mut">Loading…</div>
 	</div>
 </template>
 
 <script setup>
+import { dept } from "@/composables/format";
 import { computed, onMounted, reactive, ref } from "vue";
 import { call } from "frappe-ui";
 import dayjs from "dayjs";
@@ -341,8 +355,8 @@ const shown = computed(() =>
 	tab.value === "changes"
 		? changed.value
 		: tab.value === "flagged"
-		  ? flagged.value
-		  : data.value?.people || [],
+			? flagged.value
+			: data.value?.people || [],
 );
 const listed = computed(() => (tab.value === "all" ? data.value?.people || [] : shown.value));
 const netDelta = computed(() =>
@@ -391,12 +405,12 @@ const deltaTone = (p) =>
 	p.missing_slip
 		? "text-neg"
 		: p.new
-		  ? "text-acc"
-		  : p.change > 0
-		    ? "text-pos"
-		    : p.change < 0
-		      ? "text-neg"
-		      : "text-mut";
+			? "text-acc"
+			: p.change > 0
+				? "text-pos"
+				: p.change < 0
+					? "text-neg"
+					: "text-mut";
 function lineSign(l) {
 	const deduction = l.section === "deductions";
 	if (l.kind === "added") return { sign: "+", tone: deduction ? "text-neg" : "text-pos" };
@@ -411,10 +425,10 @@ const lineBg = (l) =>
 	l.kind === "same"
 		? ""
 		: l.kind === "removed"
-		  ? "bg-neg-tint/60"
-		  : l.kind === "added"
-		    ? "bg-pos-tint/60"
-		    : "bg-acc-tint/50";
+			? "bg-neg-tint/60"
+			: l.kind === "added"
+				? "bg-pos-tint/60"
+				: "bg-acc-tint/50";
 
 // Unchanged components collapse into one row, like a code review.
 function visibleLines(p) {

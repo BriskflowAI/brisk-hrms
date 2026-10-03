@@ -36,6 +36,7 @@ export const areas = [
 				items: [
 					{ label: "Overview", route: "/overview/people" },
 					{ label: "People", route: "/people" },
+					{ label: "Org chart", route: "/org-chart" },
 					r("Employees (table)", "Employee"),
 					r("Departments", "Department"),
 					r("Designations", "Designation"),
@@ -54,6 +55,13 @@ export const areas = [
 					r("Separations", "Employee Separation"),
 					r("Exit interviews", "Exit Interview"),
 					r("Full & final", "Full and Final Statement"),
+				],
+			},
+			{
+				label: "Team",
+				items: [
+					{ label: "Team updates", route: "/team-updates" },
+					r("Daily work summaries", "Daily Work Summary Group"),
 				],
 			},
 		],
@@ -231,8 +239,10 @@ export const areas = [
 	},
 ];
 
+// The area a record type belongs to. Home only lists shortcuts, so a record type's own area wins.
 export function areaForDoctype(doctype) {
-	return areas.find((a) => a.sections.some((s) => s.items.some((i) => i.doctype === doctype)));
+	const has = (a) => a.sections.some((s) => s.items.some((i) => i.doctype === doctype));
+	return areas.find((a) => a.key !== "home" && has(a)) || areas.find(has);
 }
 
 export function allNavItems() {

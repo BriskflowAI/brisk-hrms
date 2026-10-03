@@ -10,7 +10,7 @@
 		class="desk-html min-w-0 text-[14px]"
 		v-html="df.__html ?? df.options ?? ''"
 	/>
-	<h3 v-else-if="df.fieldtype === 'Heading'" class="text-[16px]">{{ df.label }}</h3>
+	<h3 v-else-if="df.fieldtype === 'Heading'" class="text-[16px]">{{ __(df.label) }}</h3>
 	<div v-else-if="df.fieldtype === 'Button'">
 		<button
 			type="button"
@@ -18,31 +18,31 @@
 			:disabled="form.busy"
 			@click="form.trigger('button', df.fieldname, row)"
 		>
-			{{ df.label }}
+			{{ __(df.label) }}
 		</button>
 	</div>
 
 	<!-- Tables span the full width -->
 	<div v-else-if="df.fieldtype === 'Table'" class="flex flex-col gap-2">
 		<div class="text-[13px] font-semibold text-ink-2">
-			{{ df.label }}<span v-if="required" class="text-neg" aria-label="required">*</span>
+			{{ __(df.label) }}<span v-if="required" class="text-neg" aria-label="required">*</span>
 		</div>
 		<TableField :form="form" :df="df" />
 	</div>
 
-	<div v-else class="grid grid-cols-[minmax(120px,38%)_minmax(0,1fr)] items-start gap-3">
-		<label :for="id" class="pt-1.5 text-[13px] text-mut">
-			{{ df.label }}<span v-if="required" class="text-neg" aria-label="required">*</span>
-			<span
-				v-if="df.description"
-				class="mt-0.5 block text-[11.5px] leading-snug text-mut/80"
-				v-html="df.description"
-			/>
+	<!-- Label above the input, as in the desk, so inputs keep their width in narrow columns. -->
+	<div v-else class="flex min-w-0 flex-col gap-1">
+		<label
+			v-if="df.fieldtype !== 'Check' || readOnly"
+			:for="id"
+			class="text-[12.5px] font-semibold text-ink-2"
+		>
+			{{ __(df.label) }}<span v-if="required" class="text-neg" aria-label="required">*</span>
 		</label>
 
 		<div class="min-w-0">
 			<!-- Read-only display -->
-			<div v-if="readOnly" class="min-h-[32px] break-words pt-1.5 text-[14px]">
+			<div v-if="readOnly" class="min-h-[24px] break-words text-[14px]">
 				<template v-if="df.fieldtype === 'Geolocation'">
 					<a
 						v-if="coords"
@@ -91,7 +91,7 @@
 				:doctype="linkDoctype"
 				:get-query="() => form.linkQuery(df, row)"
 				:reference-doctype="form.doctype"
-				:label="df.label"
+				:label="__(df.label)"
 				:required="required"
 				:input-class="cls"
 				@update:model-value="set"
@@ -116,7 +116,7 @@
 				:class="cls"
 				@change="set($event.target.value)"
 			>
-				<option v-for="o in options" :key="o" :value="o">{{ o || "—" }}</option>
+				<option v-for="o in options" :key="o" :value="o">{{ o ? __(o) : "—" }}</option>
 			</select>
 			<label
 				v-else-if="df.fieldtype === 'Check'"
@@ -129,7 +129,10 @@
 					class="h-4 w-4 rounded border-line text-acc focus:ring-acc"
 					@change="set($event.target.checked ? 1 : 0)"
 				/>
-				<span class="text-[13px] text-ink-2">{{ value ? "Yes" : "No" }}</span>
+				<span class="text-[13.5px] font-semibold text-ink-2"
+					>{{ __(df.label)
+					}}<span v-if="required" class="text-neg" aria-label="required">*</span></span
+				>
 			</label>
 			<textarea
 				v-else-if="
@@ -204,7 +207,7 @@
 				v-else-if="df.fieldtype === 'Rating'"
 				class="flex min-h-[32px] items-center gap-0.5"
 				role="radiogroup"
-				:aria-label="df.label"
+				:aria-label="__(df.label)"
 			>
 				<button
 					v-for="n in 5"
@@ -248,6 +251,11 @@
 				@change="onInput($event.target.value)"
 			/>
 		</div>
+		<p
+			v-if="df.description"
+			class="text-[11.5px] leading-snug text-mut"
+			v-html="df.description"
+		/>
 	</div>
 </template>
 
@@ -317,10 +325,10 @@ const step = computed(() =>
 	props.df.fieldtype === "Int"
 		? "1"
 		: ["Float", "Currency", "Percent"].includes(props.df.fieldtype)
-		  ? "any"
-		  : props.df.fieldtype === "Time"
-		    ? "1"
-		    : undefined,
+			? "any"
+			: props.df.fieldtype === "Time"
+				? "1"
+				: undefined,
 );
 const inputValue = computed(() => {
 	const v = value.value;

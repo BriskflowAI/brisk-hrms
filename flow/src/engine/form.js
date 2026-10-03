@@ -9,6 +9,7 @@
 import { reactive } from "vue";
 import { call } from "frappe-ui";
 import { getMeta, isLayout, isTable } from "@/composables/api";
+import { useSession } from "@/composables/session";
 
 const LOCAL_PREFIX = "new-";
 let localCounter = 0;
@@ -193,7 +194,7 @@ export function createForm(doctype, name) {
 						);
 					f.doc = doc;
 					f.docinfo = res.docinfo || null;
-					f.perms = res.docinfo?.permissions || null;
+					f.perms = docPerms(res.docinfo);
 				}
 				if (f.isNew) {
 					// Defaults that are links fill their dependent fields, as the desk does.
@@ -439,7 +440,7 @@ export function createForm(doctype, name) {
 			});
 			f.doc = res.docs[0];
 			f.docinfo = res.docinfo || null;
-			f.perms = res.docinfo?.permissions || f.perms;
+			f.perms = docPerms(res.docinfo) || f.perms;
 			f.dirty = false;
 			await f.loadTransitions();
 		},
@@ -494,12 +495,13 @@ export function createForm(doctype, name) {
 
 		addComment(content) {
 			return f.run("Commenting", async () => {
+				const session = useSession();
 				await call("frappe.desk.form.utils.add_comment", {
 					reference_doctype: f.doctype,
 					reference_name: f.doc.name,
 					content,
-					comment_email: window.frappe?.session?.user || "",
-					comment_by: window.frappe?.session?.user_fullname || "",
+					comment_email: window.frappe?.session?.user || session.user,
+					comment_by: window.frappe?.session?.user_fullname || session.fullName,
 				});
 				await f.reloadDoc();
 			});
@@ -705,7 +707,34 @@ function serverMessage(data) {
 	}
 }
 
+// The document's permissions, plus what has been shared with this user (the desk does the same,
+// which is how people can edit their own User record).
+function docPerms(docinfo) {
+	if (!docinfo?.permissions) return null;
+	const perms = { ...docinfo.permissions };
+	const me = document.cookie.match(/(?:^|; )user_id=([^;]*)/)?.[1];
+	const user = me ? decodeURIComponent(me) : "";
+	for (const s of docinfo.shared || []) {
+		if (s.user !== user && !s.everyone) continue;
+		for (const right of ["read", "write", "submit", "share"]) perms[right] ||= s[right];
+	}
+	return perms;
+}
+
 export function messageOf(e, fallback) {
 	const text = e?.messages?.filter(Boolean).join(" ") || e?.message || fallback;
-	return String(text).replace(/<[^>]+>/g, "");
+	return humanError(String(text).replace(/<[^>]+>/g, ""), fallback);
+}
+
+// Server errors arrive as "frappe.exceptions.ValidationError: …" or with a Python traceback;
+// people only need the sentence.
+export function humanError(text, fallback = "Something went wrong.") {
+	let t = String(text || "").trim();
+	if (/Traceback \(most recent call last\)/.test(t))
+		t = t.split("\n").filter(Boolean).pop() || "";
+	t = t.replace(/^(?:[\w.]+\.)?(?:exceptions\.)?\w*(?:Error|Exception)\s*:\s*/, "");
+	// Developer-facing type errors ("Argument 'x' in 'module.fn' should be of type…")
+	if (/should be of type '\w+' but got/.test(t))
+		t = "Some required information is missing. Fill in the required fields and try again.";
+	return t || fallback;
 }
