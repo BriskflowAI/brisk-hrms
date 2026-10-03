@@ -42,6 +42,28 @@
 				</div>
 			</template>
 
+			<div
+				v-if="calendar"
+				role="group"
+				aria-label="View"
+				class="flex h-9 rounded-lg border border-line bg-surf p-0.5"
+			>
+				<button
+					v-for="v in [
+						{ key: 'list', label: 'List', icon: 'list' },
+						{ key: 'calendar', label: 'Calendar', icon: 'cal' },
+					]"
+					:key="v.key"
+					type="button"
+					:aria-pressed="view === v.key"
+					class="flex items-center gap-1.5 rounded-md px-2.5 text-[13px] font-semibold"
+					:class="view === v.key ? 'bg-ink text-surf' : 'text-ink-2 hover:bg-side'"
+					@click="setView(v.key)"
+				>
+					<Icon :name="v.icon" :size="14" /> {{ v.label }}
+				</button>
+			</div>
+
 			<div class="relative">
 				<button
 					type="button"
@@ -284,9 +306,17 @@
 			</button>
 		</div>
 
+		<CalendarView
+			v-if="view === 'calendar' && calendar"
+			:doctype="doctype"
+			:settings="calendar"
+			:filters="serverFilters()"
+			:can-create="!!canCreate"
+		/>
+
 		<!-- Bulk bar -->
 		<div
-			v-if="list.selected.length"
+			v-if="list.selected.length && view === 'list'"
 			class="flex flex-wrap items-center gap-2 rounded-xl bg-ink px-4 py-2.5 text-surf"
 		>
 			<span class="mr-2 text-[13.5px] font-semibold"
@@ -380,7 +410,7 @@
 		</p>
 
 		<!-- Table -->
-		<div class="overflow-x-auto rounded-xl border border-line bg-surf">
+		<div v-if="view === 'list'" class="overflow-x-auto rounded-xl border border-line bg-surf">
 			<table class="w-full border-collapse">
 				<thead>
 					<tr>
@@ -502,7 +532,12 @@
 		</div>
 
 		<div
-			v-if="!list.loading && list.total !== null && list.rows.length < list.total"
+			v-if="
+				view === 'list' &&
+				!list.loading &&
+				list.total !== null &&
+				list.rows.length < list.total
+			"
 			class="flex items-center justify-center gap-2"
 		>
 			<button type="button" class="btn-ghost" @click="list.reload(true)">
@@ -626,8 +661,15 @@ import BulkTools from "@/components/list/BulkTools.vue";
 import ColumnPicker from "@/components/list/ColumnPicker.vue";
 import GroupBy from "@/components/list/GroupBy.vue";
 import SavedFilters from "@/components/list/SavedFilters.vue";
+import CalendarView from "@/components/list/CalendarView.vue";
 import { getMeta, isLayout, isTable, listFields, titleField } from "@/composables/api";
-import { attachListScript, detachListScript, listIndicator, loadPerms } from "@/engine/compat";
+import {
+	attachListScript,
+	calendarSettings,
+	detachListScript,
+	listIndicator,
+	loadPerms,
+} from "@/engine/compat";
 import { messageOf } from "@/engine/form";
 import { allNavItems, areaForDoctype, classicUrl } from "@/nav";
 
@@ -653,6 +695,17 @@ const menu = ref(null);
 const draft = reactive({ field: "", op: "=", value: "" });
 const bulkEditOpen = ref(false);
 const bulkMode = ref(null);
+const calendar = ref(null); // the desk's calendar settings, when this type has a calendar
+const viewChoice = ref(route.query.view === "calendar" ? "calendar" : "list");
+const view = computed(() => (calendar.value ? viewChoice.value : "list"));
+// Kept out of the router so switching doesn't reload the screen and drop the filters.
+function setView(v) {
+	viewChoice.value = v;
+	const url = new URL(window.location.href);
+	if (v === "list") url.searchParams.delete("view");
+	else url.searchParams.set("view", v);
+	window.history.replaceState(window.history.state, "", url);
+}
 const customColumns = ref(null); // the user's own column choice, kept in their list settings
 const bulk = reactive({ field: "", value: "" });
 const confirming = ref(null);
@@ -1188,6 +1241,7 @@ onMounted(async () => {
 		list.filters = filtersFromRoute();
 		await loadColumnChoice();
 		await attachListScript(list, router);
+		calendar.value = await calendarSettings(list.meta).catch(() => null);
 		await load();
 	} catch (e) {
 		list.error = messageOf(e, `Couldn't open ${props.doctype}.`);
