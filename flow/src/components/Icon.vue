@@ -45,6 +45,7 @@ const paths = {
 	board: '<rect x="3" y="4" width="5" height="16" rx="1"/><rect x="10" y="4" width="5" height="11" rx="1"/><rect x="17" y="4" width="4" height="7" rx="1"/>',
 	file: '<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/>',
 	check: '<path d="m5 12 5 5 9-10"/>',
+	menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
 	x: '<path d="M6 6l12 12M18 6 6 18"/>',
 	alert: '<path d="M12 3 2 21h20z"/><path d="M12 10v5M12 18v.5"/>',
 	user: '<circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/>',

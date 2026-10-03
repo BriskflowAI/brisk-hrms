@@ -1,5 +1,5 @@
 <template>
-	<div class="flex max-w-[1240px] flex-col gap-6 px-9 py-7">
+	<div class="flex max-w-[1240px] flex-col gap-6 px-4 md:px-9 py-7">
 		<p
 			v-if="error"
 			role="alert"
@@ -10,10 +10,13 @@
 
 		<header>
 			<div class="kicker">{{ dateLine }}</div>
-			<h1 class="mt-2 text-[52px] leading-none">
+			<h1 class="mt-2 text-[38px] leading-none md:text-[52px]">
 				Good {{ partOfDay }}<span class="text-acc">.</span>
 			</h1>
-			<p v-if="data" class="mt-3.5 max-w-[860px] text-[19px] leading-relaxed text-ink-2">
+			<p
+				v-if="data"
+				class="mt-3.5 max-w-[860px] text-[16px] leading-relaxed text-ink-2 md:text-[19px]"
+			>
 				<template v-if="data.headcount">
 					<router-link
 						:to="{ name: 'People', query: { view: 'away' } }"
@@ -40,13 +43,14 @@
 		<section
 			v-if="data"
 			aria-label="This week"
-			class="rounded-2xl border border-line bg-surf px-5 pb-4 pt-4"
+			class="overflow-x-auto rounded-2xl border border-line bg-surf px-5 pb-4 pt-4"
 		>
-			<div class="mb-3 flex items-baseline gap-3">
+			<div class="mb-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
 				<h2 class="text-[22px]">The week</h2>
 				<span class="text-[13px] text-mut">Who's away, what's due, what to celebrate</span>
 			</div>
-			<div class="relative">
+			<!-- Phones scroll the week sideways rather than squeezing seven days. -->
+			<div class="relative min-w-[680px]">
 				<div
 					class="grid grid-cols-[110px_repeat(7,minmax(0,1fr))] border-b border-line-2 pb-2"
 				>
@@ -163,7 +167,7 @@
 		<!-- Bottom row -->
 		<div
 			v-if="data"
-			class="grid grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,0.8fr)] gap-8"
+			class="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,0.8fr)]"
 		>
 			<section aria-label="Waiting on you">
 				<div class="mb-1.5 flex items-baseline gap-2.5">

@@ -1,9 +1,9 @@
 <template>
 	<div class="flex h-full min-h-0 flex-col">
-		<header class="flex flex-wrap items-end gap-3 border-b border-line px-7 pb-4 pt-5">
+		<header class="flex flex-wrap items-end gap-3 border-b border-line px-4 md:px-7 pb-4 pt-5">
 			<div class="mr-auto">
 				<div class="kicker">Time · Leave</div>
-				<h1 class="mt-1.5 text-[36px] leading-none">Leave policies</h1>
+				<h1 class="mt-1.5 text-[28px] leading-none md:text-[36px]">Leave policies</h1>
 			</div>
 			<router-link
 				:to="{ name: 'List', params: { doctype: 'Leave Policy Assignment' } }"
@@ -22,13 +22,16 @@
 		>
 			{{ error }}
 		</p>
-		<div v-else-if="!data" class="px-7 py-10 text-[13.5px] text-mut">Loading…</div>
+		<div v-else-if="!data" class="px-4 md:px-7 py-10 text-[13.5px] text-mut">Loading…</div>
 
-		<div v-else class="flex min-h-0 flex-grow">
+		<div
+			v-else
+			class="flex min-h-0 flex-grow flex-col overflow-y-auto md:flex-row md:overflow-visible"
+		>
 			<!-- policies and leave types -->
 			<aside
 				aria-label="Policies"
-				class="flex w-[250px] shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-line px-3 py-4"
+				class="flex max-h-[40vh] w-full shrink-0 flex-col gap-0.5 overflow-y-auto border-b border-line px-3 py-4 md:max-h-none md:w-[250px] md:border-b-0 md:border-r"
 			>
 				<div class="kicker px-2 pb-1.5">Policies</div>
 				<p v-if="!data.policies.length && !draft" class="px-2 text-[13px] text-mut">
@@ -88,7 +91,7 @@
 			</aside>
 
 			<!-- the selected policy -->
-			<main class="min-w-0 flex-grow overflow-y-auto px-7 py-6">
+			<main class="min-w-0 flex-grow shrink-0 md:shrink md:overflow-y-auto px-4 md:px-7 py-6">
 				<div
 					v-if="!policy"
 					class="rounded-xl border border-line bg-surf px-6 py-12 text-center"
@@ -562,7 +565,7 @@
 			<aside
 				v-if="typeEdit"
 				aria-label="Leave type rules"
-				class="flex w-[400px] shrink-0 flex-col border-l border-line bg-surf"
+				class="flex w-full shrink-0 flex-col border-t border-line bg-surf md:w-[400px] md:border-l md:border-t-0"
 			>
 				<header class="flex items-center gap-2 border-b border-line px-5 py-3.5">
 					<div class="min-w-0 flex-grow">
@@ -881,8 +884,8 @@ function openType(t) {
 			values[df.fieldname] = t
 				? t[df.fieldname]
 				: df.fieldtype === "Check"
-				  ? Number(df.default || 0)
-				  : df.default ?? null;
+					? Number(df.default || 0)
+					: (df.default ?? null);
 	values.leave_type_name = t?.leave_type_name || "";
 	typeEdit.value = { name: t?.name || null, values };
 }

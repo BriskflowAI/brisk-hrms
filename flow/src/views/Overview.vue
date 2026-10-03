@@ -1,9 +1,9 @@
 <template>
 	<div class="h-full overflow-y-auto">
-		<header class="flex flex-wrap items-end gap-3 px-7 pb-2 pt-5">
+		<header class="flex flex-wrap items-end gap-3 px-4 md:px-7 pb-2 pt-5">
 			<div class="mr-auto">
 				<div class="kicker">{{ data?.title || "" }} · Overview</div>
-				<h1 class="mt-1.5 text-[36px] leading-none">
+				<h1 class="mt-1.5 text-[28px] leading-none md:text-[36px]">
 					{{ data?.title || "Overview" }} at a glance
 				</h1>
 			</div>
@@ -32,9 +32,9 @@
 		>
 			{{ error }}
 		</p>
-		<div v-else-if="!data" class="px-7 py-10 text-[13.5px] text-mut">Loading…</div>
+		<div v-else-if="!data" class="px-4 md:px-7 py-10 text-[13.5px] text-mut">Loading…</div>
 
-		<div v-else class="px-7 pb-10 transition-opacity" :class="loading && 'opacity-60'">
+		<div v-else class="px-4 md:px-7 pb-10 transition-opacity" :class="loading && 'opacity-60'">
 			<!-- headline numbers -->
 			<section
 				v-if="data.cards.length"

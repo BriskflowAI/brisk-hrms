@@ -10,17 +10,17 @@
 		<template v-else-if="form.ready && form.doc">
 			<!-- Header -->
 			<header
-				class="sticky top-0 z-20 flex flex-col gap-3 border-b border-line bg-surf px-7 pt-5"
+				class="sticky top-0 z-20 flex flex-col gap-3 border-b border-line bg-surf px-4 md:px-7 pt-5"
 			>
-				<div class="flex items-end gap-3">
+				<div class="flex flex-wrap items-end gap-3">
 					<Avatar v-if="doctype === 'Employee'" :label="form.titleValue" :size="52" />
-					<div class="min-w-0 flex-grow">
+					<div class="min-w-0 flex-grow basis-[calc(100%-70px)] md:basis-auto">
 						<router-link
 							:to="{ name: 'List', params: { doctype } }"
 							class="kicker hover:text-acc"
 							>{{ doctype }}</router-link
 						>
-						<h1 class="mt-1.5 truncate text-[30px] leading-none">
+						<h1 class="mt-1.5 truncate text-[24px] leading-none md:text-[30px]">
 							{{ form.isNew ? `New ${doctype}` : form.titleValue }}
 						</h1>
 						<div
@@ -287,7 +287,7 @@
 			</header>
 
 			<!-- Messages -->
-			<div class="flex flex-col gap-2 px-7 pt-4 empty:hidden">
+			<div class="flex flex-col gap-2 px-4 md:px-7 pt-4 empty:hidden">
 				<div
 					v-if="changedBy"
 					role="status"
@@ -362,7 +362,7 @@
 				</div>
 			</div>
 
-			<div class="flex min-h-0 flex-grow gap-6 px-7 py-5">
+			<div class="flex min-h-0 flex-grow flex-col gap-6 px-4 py-5 md:px-7 lg:flex-row">
 				<!-- Fields -->
 				<div class="flex min-w-0 flex-grow flex-col gap-5">
 					<section
@@ -387,10 +387,8 @@
 						</button>
 						<div
 							v-if="!collapsed[s.key]"
-							class="grid gap-x-8"
-							:style="{
-								gridTemplateColumns: `repeat(${s.columns.length}, minmax(0, 1fr))`,
-							}"
+							class="form-cols grid gap-x-8 gap-y-2.5"
+							:style="{ '--cols': s.columns.length }"
 						>
 							<div
 								v-for="(col, ci) in s.columns"
@@ -409,13 +407,13 @@
 				</div>
 
 				<!-- Sidebar -->
-				<aside v-if="!form.isNew" class="flex w-[280px] shrink-0 flex-col gap-5">
+				<aside v-if="!form.isNew" class="flex w-full shrink-0 flex-col gap-5 lg:w-[280px]">
 					<DocSidebar :form="form" />
 				</aside>
 			</div>
 		</template>
 
-		<div v-else class="px-7 py-10 text-[13.5px] text-mut">Loading…</div>
+		<div v-else class="px-4 md:px-7 py-10 text-[13.5px] text-mut">Loading…</div>
 
 		<!-- Confirm -->
 		<div
@@ -814,6 +812,15 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+/* Section columns side by side on wider screens, one under another on phones. */
+.form-cols {
+	grid-template-columns: minmax(0, 1fr);
+}
+@media (min-width: 768px) {
+	.form-cols {
+		grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+	}
+}
 .menu-item {
 	@apply block w-full px-3 py-1.5 text-left text-[13.5px] hover:bg-acc-tint;
 }

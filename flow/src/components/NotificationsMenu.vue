@@ -21,7 +21,7 @@
 			v-if="open"
 			role="dialog"
 			aria-label="Notifications"
-			class="absolute right-0 top-full z-50 mt-2 flex max-h-[min(560px,80vh)] w-[380px] flex-col overflow-hidden rounded-xl border border-line bg-surf text-ink shadow-xl"
+			class="absolute right-0 top-full z-50 mt-2 flex max-h-[min(560px,80vh)] w-[min(380px,calc(100vw-16px))] flex-col overflow-hidden rounded-xl border border-line bg-surf text-ink shadow-xl"
 		>
 			<div class="flex items-center gap-2 border-b border-line-2 px-4 py-3">
 				<span class="flex-grow text-[14px] font-bold">Notifications</span>

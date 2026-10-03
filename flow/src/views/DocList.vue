@@ -1,10 +1,10 @@
 <template>
-	<div class="flex flex-col gap-4 px-7 py-6">
+	<div class="flex flex-col gap-4 px-4 md:px-7 py-6">
 		<!-- Header -->
 		<header class="flex flex-wrap items-end gap-2">
 			<div class="mr-auto">
 				<div class="kicker">{{ area?.label || list.meta?.module }}</div>
-				<h1 class="mt-1.5 text-[34px] leading-none">{{ label }}</h1>
+				<h1 class="mt-1.5 text-[28px] leading-none md:text-[34px]">{{ label }}</h1>
 			</div>
 
 			<template v-for="g in buttonGroups" :key="g.group">
@@ -476,7 +476,7 @@
 								<span class="font-semibold">{{ row[titleKey] || row.name }}</span>
 								<span
 									v-if="titleKey && row[titleKey] && row[titleKey] !== row.name"
-									class="text-[12px] text-mut"
+									class="hidden whitespace-nowrap text-[12px] text-mut md:inline"
 									>{{ row.name }}</span
 								>
 							</span>

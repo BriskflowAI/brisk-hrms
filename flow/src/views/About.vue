@@ -1,5 +1,5 @@
 <template>
-	<div class="flex max-w-[760px] flex-col gap-6 px-9 py-8">
+	<div class="flex max-w-[760px] flex-col gap-6 px-4 md:px-9 py-8">
 		<h1 class="text-[40px] leading-none">About {{ brand.name }}</h1>
 		<p class="text-[15px] leading-relaxed text-ink-2">
 			{{ brand.name }} is a new interface built on open-source software. It keeps every rule,

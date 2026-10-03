@@ -112,7 +112,7 @@ import Avatar from "./Avatar.vue";
 import SessionDefaults from "./SessionDefaults.vue";
 import { canReadDoctype, visibleAreas } from "@/composables/access";
 import { brand } from "@/brand";
-import { useSession } from "@/composables/session";
+import { logout as signOut, useSession } from "@/composables/session";
 import { inboxCount, fetchInbox } from "@/composables/inbox";
 import { onMounted, ref } from "vue";
 
@@ -130,14 +130,7 @@ function openSessionDefaults() {
 
 async function logout() {
 	loggingOut.value = true;
-	try {
-		await fetch("/api/method/logout", {
-			method: "POST",
-			headers: { "X-Frappe-CSRF-Token": window.csrf_token || "" },
-		});
-	} finally {
-		window.location.href = "/login";
-	}
+	await signOut();
 }
 
 onMounted(() => fetchInbox().catch(() => {}));

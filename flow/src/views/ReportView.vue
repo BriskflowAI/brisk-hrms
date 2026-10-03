@@ -1,9 +1,9 @@
 <template>
-	<div class="flex flex-col gap-4 px-7 py-6">
+	<div class="flex flex-col gap-4 px-4 md:px-7 py-6">
 		<header class="flex flex-wrap items-end gap-2">
 			<div class="mr-auto">
 				<div class="kicker">Report</div>
-				<h1 class="mt-1.5 text-[34px] leading-none">{{ name }}</h1>
+				<h1 class="mt-1.5 text-[28px] leading-none md:text-[34px]">{{ name }}</h1>
 			</div>
 			<button
 				v-for="b in report.buttons"

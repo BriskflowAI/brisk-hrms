@@ -1,9 +1,9 @@
 <template>
-	<div class="flex max-w-[860px] flex-col gap-5 px-7 py-6">
+	<div class="flex max-w-[860px] flex-col gap-5 px-4 md:px-7 py-6">
 		<header class="flex flex-wrap items-end gap-3">
 			<div class="mr-auto">
 				<div class="kicker">People</div>
-				<h1 class="mt-1.5 text-[34px] leading-none">Team updates</h1>
+				<h1 class="mt-1.5 text-[28px] leading-none md:text-[34px]">Team updates</h1>
 				<p class="mt-2 text-[13.5px] text-mut">
 					Replies to the daily work summary emails, newest first.
 				</p>

@@ -1,9 +1,9 @@
 <template>
-	<div class="flex flex-col gap-5 px-7 py-6">
+	<div class="flex flex-col gap-5 px-4 md:px-7 py-6">
 		<header class="flex flex-wrap items-end gap-3">
 			<div class="mr-auto">
 				<div class="kicker">People</div>
-				<h1 class="mt-1.5 text-[34px] leading-none">Org chart</h1>
+				<h1 class="mt-1.5 text-[28px] leading-none md:text-[34px]">Org chart</h1>
 			</div>
 			<LinkInput
 				class="w-[260px]"

@@ -1,5 +1,5 @@
 <template>
-	<div class="relative flex h-full min-h-0 flex-col px-7 pt-6">
+	<div class="relative flex h-full min-h-0 flex-col px-4 md:px-7 pt-6">
 		<header class="flex flex-wrap items-end gap-3">
 			<div class="mr-auto">
 				<h1 class="text-[40px] leading-none">People</h1>
@@ -8,8 +8,8 @@
 						loading
 							? "Loading…"
 							: view === "everyone"
-							  ? peopleSummary
-							  : `${rows.length} ${viewLabel.toLowerCase()}`
+								? peopleSummary
+								: `${rows.length} ${viewLabel.toLowerCase()}`
 					}}
 				</p>
 			</div>
@@ -409,8 +409,8 @@ const todayTone = (t) =>
 	t.kind === "remote"
 		? "bg-line-2 text-ink-2"
 		: t.kind === "half"
-		  ? "bg-warn-tint text-warn"
-		  : "bg-neg-tint text-neg";
+			? "bg-warn-tint text-warn"
+			: "bg-neg-tint text-neg";
 
 const facts = computed(() => {
 	const e = profile.value?.employee || {};
@@ -423,7 +423,7 @@ const facts = computed(() => {
 				? {
 						name: "Form",
 						params: { doctype: "Employee", name: profile.value.manager.name },
-				  }
+					}
 				: null,
 		],
 		["Joined", d(e.date_of_joining)],

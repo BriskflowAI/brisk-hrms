@@ -1,8 +1,9 @@
 <template>
-	<div class="flex h-screen overflow-hidden bg-paper font-body text-ink">
-		<Rail :active="area?.key" />
+	<div class="flex h-[100dvh] overflow-hidden bg-paper font-body text-ink">
+		<Rail class="hidden md:flex" :active="area?.key" />
 		<ContextSidebar
 			v-if="area?.sections.length && !collapsed"
+			class="hidden md:flex"
 			:area="area"
 			@collapse="collapsed = true"
 		/>
@@ -12,11 +13,13 @@
 				:collapsed="!!area?.sections.length && collapsed"
 				@search="paletteOpen = true"
 				@expand="collapsed = false"
+				@menu="phoneMenu = true"
 			/>
-			<main class="relative min-h-0 flex-grow overflow-y-auto">
+			<main class="relative min-h-0 flex-grow overflow-y-auto pb-[60px] md:pb-0">
 				<router-view :key="$route.fullPath" />
 			</main>
 		</div>
+		<PhoneNav v-model:open="phoneMenu" :active="area?.key" />
 		<CommandPalette v-model="paletteOpen" />
 	</div>
 </template>
@@ -28,12 +31,14 @@ import Rail from "@/components/Rail.vue";
 import ContextSidebar from "@/components/ContextSidebar.vue";
 import TopBar from "@/components/TopBar.vue";
 import CommandPalette from "@/components/CommandPalette.vue";
+import PhoneNav from "@/components/PhoneNav.vue";
 import { areaForDoctype } from "@/nav";
 import { loadAccess, visibleAreas } from "@/composables/access";
 import { brand } from "@/brand";
 
 const route = useRoute();
 const paletteOpen = ref(false);
+const phoneMenu = ref(false);
 const collapsed = ref(localPref("flow.sidebarCollapsed") === "1");
 
 watch(collapsed, (v) => savePref("flow.sidebarCollapsed", v ? "1" : "0"));

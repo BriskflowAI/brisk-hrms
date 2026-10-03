@@ -1,13 +1,15 @@
 <template>
 	<aside
 		:aria-label="`${area.label} navigation`"
-		class="flex w-[236px] shrink-0 flex-col gap-[18px] overflow-y-auto border-r border-line bg-side px-2.5 py-3.5"
+		class="flex shrink-0 flex-col gap-[18px] overflow-y-auto bg-side px-2.5 py-3.5"
+		:class="embedded ? 'w-full' : 'w-[236px] border-r border-line'"
 	>
 		<div class="flex items-center gap-1 pl-2 pr-1">
 			<span class="flex-grow font-display text-[19px] font-bold tracking-tight">{{
 				area.label
 			}}</span>
 			<button
+				v-if="!embedded"
 				type="button"
 				aria-label="Collapse sidebar"
 				class="flex h-7 w-7 items-center justify-center rounded-md text-mut hover:bg-surf"
@@ -82,7 +84,10 @@
 import { useRoute } from "vue-router";
 import Icon from "./Icon.vue";
 
-defineProps({ area: { type: Object, required: true } });
+defineProps({
+	area: { type: Object, required: true },
+	embedded: { type: Boolean, default: false }, // inside the phone menu
+});
 defineEmits(["collapse"]);
 
 const route = useRoute();
