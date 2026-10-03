@@ -15,9 +15,7 @@ export async function loadTranslations(code) {
 	if (base === "en") return;
 	try {
 		const res = await fetch(
-			`/api/method/hrms.briskrew.api.translations?lang=${encodeURIComponent(
-				lang.value,
-			)}`,
+			`/api/method/hrms.briskrew.api.translations?lang=${encodeURIComponent(lang.value)}`,
 		);
 		Object.assign(messages, (await res.json()).message || {});
 	} catch {

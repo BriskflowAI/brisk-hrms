@@ -39,7 +39,7 @@ jobs:
   server:
     name: briskrew server tests
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
     services:
       mysql:
         image: mariadb:11.8
@@ -82,3 +82,34 @@ jobs:
             echo "::endgroup::"
           done
           if [ -n "$failed" ]; then echo "::error::Failing:$failed"; exit 1; fi
+
+      # bench build is what the production image runs; it must build briskrew too.
+      - name: Build briskrew through bench
+        working-directory: /home/runner/frappe-bench
+        run: |
+          bench build --app hrms
+          test -s apps/hrms/hrms/www/flow.html
+
+      - name: Seed the demo team
+        working-directory: /home/runner/frappe-bench
+        run: |
+          bench --site test_site set-config developer_mode 1
+          bench --site test_site execute hrms.briskrew.demo.seed
+
+      # The web server from install.sh (bench start) is still running on test_site:8000.
+      - name: Browser tests
+        working-directory: ${{ github.workspace }}/flow/e2e
+        env:
+          E2E_BASE_URL: http://test_site:8000
+        run: |
+          npm install --no-audit --no-fund
+          npx playwright install --with-deps chromium
+          npx playwright test
+
+      - name: Keep browser test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-results
+          path: flow/e2e/test-results
+          if-no-files-found: ignore

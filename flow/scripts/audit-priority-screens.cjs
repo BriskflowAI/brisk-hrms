@@ -1,6 +1,6 @@
 // Opens every priority doctype in briskrew on a running site and records unsupported desk APIs.
 // Usage: node flow/scripts/audit-priority-screens.cjs [priority|performance|hiring|shifts|<Doctype>…]
-// (expects the site on http://127.0.0.1:8000, Administrator/admin)
+// (expects the site on AUDIT_BASE_URL, default http://127.0.0.1:8000, as Administrator/admin)
 const { chromium } = require("playwright");
 const fs = require("fs");
 const GROUPS = {
@@ -70,7 +70,7 @@ const OUT = process.env.AUDIT_OUT || "audit.json";
   ).newPage();
   let errs = [];
   p.on("pageerror", (e) => errs.push(e.message));
-  const base = "http://127.0.0.1:8000";
+  const base = process.env.AUDIT_BASE_URL || "http://127.0.0.1:8000";
   await p.request.post(base + "/api/method/login", {
     data: { usr: "Administrator", pwd: "admin" },
   });

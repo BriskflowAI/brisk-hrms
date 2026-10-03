@@ -1,0 +1,11 @@
+{
+	"name": "flow-e2e",
+	"private": true,
+	"description": "Browser tests for briskrew against a running site with the demo team (hrms.briskrew.demo).",
+	"scripts": {
+		"test": "playwright test"
+	},
+	"devDependencies": {
+		"@playwright/test": "1.56.1"
+	}
+}
