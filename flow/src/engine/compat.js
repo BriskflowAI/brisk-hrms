@@ -2321,7 +2321,13 @@ export async function attachReportScript(report) {
 	} catch (e) {
 		report.unsupported.push(`report script: ${e.message}`);
 	}
-	const settings = window.frappe.query_reports[report.name] || {};
+	// A saved ("custom") report runs its reference report's script, with its own saved filters.
+	const reference = res?.custom_report_name;
+	report.reference = reference && reference !== report.name ? reference : null;
+	const settings =
+		window.frappe.query_reports[report.name] ||
+		(report.reference && window.frappe.query_reports[report.reference]) ||
+		{};
 	report.settings = settings;
 	report.filters = (settings.filters || []).map((f) => ({
 		...f,
@@ -2335,6 +2341,18 @@ export async function attachReportScript(report) {
 		report.values[f.fieldname] = d;
 		// Report filters use on_change(query_report); the dialog form calls onchange().
 		if (f.on_change && !f.onchange) f.onchange = () => f.on_change(window.frappe.query_report);
+	}
+	if (report.reference) {
+		const saved = await call("frappe.client.get_value", {
+			doctype: "Report",
+			filters: { name: report.name },
+			fieldname: "json",
+		}).catch(() => null);
+		try {
+			Object.assign(report.values, JSON.parse(saved?.json || "{}").filters || {});
+		} catch {
+			/* no saved filters */
+		}
 	}
 	// A dialog-style form so filters render with the same field controls as records.
 	const dlg = new Dialog({ fields: report.filters });
