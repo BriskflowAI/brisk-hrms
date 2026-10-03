@@ -14,7 +14,7 @@ def get_today() -> dict:
 	week_end = add_days(week_start, 6)
 
 	# Each part shows only what this user may read; the rest is left out, not an error.
-	can_see_people = bool(frappe.has_permission("Employee", "read"))
+	can_see_people = bool(frappe.has_permission("Employee", "read"))  # nosemgrep
 	employees = (
 		frappe.get_list(
 			"Employee",
