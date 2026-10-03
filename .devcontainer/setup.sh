@@ -16,24 +16,41 @@ ADMIN_PASSWORD="${ADMIN_PASSWORD:-admin}"
 
 step() { printf '\n==> %s\n' "$*"; }
 
+# Downloads (PyPI, npm, GitHub) occasionally time out in a fresh codespace; try again before failing.
+retry() {
+	local n
+	for n in 1 2 3 4; do
+		"$@" && return 0
+		[ "$n" = 4 ] && break
+		echo "   ... that failed, trying again in $((n * 15)) seconds ($n/3)"
+		sleep $((n * 15))
+	done
+	echo "   ... still failing. Check the network, then run: bash .devcontainer/setup.sh" >&2
+	return 1
+}
+export UV_HTTP_TIMEOUT=120
+
 step "Python 3.14 and bench"
 if ! command -v uv >/dev/null; then
-	curl -LsSf https://astral.sh/uv/install.sh | sh
+	retry sh -c 'curl -LsSf https://astral.sh/uv/install.sh | sh'
 fi
 export PATH="$HOME/.local/bin:$PATH"
-uv python install 3.14
-command -v bench >/dev/null || uv tool install frappe-bench
-command -v yarn >/dev/null || npm install -g yarn
+retry uv python install 3.14
+command -v bench >/dev/null || retry uv tool install frappe-bench
+command -v yarn >/dev/null || retry npm install -g yarn
 
 step "Waiting for the database"
 until mariadb -h "$DB_HOST" -P "$DB_PORT" -uroot -p"$DB_ROOT_PASSWORD" -e "select 1" >/dev/null 2>&1; do sleep 2; done
 
 if [ ! -f "$BENCH/sites/apps.txt" ]; then
 	step "Frappe (develop)"
-	rm -rf "$BENCH" # a half-finished earlier attempt
-	cd "$(dirname "$BENCH")"
-	bench init --frappe-branch develop --python "$(uv python find 3.14)" \
-		--skip-redis-config-generation --skip-assets --no-backups "$(basename "$BENCH")"
+	init_bench() {
+		rm -rf "$BENCH" # a half-finished earlier attempt
+		cd "$(dirname "$BENCH")"
+		bench init --frappe-branch develop --python "$(uv python find 3.14)" \
+			--skip-redis-config-generation --skip-assets --no-backups "$(basename "$BENCH")" < /dev/null
+	}
+	retry init_bench
 fi
 cd "$BENCH"
 bench set-config -g db_host "$DB_HOST"
@@ -46,13 +63,13 @@ sed -i '/^watch:/d' Procfile
 
 if [ ! -d apps/erpnext ]; then
 	step "ERPNext (develop)"
-	bench get-app --branch develop --skip-assets https://github.com/frappe/erpnext
+	retry bench get-app --branch develop --skip-assets https://github.com/frappe/erpnext
 fi
 
 if [ ! -e apps/hrms ]; then
 	step "Frappe HR from this repository"
 	ln -s "$REPO" apps/hrms
-	bench pip install -e apps/hrms
+	retry bench pip install -e apps/hrms
 	python3 - <<'PY'
 from pathlib import Path
 p = Path("sites/apps.txt")
@@ -64,7 +81,7 @@ PY
 fi
 
 step "Front-end packages"
-(cd apps/hrms && yarn install)
+retry sh -c 'cd apps/hrms && yarn install'
 
 # The marker is written only once the site is fully made.
 if [ ! -f "sites/$SITE/.briskrew-site-ready" ]; then
