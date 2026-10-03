@@ -23,6 +23,45 @@ TEAM = [
 ]
 
 
+def setup_site(
+	company: str = "Brisk Flow Demo",
+	country: str = "India",
+	currency: str = "INR",
+	timezone: str = "Asia/Kolkata",
+) -> dict:
+	"""A ready-to-try site from a fresh install: finishes ERPNext's setup wizard
+	(company, fiscal year, chart of accounts) when no company exists yet, then seeds the demo team.
+	Used by the Codespaces setup in .devcontainer/."""
+	if not frappe.conf.developer_mode:
+		frappe.throw("Demo data is for test sites only. Enable developer_mode on the site first.")
+
+	if not frappe.db.exists("Company", {}):
+		from frappe.desk.page.setup_wizard.setup_wizard import setup_complete
+
+		year = getdate(nowdate()).year
+		res = setup_complete(
+			{
+				"language": "english",
+				"country": country,
+				"currency": currency,
+				"timezone": timezone,
+				"company_name": company,
+				"company_abbr": "".join(w[0] for w in company.split()).upper()[:5],
+				"chart_of_accounts": "Standard",
+				"fy_start_date": f"{year}-01-01",
+				"fy_end_date": f"{year}-12-31",
+				"setup_demo": 0,
+			}
+		)
+		if (res or {}).get("status") not in (None, "ok"):
+			frappe.throw(f"Setup wizard failed: {res}")
+		frappe.db.commit()  # nosemgrep
+
+	result = seed(frappe.db.get_value("Company", {}, "name"))
+	frappe.db.commit()  # nosemgrep
+	return result
+
+
 def seed(company: str | None = None) -> dict:
 	if not frappe.conf.developer_mode and not frappe.flags.in_test:
 		frappe.throw("Demo data is for test sites only. Enable developer_mode on the site first.")
@@ -361,7 +400,8 @@ def _previous_month_slips(company, employees):
 	start = get_first_day(add_months(nowdate(), -1))
 	end = get_last_day(start)
 	for emp in employees:
-		if frappe.db.exists("Salary Slip", {"employee": emp, "start_date": start, "docstatus": 1}):
+		# Any slip for that month (a draft from a payroll run included) means there's nothing to add.
+		if frappe.db.exists("Salary Slip", {"employee": emp, "start_date": start, "docstatus": ("<", 2)}):
 			continue
 		slip = frappe.get_doc(
 			{
