@@ -41,13 +41,50 @@
 				<Icon name="gear" :size="20" />
 				Setup
 			</a>
-			<router-link
-				to="/about"
-				aria-label="About and licences"
-				class="inline-flex rounded-full ring-2 ring-lime"
-			>
-				<Avatar :label="fullName" :size="32" />
-			</router-link>
+			<div class="relative" @keydown.esc="menuOpen = false">
+				<button
+					ref="avatarBtn"
+					type="button"
+					aria-label="Your account"
+					aria-haspopup="menu"
+					:aria-expanded="menuOpen"
+					class="inline-flex rounded-full ring-2 ring-lime"
+					@click="menuOpen = !menuOpen"
+				>
+					<Avatar :label="fullName" :size="32" />
+				</button>
+				<div v-if="menuOpen" class="fixed inset-0 z-40" @click="menuOpen = false" />
+				<div
+					v-if="menuOpen"
+					role="menu"
+					aria-label="Your account"
+					class="absolute bottom-0 left-full z-50 ml-3 w-60 overflow-hidden rounded-xl border border-line bg-surf py-1.5 text-[13.5px] text-ink shadow-xl"
+				>
+					<div class="border-b border-line-2 px-3.5 pb-2.5 pt-1.5">
+						<div class="truncate font-bold">{{ fullName }}</div>
+						<div class="truncate text-[12px] text-mut">{{ user }}</div>
+					</div>
+					<router-link
+						to="/about"
+						role="menuitem"
+						class="block px-3.5 py-2 hover:bg-side"
+						@click="menuOpen = false"
+						>About and licences</router-link
+					>
+					<a href="/app" role="menuitem" class="block px-3.5 py-2 hover:bg-side"
+						>Classic desk</a
+					>
+					<button
+						type="button"
+						role="menuitem"
+						class="block w-full border-t border-line-2 px-3.5 py-2 text-left font-semibold text-neg hover:bg-neg-tint"
+						:disabled="loggingOut"
+						@click="logout"
+					>
+						{{ loggingOut ? "Logging out…" : "Log out" }}
+					</button>
+				</div>
+			</div>
 		</div>
 	</nav>
 </template>
@@ -59,11 +96,25 @@ import { areas } from "@/nav";
 import { brand } from "@/brand";
 import { useSession } from "@/composables/session";
 import { inboxCount, fetchInbox } from "@/composables/inbox";
-import { onMounted } from "vue";
+import { onMounted, ref } from "vue";
 
 defineProps({ active: { type: String, default: null } });
 
-const { fullName } = useSession();
+const { fullName, user } = useSession();
+const menuOpen = ref(false);
+const loggingOut = ref(false);
+
+async function logout() {
+	loggingOut.value = true;
+	try {
+		await fetch("/api/method/logout", {
+			method: "POST",
+			headers: { "X-Frappe-CSRF-Token": window.csrf_token || "" },
+		});
+	} finally {
+		window.location.href = "/login";
+	}
+}
 
 onMounted(() => fetchInbox().catch(() => {}));
 
