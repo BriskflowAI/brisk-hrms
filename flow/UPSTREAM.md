@@ -4,6 +4,34 @@ briskrew lives in a fork of [frappe/hrms](https://github.com/frappe/hrms). The F
 code is unchanged, so new upstream fixes and features should flow in regularly. This page covers
 how they come in, where conflicts can happen, and what to check before merging.
 
+## Production branch: version-16-briskrew
+
+Production runs Frappe HR v16, so it is built from `version-16-briskrew`: upstream `version-16`
+plus briskrew (`flow/`, `hrms/briskrew/`, `hrms/www/flow.py`, `hrms/public/briskrew/mark.svg`,
+and small additions to `hrms/hooks.py`, `package.json`, `.gitignore` and `.github/`). It never
+merges `develop`.
+
+- **Weekly sync:** `.github/workflows/upstream-sync-v16.yml` merges upstream `version-16` into
+  `sync/v16-upstream-<date>` and opens a pull request to `version-16-briskrew`. GitHub only runs a
+  schedule from the default branch, so this file must also be on `develop` for the schedule to fire.
+- **Checks:** `.github/workflows/briskrew.yml` on this branch builds the front ends and runs
+  briskrew's tests against Frappe and ERPNext `version-16`.
+- **Moving briskrew changes across:** develop briskrew work on `develop`, then bring it over with
+  `git checkout origin/develop -- flow hrms/briskrew` (and any hooks it needs) on a branch off
+  `version-16-briskrew`. Don't merge `develop` into it: that would bring Frappe HR v17.
+- **What to check:** `git diff upstream/version-16 -- hrms/ frontend/` must show only the
+  briskrew additions listed above.
+
+To sync by hand:
+
+```bash
+git fetch upstream version-16
+git checkout -b sync/v16-upstream-$(date -u +%F) origin/version-16-briskrew
+git merge upstream/version-16
+```
+
+The rest of this page describes `develop`, which follows upstream `develop` (Frappe HR v17).
+
 ## The routine
 
 1. **Every Monday** the `Upstream sync` workflow (`.github/workflows/upstream-sync.yml`) merges
