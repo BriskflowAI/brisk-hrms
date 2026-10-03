@@ -89,9 +89,6 @@
 						class="menu-item block"
 						>Import</a
 					>
-					<a :href="classicUrl(doctype) + '/view/report'" class="menu-item block"
-						>Report view</a
-					>
 					<a :href="classicUrl(doctype)" class="menu-item block">Open in classic desk</a>
 				</div>
 			</div>
@@ -270,7 +267,7 @@
 				list.total === null ? "" : `${list.rows.length} of ${list.total}`
 			}}</span>
 			<ColumnPicker
-				v-if="list.meta"
+				v-if="list.meta && view === 'list'"
 				v-model="customColumns"
 				:fields="columnChoices"
 				:defaults="defaultColumns.map((f) => f.fieldname)"
@@ -303,6 +300,14 @@
 			</button>
 		</div>
 
+		<ReportGrid
+			v-if="view === 'report' && list.meta"
+			:doctype="doctype"
+			:meta="list.meta"
+			:filters="serverFilters()"
+			:perms="list.perms"
+			@filters="applyReportFilters"
+		/>
 		<TreeView
 			v-if="view === 'tree' && tree"
 			:doctype="doctype"
@@ -674,6 +679,7 @@ import GroupBy from "@/components/list/GroupBy.vue";
 import SavedFilters from "@/components/list/SavedFilters.vue";
 import CalendarView from "@/components/list/CalendarView.vue";
 import TreeView from "@/components/list/TreeView.vue";
+import ReportGrid from "@/components/list/ReportGrid.vue";
 import BoardView from "@/components/list/BoardView.vue";
 import { useLiveCheck } from "@/composables/live";
 import { onListUpdate } from "@/composables/realtime";
@@ -715,6 +721,7 @@ const calendar = ref(null); // the desk's calendar settings, when this type has 
 const tree = ref(null); // the desk's tree settings, for record types kept as a tree
 const views = computed(() => [
 	{ key: "list", label: "List", icon: "list" },
+	{ key: "report", label: "Report", icon: "table" },
 	...(calendar.value ? [{ key: "calendar", label: "Calendar", icon: "cal" }] : []),
 	...(tree.value ? [{ key: "tree", label: "Tree", icon: "tree" }] : []),
 	...((list.meta?.fields || []).some((f) => f.fieldtype === "Select" && f.options && !f.hidden)
@@ -978,6 +985,15 @@ function applyDraft() {
 function addFilter(f) {
 	list.filters.push(f);
 	load();
+}
+// A saved report's filters, stored the desk's way: [doctype, field, operator, value].
+function applyReportFilters(tuples) {
+	list.filters = tuples.map((t) => {
+		const [field, op, value] = t.length === 4 ? t.slice(1) : t;
+		if (op === "is")
+			return { field, op: value === "set" ? "is set" : "is not set", value: "" };
+		return { field, op, value };
+	});
 }
 function applySaved(filters) {
 	list.filters = filters;

@@ -547,6 +547,20 @@ watch(
 
 onMounted(async () => {
 	try {
+		// Reports built in the Report view open there, with their columns and grouping.
+		const meta = await call("frappe.client.get_value", {
+			doctype: "Report",
+			filters: { name: props.name },
+			fieldname: ["report_type", "ref_doctype"],
+		}).catch(() => null);
+		if (meta?.report_type === "Report Builder" && meta.ref_doctype) {
+			router.replace({
+				name: "List",
+				params: { doctype: meta.ref_doctype },
+				query: { view: "report", report: props.name },
+			});
+			return;
+		}
 		await Promise.all([attachReportScript(report), loadColumnChoice()]);
 		await run();
 	} catch (e) {
