@@ -43,16 +43,13 @@
 			</template>
 
 			<div
-				v-if="calendar"
+				v-if="views.length > 1"
 				role="group"
 				aria-label="View"
 				class="flex h-9 rounded-lg border border-line bg-surf p-0.5"
 			>
 				<button
-					v-for="v in [
-						{ key: 'list', label: 'List', icon: 'list' },
-						{ key: 'calendar', label: 'Calendar', icon: 'cal' },
-					]"
+					v-for="v in views"
 					:key="v.key"
 					type="button"
 					:aria-pressed="view === v.key"
@@ -306,6 +303,20 @@
 			</button>
 		</div>
 
+		<TreeView
+			v-if="view === 'tree' && tree"
+			:doctype="doctype"
+			:meta="list.meta"
+			:settings="tree"
+			:can-create="!!canCreate"
+		/>
+		<BoardView
+			v-if="view === 'board'"
+			:doctype="doctype"
+			:meta="list.meta"
+			:filters="serverFilters()"
+			:can-write="!!list.perms.write"
+		/>
 		<CalendarView
 			v-if="view === 'calendar' && calendar"
 			:doctype="doctype"
@@ -662,11 +673,14 @@ import ColumnPicker from "@/components/list/ColumnPicker.vue";
 import GroupBy from "@/components/list/GroupBy.vue";
 import SavedFilters from "@/components/list/SavedFilters.vue";
 import CalendarView from "@/components/list/CalendarView.vue";
+import TreeView from "@/components/list/TreeView.vue";
+import BoardView from "@/components/list/BoardView.vue";
 import { useLiveCheck } from "@/composables/live";
 import { getMeta, isLayout, isTable, listFields, titleField } from "@/composables/api";
 import {
 	attachListScript,
 	calendarSettings,
+	treeSettings,
 	detachListScript,
 	listIndicator,
 	loadPerms,
@@ -697,8 +711,19 @@ const draft = reactive({ field: "", op: "=", value: "" });
 const bulkEditOpen = ref(false);
 const bulkMode = ref(null);
 const calendar = ref(null); // the desk's calendar settings, when this type has a calendar
-const viewChoice = ref(route.query.view === "calendar" ? "calendar" : "list");
-const view = computed(() => (calendar.value ? viewChoice.value : "list"));
+const tree = ref(null); // the desk's tree settings, for record types kept as a tree
+const views = computed(() => [
+	{ key: "list", label: "List", icon: "list" },
+	...(calendar.value ? [{ key: "calendar", label: "Calendar", icon: "cal" }] : []),
+	...(tree.value ? [{ key: "tree", label: "Tree", icon: "tree" }] : []),
+	...((list.meta?.fields || []).some((f) => f.fieldtype === "Select" && f.options && !f.hidden)
+		? [{ key: "board", label: "Board", icon: "board" }]
+		: []),
+]);
+const viewChoice = ref(route.query.view || "list");
+const view = computed(() =>
+	views.value.some((v) => v.key === viewChoice.value) ? viewChoice.value : "list",
+);
 // Kept out of the router so switching doesn't reload the screen and drop the filters.
 function setView(v) {
 	viewChoice.value = v;
@@ -1264,7 +1289,10 @@ onMounted(async () => {
 		list.filters = filtersFromRoute();
 		await loadColumnChoice();
 		await attachListScript(list, router);
-		calendar.value = await calendarSettings(list.meta).catch(() => null);
+		[calendar.value, tree.value] = await Promise.all([
+			calendarSettings(list.meta).catch(() => null),
+			treeSettings(list.meta).catch(() => null),
+		]);
 		await load();
 	} catch (e) {
 		list.error = messageOf(e, `Couldn't open ${props.doctype}.`);

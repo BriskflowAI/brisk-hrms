@@ -1429,7 +1429,14 @@ function buildErpnext() {
 			"erpnext.accounts",
 		),
 		utils: lenient(
-			{ get_fiscal_year: (d) => booted?.defaults?.fiscal_year, add_dimensions: () => {} },
+			{
+				get_fiscal_year: (d) => booted?.defaults?.fiscal_year,
+				add_dimensions: () => {},
+				// Tree screens offer the companies and default to the user's own.
+				get_tree_options: (key) =>
+					key === "company" ? Object.keys(booted?.companies || {}) : [],
+				get_tree_default: (key) => booted?.defaults?.[key] || "",
+			},
 			"erpnext.utils",
 		),
 		setup: lenient({ utils: {} }, "erpnext.setup"),
@@ -2394,4 +2401,15 @@ export async function calendarSettings(meta) {
 	delete views.calendar[meta.name];
 	runScript(meta.__calendar_js, `${meta.name} calendar`);
 	return views.calendar[meta.name] || null;
+}
+
+// The desk's tree settings for a record type (its *_tree.js): the method that returns child
+// nodes, the filters above the tree, and whether to look up the root first.
+export async function treeSettings(meta) {
+	if (!meta?.is_tree) return null;
+	await install();
+	window.frappe.treeview_settings ||= {};
+	delete window.frappe.treeview_settings[meta.name];
+	runScript(meta.__tree_js, `${meta.name} tree`);
+	return window.frappe.treeview_settings[meta.name] || {};
 }
