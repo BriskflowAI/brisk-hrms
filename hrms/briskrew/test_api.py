@@ -1,6 +1,6 @@
 import frappe
 
-from hrms.briskrew.api import access, unread_notifications
+from hrms.briskrew.api import access, apps, unread_notifications
 from hrms.tests.utils import HRMSTestSuite
 
 
@@ -34,3 +34,13 @@ class TestBriskrewApi(HRMSTestSuite):
 			{"doctype": "Notification Log", "for_user": "Guest", "subject": "Hello", "type": "Alert"}
 		).insert(ignore_permissions=True)
 		self.assertEqual(unread_notifications(), before + 1)
+
+	def test_apps_lists_workspaces_by_app(self):
+		result = apps()
+		self.assertIn(result["desk"], ("/desk", "/app"))
+		by_app = {g["app"]: g for g in result["groups"]}
+		self.assertIn("hrms", by_app)
+		labels = [i["label"] for i in by_app["hrms"]["items"]]
+		self.assertIn("Leaves", labels)
+		for item in by_app["hrms"]["items"]:
+			self.assertTrue(item["route"].startswith(result["desk"] + "/"))
