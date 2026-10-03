@@ -50,7 +50,8 @@ const area = computed(() => {
 			) || areas.find((a) => a.key === "reports")
 		);
 	if (route.name === "PayrollReview") return areas.find((a) => a.key === "pay");
-	if (route.name === "People") return areas.find((a) => a.key === "people");
+	if (["People", "OrgChart", "TeamUpdates"].includes(route.name))
+		return areas.find((a) => a.key === "people");
 	if (route.name === "LeavePolicies") return areas.find((a) => a.key === "time");
 	if (route.name === "Overview") return areas.find((a) => a.key === route.params.area);
 	if (route.name === "Inbox") return areas.find((a) => a.key === "inbox");
@@ -74,6 +75,8 @@ const crumbs = computed(() => {
 	}
 	if (route.name === "About") out.push({ label: "About" });
 	if (route.name === "LeavePolicies") out.push({ label: "Leave policies" });
+	if (route.name === "OrgChart") out.push({ label: "Org chart" });
+	if (route.name === "TeamUpdates") out.push({ label: "Team updates" });
 	if (route.name === "Overview") out.push({ label: "Overview" });
 	if (route.name === "Inbox") out.push({ label: "Decide" });
 	if (route.name === "PayrollReview") out.push({ label: "Runs" }, { label: route.params.name });

@@ -17,6 +17,8 @@ export function loadAccess() {
 // Screens that aren't a single record type, and what they need to read.
 const ROUTE_NEEDS = {
 	"/people": "Employee",
+	"/org-chart": "Employee",
+	"/team-updates": "Employee",
 	"/overview/people": "Employee",
 	"/overview/time": "Leave Application",
 	"/overview/pay": "Salary Slip",
