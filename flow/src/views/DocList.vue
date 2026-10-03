@@ -233,9 +233,29 @@
 				</div>
 			</div>
 
+			<GroupBy
+				v-if="list.meta"
+				:doctype="doctype"
+				:options="groupByOptions"
+				:filters="serverFilters"
+				@filter="addFilter"
+			/>
+			<SavedFilters
+				v-if="list.meta"
+				:doctype="doctype"
+				:filters="list.filters"
+				@apply="applySaved"
+			/>
+
 			<span class="ml-auto text-[13px] tabular-nums text-mut">{{
 				list.total === null ? "" : `${list.rows.length} of ${list.total}`
 			}}</span>
+			<ColumnPicker
+				v-if="list.meta"
+				v-model="customColumns"
+				:fields="columnChoices"
+				:defaults="defaultColumns.map((f) => f.fieldname)"
+			/>
 		</div>
 
 		<div v-if="list.filters.length" class="flex flex-wrap gap-1.5">
@@ -304,6 +324,20 @@
 			>
 				Delete
 			</button>
+			<template v-if="list.perms.bulk_actions">
+				<button type="button" class="bulk-btn" @click="bulkMode = 'assign'">
+					Assign to
+				</button>
+				<button type="button" class="bulk-btn" @click="bulkMode = 'tags'">Add tags</button>
+				<button
+					v-if="list.perms.print"
+					type="button"
+					class="bulk-btn"
+					@click="bulkMode = 'print'"
+				>
+					Print
+				</button>
+			</template>
 			<button
 				v-if="list.perms.export"
 				type="button"
@@ -568,6 +602,12 @@
 			</div>
 		</div>
 
+		<BulkTools
+			v-model="bulkMode"
+			:doctype="doctype"
+			:names="list.selected"
+			@done="onBulkDone"
+		/>
 		<CompatDialogs />
 	</div>
 </template>
@@ -582,6 +622,10 @@ import FieldValue from "@/components/FieldValue.vue";
 import StatusChip from "@/components/StatusChip.vue";
 import LinkInput from "@/components/fields/LinkInput.vue";
 import CompatDialogs from "@/components/CompatDialogs.vue";
+import BulkTools from "@/components/list/BulkTools.vue";
+import ColumnPicker from "@/components/list/ColumnPicker.vue";
+import GroupBy from "@/components/list/GroupBy.vue";
+import SavedFilters from "@/components/list/SavedFilters.vue";
 import { getMeta, isLayout, isTable, listFields, titleField } from "@/composables/api";
 import { attachListScript, detachListScript, listIndicator, loadPerms } from "@/engine/compat";
 import { messageOf } from "@/engine/form";
@@ -608,6 +652,8 @@ const OPERATORS = [
 const menu = ref(null);
 const draft = reactive({ field: "", op: "=", value: "" });
 const bulkEditOpen = ref(false);
+const bulkMode = ref(null);
+const customColumns = ref(null); // the user's own column choice, kept in their list settings
 const bulk = reactive({ field: "", value: "" });
 const confirming = ref(null);
 
@@ -663,13 +709,47 @@ const titleKey = computed(() => (list.meta ? titleField(list.meta) : null));
 const titleLabel = computed(
 	() => list.meta?.fields.find((f) => f.fieldname === titleKey.value)?.label || "ID",
 );
-const columns = computed(() =>
+const defaultColumns = computed(() =>
 	list.meta
 		? listFields(list.meta).filter(
 				(f) => f.fieldname !== titleKey.value && f.fieldname !== "status",
 			)
 		: [],
 );
+const columnChoices = computed(() =>
+	(list.meta?.fields || []).filter(
+		(f) =>
+			!isLayout(f) &&
+			!isTable(f) &&
+			![
+				"Text Editor",
+				"HTML Editor",
+				"Code",
+				"Attach Image",
+				"Signature",
+				"Password",
+			].includes(f.fieldtype) &&
+			f.fieldname !== titleKey.value &&
+			f.fieldname !== "status" &&
+			f.label,
+	),
+);
+const columns = computed(() =>
+	customColumns.value
+		? customColumns.value
+				.map((n) => columnChoices.value.find((f) => f.fieldname === n))
+				.filter(Boolean)
+		: defaultColumns.value,
+);
+const groupByOptions = computed(() => [
+	{ fieldname: "assigned_to", label: "Assigned to" },
+	{ fieldname: "owner", label: "Created by" },
+	...fields.value.filter(
+		(d) =>
+			(d.fieldname === "status" || d.in_standard_filter) &&
+			["Link", "Select", "Check"].includes(d.fieldtype),
+	),
+]);
 const canCreate = computed(
 	() => list.meta && !list.meta.issingle && !list.meta.istable && list.perms.create,
 );
@@ -697,6 +777,9 @@ const filterableFields = computed(() => [
 	...fields.value,
 	{ fieldname: "modified", label: "Last updated", fieldtype: "Datetime" },
 	{ fieldname: "creation", label: "Created on", fieldtype: "Datetime" },
+	{ fieldname: "owner", label: "Created by" },
+	{ fieldname: "_assign", label: "Assigned to" },
+	{ fieldname: "_user_tags", label: "Tags" },
 ]);
 const editableFields = computed(() =>
 	fields.value.filter(
@@ -810,6 +893,19 @@ function applyDraft() {
 	list.filters.push({ field: draft.field, op: draft.op, value: draft.value });
 	Object.assign(draft, { field: "", op: "=", value: "" });
 	menu.value = null;
+	load();
+}
+function addFilter(f) {
+	list.filters.push(f);
+	load();
+}
+function applySaved(filters) {
+	list.filters = filters;
+	load();
+}
+function onBulkDone(message) {
+	list.notice = message;
+	list.selected = [];
 	load();
 }
 function removeFilter(i) {
@@ -1054,6 +1150,29 @@ watch(
 	() => load(),
 );
 
+// ---- the user's columns, saved with their other list settings for this record type ----
+let savedColumns = null; // JSON of what's stored, so loading it doesn't save it again
+async function loadColumnChoice() {
+	try {
+		const raw = await call("frappe.model.utils.user_settings.get", { doctype: props.doctype });
+		const saved = (typeof raw === "string" ? JSON.parse(raw || "{}") : raw || {})
+			.briskrew_columns;
+		customColumns.value = Array.isArray(saved) && saved.length ? saved : null;
+	} catch {
+		customColumns.value = null;
+	}
+	savedColumns = JSON.stringify(customColumns.value);
+}
+watch(customColumns, (cols) => {
+	if (savedColumns === null || JSON.stringify(cols) === savedColumns) return;
+	savedColumns = JSON.stringify(cols);
+	call("frappe.model.utils.user_settings.save", {
+		doctype: props.doctype,
+		user_settings: JSON.stringify({ briskrew_columns: cols }),
+	}).catch(() => {});
+	load();
+});
+
 onMounted(async () => {
 	try {
 		const [m, perms] = await Promise.all([getMeta(props.doctype), loadPerms(props.doctype)]);
@@ -1067,6 +1186,7 @@ onMounted(async () => {
 			return;
 		}
 		list.filters = filtersFromRoute();
+		await loadColumnChoice();
 		await attachListScript(list, router);
 		await load();
 	} catch (e) {
