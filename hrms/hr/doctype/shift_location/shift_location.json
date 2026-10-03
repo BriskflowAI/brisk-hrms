@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_import": 1,
  "allow_rename": 1,
  "autoname": "field:location_name",
  "creation": "2024-07-04 12:12:26.894513",
@@ -28,7 +29,8 @@
    "description": "Radius within which check-in is allowed (in meters)",
    "fieldname": "checkin_radius",
    "fieldtype": "Int",
-   "label": "Checkin Radius"
+   "label": "Checkin Radius",
+   "non_negative": 1
   },
   {
    "fieldname": "column_break_dlgd",
@@ -65,7 +67,7 @@
    "link_fieldname": "shift_location"
   }
  ],
- "modified": "2024-10-10 12:54:26.209170",
+ "modified": "2026-09-01 18:39:51.520758",
  "modified_by": "Administrator",
  "module": "HR",
  "name": "Shift Location",

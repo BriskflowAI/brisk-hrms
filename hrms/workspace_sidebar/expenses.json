@@ -3,7 +3,7 @@
  "creation": "2025-10-26 21:53:46.574309",
  "docstatus": 0,
  "doctype": "Workspace Sidebar",
- "header_icon": "expenses",
+ "header_icon": "receipt-text",
  "idx": 0,
  "items": [
   {
@@ -268,9 +268,9 @@
    "type": "Link"
   }
  ],
- "modified": "2026-07-03 14:16:38.878865",
+ "modified": "2026-08-07 12:00:00.000000",
  "modified_by": "Administrator",
- "module": "HR",
+ "module": "Expenses",
  "name": "Expenses",
  "owner": "Administrator",
  "standard": 1,

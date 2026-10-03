@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_import": 1,
  "autoname": "naming_series:",
  "creation": "2016-09-03 14:14:51.788550",
  "doctype": "DocType",
@@ -96,6 +97,7 @@
    "fieldname": "odometer",
    "fieldtype": "Int",
    "label": "Current Odometer value ",
+   "non_negative": 1,
    "reqd": 1
   },
   {
@@ -107,12 +109,14 @@
   {
    "fieldname": "fuel_qty",
    "fieldtype": "Float",
-   "label": "Fuel Qty"
+   "label": "Fuel Qty",
+   "non_negative": 1
   },
   {
    "fieldname": "price",
    "fieldtype": "Currency",
-   "label": "Fuel Price"
+   "label": "Fuel Price",
+   "non_negative": 1
   },
   {
    "fieldname": "column_break_15",
@@ -164,7 +168,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2024-03-27 13:10:58.330593",
+ "modified": "2026-09-01 18:39:51.520758",
  "modified_by": "Administrator",
  "module": "HR",
  "name": "Vehicle Log",
