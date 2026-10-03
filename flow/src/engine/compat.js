@@ -90,6 +90,12 @@ function record(path) {
 	if (import.meta.env.DEV) console.warn(`[briskrew compat] unsupported: ${path}`);
 }
 
+// Keys these stand-ins never answer: promise checks, and Vue's internal flags (`__v_raw`,
+// `__v_isRef`...). Answering those with another stand-in sends Vue round in circles when one of
+// these ends up inside reactive state.
+const internal = (prop) =>
+	typeof prop === "symbol" || SKIP.has(prop) || String(prop).startsWith("__v_");
+
 function stub(path) {
 	const fn = function () {
 		record(path);
@@ -97,7 +103,7 @@ function stub(path) {
 	};
 	return new Proxy(fn, {
 		get(t, prop) {
-			if (typeof prop === "symbol" || SKIP.has(prop)) return undefined;
+			if (internal(prop)) return undefined;
 			return stub(`${path}.${String(prop)}`);
 		},
 		set() {
@@ -114,7 +120,7 @@ function silent() {
 	};
 	return new Proxy(fn, {
 		get(t, prop) {
-			if (typeof prop === "symbol" || SKIP.has(prop)) return undefined;
+			if (internal(prop)) return undefined;
 			return silent();
 		},
 		set() {
