@@ -32,11 +32,11 @@ Anyone with a public link can reach the site, so switch it back afterwards.
 cd ~/frappe-bench
 bench --site briskrew.localhost migrate
 (cd apps/hrms && yarn build)
-pkill -f "bench start"; bash /workspaces/*/.devcontainer/start.sh
+pkill -f "frappe.*serve --port 8000"; bash /workspaces/*/.devcontainer/start.sh
 ```
 
 ## If something's wrong
 
-- The site isn't up: `tail -f ~/bench.log`, or start it with `bash .devcontainer/start.sh`.
+- The site isn't up: run `bash .devcontainer/start.sh`; it reports when the site is ready. Logs are in `~/logs/` (`web.log` first).
 - Setup stopped part-way: run `bash .devcontainer/setup.sh` again; it skips finished steps.
 - Codespaces stop after 30 idle minutes; reopening one restarts briskrew automatically.
