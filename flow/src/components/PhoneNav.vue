@@ -13,7 +13,7 @@
 			:class="t.key === active ? 'font-bold text-surf' : 'font-medium text-ink-navtext'"
 		>
 			<Icon :name="t.icon" :size="20" :class="t.key === active ? 'text-lime' : ''" />
-			{{ t.label }}
+			{{ __(t.label) }}
 			<span
 				v-if="t.key === 'inbox' && inboxCount"
 				class="absolute left-1/2 top-1 ml-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-lime px-1 text-[10px] font-extrabold text-ink"
@@ -73,7 +73,7 @@
 					:size="20"
 					:class="a.key === shown?.key ? 'text-acc' : 'text-mut'"
 				/>
-				{{ a.label }}
+				{{ __(a.label) }}
 			</button>
 		</div>
 		<ContextSidebar v-if="shown?.sections.length" :area="shown" embedded />

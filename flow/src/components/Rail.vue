@@ -24,7 +24,7 @@
 			"
 		>
 			<Icon :name="area.icon" :size="20" :class="area.key === active ? 'text-lime' : ''" />
-			{{ area.label }}
+			{{ __(area.label) }}
 			<span
 				v-if="area.key === 'inbox' && inboxCount"
 				class="absolute right-2 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-lime px-1 text-[10px] font-extrabold text-ink"

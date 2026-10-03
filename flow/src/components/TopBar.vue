@@ -27,13 +27,13 @@
 					:to="c.to"
 					class="hover:text-ink"
 					:class="i < crumbs.length - 1 && 'hidden md:inline'"
-					>{{ c.label }}</router-link
+					>{{ __(c.label) }}</router-link
 				>
 				<span
 					v-else
 					class="text-ink-2"
 					:class="i < crumbs.length - 1 && 'hidden md:inline'"
-					>{{ c.label }}</span
+					>{{ __(c.label) }}</span
 				>
 			</template>
 		</nav>

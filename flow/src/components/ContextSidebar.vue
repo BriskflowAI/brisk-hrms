@@ -6,7 +6,7 @@
 	>
 		<div class="flex items-center gap-1 pl-2 pr-1">
 			<span class="flex-grow font-display text-[19px] font-bold tracking-tight">{{
-				area.label
+				__(area.label)
 			}}</span>
 			<button
 				v-if="!embedded"
@@ -20,7 +20,7 @@
 		</div>
 
 		<div v-for="section in area.sections" :key="section.label" class="flex flex-col gap-px">
-			<div class="kicker px-2 pb-1">{{ section.label }}</div>
+			<div class="kicker px-2 pb-1">{{ __(section.label) }}</div>
 			<template v-for="item in section.items" :key="item.label">
 				<router-link
 					v-if="item.doctype"
@@ -36,7 +36,7 @@
 						class="h-1.5 w-1.5 shrink-0 rounded-sm"
 						:class="isActive(item) ? 'bg-acc' : 'bg-line'"
 					/>
-					<span class="truncate">{{ item.label }}</span>
+					<span class="truncate">{{ __(item.label) }}</span>
 				</router-link>
 				<router-link
 					v-else-if="item.route"
@@ -52,7 +52,7 @@
 						class="h-1.5 w-1.5 shrink-0 rounded-sm"
 						:class="$route.path === item.route ? 'bg-acc' : 'bg-line'"
 					/>
-					<span class="truncate">{{ item.label }}</span>
+					<span class="truncate">{{ __(item.label) }}</span>
 				</router-link>
 				<router-link
 					v-else-if="item.report"
@@ -65,7 +65,7 @@
 					"
 				>
 					<Icon name="chart" :size="14" class="shrink-0 text-mut" />
-					<span class="truncate">{{ item.label }}</span>
+					<span class="truncate">{{ __(item.label) }}</span>
 				</router-link>
 				<a
 					v-else
@@ -73,7 +73,7 @@
 					class="flex h-[30px] items-center gap-2 rounded-[7px] px-2 text-[13.5px] font-medium text-ink-2 hover:bg-surf/70"
 				>
 					<Icon name="chart" :size="14" class="shrink-0 text-mut" />
-					<span class="truncate">{{ item.label }}</span>
+					<span class="truncate">{{ __(item.label) }}</span>
 				</a>
 			</template>
 		</div>

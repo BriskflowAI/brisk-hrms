@@ -2,7 +2,7 @@
 	<!-- Assigned to -->
 	<section>
 		<div class="kicker mb-2 flex items-center">
-			<span class="flex-grow">Assigned to</span>
+			<span class="flex-grow">{{ __("Assigned To") }}</span>
 			<button
 				v-if="!adding.assign"
 				type="button"
@@ -49,7 +49,7 @@
 	<!-- Attachments -->
 	<section>
 		<div class="kicker mb-2 flex items-center">
-			<span class="flex-grow">Attachments</span>
+			<span class="flex-grow">{{ __("Attachments") }}</span>
 			<label class="cursor-pointer text-acc" aria-label="Attach a file">
 				+
 				<input type="file" class="sr-only" @change="upload" />
@@ -81,7 +81,7 @@
 
 	<!-- Tags -->
 	<section>
-		<div class="kicker mb-2">Tags</div>
+		<div class="kicker mb-2">{{ __("Tags") }}</div>
 		<div class="flex flex-wrap items-center gap-1.5">
 			<span v-for="t in tags" :key="t" class="chip gap-1 bg-line-2 text-ink-2">
 				{{ t }}
@@ -108,7 +108,7 @@
 	<!-- Shared with -->
 	<section>
 		<div class="kicker mb-2 flex items-center">
-			<span class="flex-grow">Shared with</span>
+			<span class="flex-grow">{{ __("Shared With") }}</span>
 			<button
 				v-if="!adding.share"
 				type="button"
@@ -145,10 +145,10 @@
 
 	<!-- Connections -->
 	<section v-if="connections.length">
-		<div class="kicker mb-2">Connections</div>
+		<div class="kicker mb-2">{{ __("Connections") }}</div>
 		<div class="flex flex-col gap-3">
 			<div v-for="g in connections" :key="g.label">
-				<div class="mb-1 text-[12px] font-semibold text-ink-2">{{ g.label }}</div>
+				<div class="mb-1 text-[12px] font-semibold text-ink-2">{{ __(g.label) }}</div>
 				<ul class="flex flex-col gap-1">
 					<li
 						v-for="i in g.items"
@@ -159,7 +159,7 @@
 							:to="{ name: 'List', params: { doctype: i.doctype }, query: i.filter }"
 							class="flex-grow truncate hover:text-acc"
 						>
-							{{ i.doctype }}
+							{{ __(i.doctype) }}
 						</router-link>
 						<span class="tabular-nums text-mut">{{ i.count }}</span>
 						<router-link
@@ -182,7 +182,7 @@
 	<!-- Activity -->
 	<section class="flex flex-col gap-3">
 		<div class="kicker flex items-center">
-			<span class="flex-grow">Activity</span>
+			<span class="flex-grow">{{ __("Activity") }}</span>
 			<button
 				v-if="canEmail"
 				type="button"

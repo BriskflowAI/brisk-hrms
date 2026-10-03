@@ -4,7 +4,7 @@
 		<header class="flex flex-wrap items-end gap-2">
 			<div class="mr-auto">
 				<div class="kicker">{{ area?.label || list.meta?.module }}</div>
-				<h1 class="mt-1.5 text-[28px] leading-none md:text-[34px]">{{ label }}</h1>
+				<h1 class="mt-1.5 text-[28px] leading-none md:text-[34px]">{{ __(label) }}</h1>
 			</div>
 
 			<template v-for="g in buttonGroups" :key="g.group">
@@ -57,7 +57,7 @@
 					:class="view === v.key ? 'bg-ink text-surf' : 'text-ink-2 hover:bg-side'"
 					@click="setView(v.key)"
 				>
-					<Icon :name="v.icon" :size="14" /> {{ v.label }}
+					<Icon :name="v.icon" :size="14" /> {{ __(v.label) }}
 				</button>
 			</div>
 
@@ -109,7 +109,7 @@
 				:to="{ name: 'Form', params: { doctype, name: 'new' }, query: prefill }"
 				class="btn-ink"
 			>
-				<Icon name="plus" :size="15" /> New {{ singular }}
+				<Icon name="plus" :size="15" /> {{ __("New {0}", [__(doctype)]) }}
 			</router-link>
 		</header>
 
@@ -144,9 +144,9 @@
 					class="h-9 rounded-lg border border-line bg-surf py-0 pl-2.5 pr-8 text-[13px]"
 					@change="setQuick(df, $event.target.value)"
 				>
-					<option value="">{{ df.label }}: any</option>
+					<option value="">{{ __(df.label) }}: {{ __("any") }}</option>
 					<option v-for="o in quickOptions(df)" :key="o.value" :value="o.value">
-						{{ df.label }}: {{ o.label }}
+						{{ __(df.label) }}: {{ __(o.label) }}
 					</option>
 				</select>
 				<LinkInput
@@ -191,7 +191,7 @@
 								:key="df.fieldname"
 								:value="df.fieldname"
 							>
-								{{ df.label }}
+								{{ __(df.label) }}
 							</option>
 						</select>
 						<div class="flex gap-2">
@@ -435,13 +435,13 @@
 								@change="toggleAll"
 							/>
 						</th>
-						<th :class="th">{{ titleLabel }}</th>
+						<th :class="th">{{ __(titleLabel) }}</th>
 						<th
 							v-for="f in columns"
 							:key="f.fieldname"
 							:class="[th, isNum(f) && 'text-right']"
 						>
-							{{ f.label }}
+							{{ __(f.label) }}
 						</th>
 						<th :class="th">Status</th>
 						<th v-if="list.settings?.button" :class="th" />

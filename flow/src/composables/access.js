@@ -1,6 +1,7 @@
 import { call } from "frappe-ui";
 import { computed, ref } from "vue";
 import { areas } from "@/nav";
+import { loadTranslations } from "@/composables/i18n";
 
 // What the signed-in user may open. Until it loads, every menu item shows; the server
 // still checks each request, so this only keeps people from following dead ends.
@@ -9,7 +10,10 @@ let loading = null;
 
 export function loadAccess() {
 	loading ||= call("hrms.briskrew.api.access")
-		.then((res) => (access.value = res))
+		.then((res) => {
+			access.value = res;
+			return loadTranslations(res?.lang);
+		})
 		.catch(() => {});
 	return loading;
 }

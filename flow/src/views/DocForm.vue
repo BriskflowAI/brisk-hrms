@@ -18,10 +18,10 @@
 						<router-link
 							:to="{ name: 'List', params: { doctype } }"
 							class="kicker hover:text-acc"
-							>{{ doctype }}</router-link
+							>{{ __(doctype) }}</router-link
 						>
 						<h1 class="mt-1.5 truncate text-[24px] leading-none md:text-[30px]">
-							{{ form.isNew ? `New ${doctype}` : form.titleValue }}
+							{{ form.isNew ? __("New {0}", [__(doctype)]) : form.titleValue }}
 						</h1>
 						<div
 							v-if="!form.isNew && form.titleValue !== form.doc.name"
@@ -75,7 +75,7 @@
 								:disabled="!!form.busy"
 								@click="runButton(b)"
 							>
-								{{ b.label }}
+								{{ __(b.label) }}
 							</button>
 						</template>
 						<template v-else>
@@ -85,7 +85,7 @@
 								:aria-expanded="menu === g.group"
 								@click="menu = menu === g.group ? null : g.group"
 							>
-								{{ g.group }} <Icon name="chev" :size="14" />
+								{{ __(g.group) }} <Icon name="chev" :size="14" />
 							</button>
 							<div
 								v-if="menu === g.group"
@@ -98,7 +98,7 @@
 									class="block w-full px-3 py-1.5 text-left text-[13.5px] hover:bg-acc-tint"
 									@click="runButton(b)"
 								>
-									{{ b.label }}
+									{{ __(b.label) }}
 								</button>
 							</div>
 						</template>
@@ -209,7 +209,7 @@
 									v-if="form.perms?.create"
 									:to="{ name: 'Form', params: { doctype, name: 'new' } }"
 									class="menu-item"
-									>New {{ doctype }}</router-link
+									>{{ __("New {0}", [__(doctype)]) }}</router-link
 								>
 								<a
 									v-if="isSystemManager"
@@ -258,7 +258,7 @@
 						:disabled="!!form.busy"
 						@click="primary.run()"
 					>
-						{{ form.busy || primary.label }}
+						{{ form.busy || __(primary.label) }}
 						<kbd v-if="primary.label === 'Save'" class="kbd">{{ modKey }}S</kbd>
 					</button>
 				</div>
@@ -280,7 +280,7 @@
 						"
 						@click="tab = i"
 					>
-						{{ t.label }}
+						{{ __(t.label) }}
 					</button>
 				</nav>
 				<div v-else class="h-1" />
@@ -357,7 +357,7 @@
 						:key="d.label"
 						class="chip"
 						:class="tone(d.color)"
-						>{{ d.label }}</span
+						>{{ __(d.label) }}</span
 					>
 				</div>
 			</div>
@@ -377,7 +377,7 @@
 							:aria-expanded="!collapsed[s.key]"
 							@click="collapsed[s.key] = !collapsed[s.key]"
 						>
-							<h2 class="flex-grow text-[16px]">{{ s.label }}</h2>
+							<h2 class="flex-grow text-[16px]">{{ __(s.label) }}</h2>
 							<Icon
 								v-if="s.collapsible"
 								:name="collapsed[s.key] ? 'chevr' : 'chev'"

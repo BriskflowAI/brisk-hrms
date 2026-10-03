@@ -12,6 +12,7 @@
 // form.unsupported (shown to the user with a link to the classic desk) instead of
 // failing silently.
 
+import { __ } from "@/composables/i18n";
 import { markRaw, reactive } from "vue";
 import dayjs from "dayjs";
 import isBetween from "dayjs/plugin/isBetween";
@@ -147,11 +148,7 @@ const cint = (v) => {
 };
 const cstr = (v) => (v === null || v === undefined ? "" : String(v));
 const in_list = (list, item) => (list || []).includes(item);
-const translate = (text, args) => {
-	let s = String(text ?? "");
-	if (args) for (const [i, a] of [].concat(args).entries()) s = s.replaceAll(`{${i}}`, a);
-	return s;
-};
+const translate = (text, args, context) => __(text, args, context);
 const escapeHtml = (s) =>
 	String(s ?? "").replace(
 		/[&<>"']/g,
