@@ -1,5 +1,7 @@
 # Production deployment (GCP)
 
+This file is public. Real project IDs, IP addresses, account names and bucket names are replaced with `<PLACEHOLDERS>`. The real values are in the team's private notes.
+
 Verified on 2026-10-03 by read-only inspection of the VM and the GCP project.
 This file holds no secrets. Passwords and keys are in the `.env` file on the VM.
 
@@ -16,15 +18,15 @@ The stack serves two Frappe sites from one bench:
 
 | Item            | Value                                                        |
 | --------------- | ------------------------------------------------------------ |
-| GCP project     | `dark-stratum-468401-r0`                                     |
+| GCP project     | `<GCP_PROJECT_ID>`                                     |
 | VM              | `brisk-hrms`, `e2-medium` (2 shared vCPU, 4 GB), zone `asia-south1-a`. Resized from `e2-standard-2` on 2026-10-03          |
-| Static IP       | `brisk-hrms-ip` = `34.180.1.123`                             |
+| Static IP       | `brisk-hrms-ip` = `<STATIC_IP>`                             |
 | Disk            | `brisk-hrms`, 100 GB `pd-balanced` (root file system: 49 GB) |
-| Service account | `brisk-hrms-vm@dark-stratum-468401-r0.iam.gserviceaccount.com` |
+| Service account | `<VM_SERVICE_ACCOUNT>` |
 | Network         | `default` VPC, network tag `brisk-hrms`                      |
 | Firewall        | `brisk-hrms-http` (80) and `brisk-hrms-https` (443) from the internet |
 | SSH             | Port 22 is open to IAP only (`allow-ssh-iap`)                |
-| Image registry  | `asia-south1-docker.pkg.dev/dark-stratum-468401-r0/brisk-hrms` |
+| Image registry  | `<REGION>-docker.pkg.dev/<GCP_PROJECT_ID>/brisk-hrms` |
 
 ## Request path
 
@@ -35,9 +37,9 @@ Internet → nginx (ports 80 and 443) → upstream `brisk_frappe` → `frontend`
 
 ## Production stack
 
-Compose project: `brisk-hrms`. Directory on the VM: `/home/umair/brisk-hrms-prod`.
+Compose project: `brisk-hrms`. Directory on the VM: `<DEPLOY_DIR>` (a user's home directory; see the private notes).
 
-Image: `erpnext-hrms-crm:v16-20260901` (ERPNext v16, HRMS, CRM).
+Image: `erpnext-hrms-crm:v16-briskrew-20261004` (ERPNext v16, HRMS from this fork's `version-16-briskrew` branch, CRM). The image tag is the `IMAGE=` line in `.env` on the VM. Rollback image: `v16-20260901` (upstream HRMS).
 
 | Container     | Role                       |
 | ------------- | -------------------------- |
@@ -57,16 +59,17 @@ Docker volumes: `brisk-hrms_sites`, `_mariadb-data`, `_logs`, `_redis-cache-data
 
 No CI/CD pipeline deploys to the VM. A person deploys by hand.
 
-Installed app versions on 2026-10-03: Frappe 16.32.0, ERPNext 16.33.0 (`version-16`), HRMS 16.17.1 (`version-16`), CRM 1.82.0 (`main`).
-The apps come from the upstream `frappe/*` repositories, not from this fork.
+Installed app versions after the 2026-10-04 deploy: Frappe 16.36.1, ERPNext 16.37.0, HRMS 16.20.1 (fork branch `version-16-briskrew`, upstream `version-16` plus the briskrew UI), CRM 1.86.0.
+Before that deploy: HRMS came from upstream `frappe/hrms` `version-16`. The fork's `develop` branch is HRMS 17.0.0-dev and must not go to production.
+`apps.json` for the current image: ERPNext `version-16`, HRMS `https://github.com/BriskflowAI/brisk-hrms` branch `main`, CRM `main`. The current image was built from `version-16-briskrew`. Since 2026-10-04 `main` is the default branch and starts at the same commit (`8be72fd86`). `develop` is the HRMS 17-dev line and must not go to production.
 
-Build files are on the VM in `/home/umair/brisk-hrms-prod`: `apps.json`, `cloudbuild.yaml`, `compose.yaml`, `nginx-brisk-hrms.conf`.
+Build files are on the VM in `<DEPLOY_DIR>`: `apps.json`, `cloudbuild.yaml`, `compose.yaml`, `nginx-brisk-hrms.conf`.
 
 1. Clone `https://github.com/frappe/frappe_docker`. Copy `apps.json` into its root.
 2. Build on Cloud Build, not on the VM. The VM is too small to build and serve at once:
-   `gcloud builds submit --config=cloudbuild.yaml . --project=dark-stratum-468401-r0 --substitutions=_FRAPPE_BRANCH=version-16,_TAG="v16-$(date +%Y%m%d)"`
-3. Take a backup and a disk snapshot.
-4. On the VM, change the image tag in `compose.yaml`. Run `sudo docker compose pull`, then `sudo docker compose up -d`.
+   `gcloud builds submit --config=cloudbuild.yaml . --project=<GCP_PROJECT_ID> --substitutions=_FRAPPE_BRANCH=version-16,_TAG="v16-$(date +%Y%m%d)"`
+3. Rehearse the migration on a throwaway VM with last night's backup. Pick the dated backup folder, not the old `stack-b-*` files. Take a backup and a disk snapshot.
+4. On the VM, change the `IMAGE=` line in `.env`. Run `sudo docker compose pull`, then `sudo docker compose up -d`.
 5. Run `bench --site <site> migrate` for both sites inside the `backend` container.
 6. Check the login. To roll back, set the old tag and run `up -d` again.
 
@@ -75,7 +78,7 @@ Build files are on the VM in `/home/umair/brisk-hrms-prod`: `apps.json`, `cloudb
 ```bash
 gcloud compute ssh brisk-hrms \
   --zone asia-south1-a \
-  --project dark-stratum-468401-r0 \
+  --project <GCP_PROJECT_ID> \
   --tunnel-through-iap
 ```
 
@@ -87,7 +90,7 @@ Direct SSH to the public IP is refused. Use `sudo` for Docker commands.
 | ---------- | ---------------------------------------------------------------------- |
 | Site data  | Root cron at 02:30 UTC runs `/opt/brisk-backups/backup-frappe-sites.sh` |
 | Log        | `/var/log/brisk-frappe-backup.log`                                     |
-| Destination | `gs://brisk-hrms-backups/production-stack/{hrms,crm}/<timestamp>/`    |
+| Destination | `gs://<BACKUP_BUCKET>/production-stack/{hrms,crm}/<timestamp>/`    |
 | Bucket     | `ASIA-SOUTH1`. Class changes to Nearline at 30 days and Coldline at 90 days. Objects are deleted at 365 days. |
 | Disk       | Snapshot policy `brisk-hrms-daily-snapshots`: daily at 03:00, 7 days kept |
 
@@ -105,7 +108,7 @@ The Google Cloud Ops Agent runs on the VM. It sends logs and metrics to Cloud Lo
 
 ## Known risks
 
-- The compose project lives in one user's home directory (`/home/umair/...`).
+- The compose project lives in one user's home directory on the VM.
 - The VM is a single point of failure. The database runs in one container on one disk.
 - The dev Compose project `deploy-*` was removed on 2026-10-03. Do not run `docker/docker-compose.yml` on this VM.
 - `/opt/brisk-backups` holds old script copies (`.bak`, `.save`). Remove them.
