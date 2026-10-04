@@ -150,9 +150,12 @@ jobs:
           update_to_version 15 3.13
 
           echo "Updating to latest version"
-          git -C "apps/frappe" fetch --depth 1 upstream "${GITHUB_BASE_REF:-${GITHUB_REF##*/}}"
+          base_branch="${GITHUB_BASE_REF:-${GITHUB_REF##*/}}"
+          # briskrew fork: main is the Frappe HR v16 line; Frappe and ERPNext have no main branch.
+          [ "$base_branch" = "main" ] && base_branch="version-16"
+          git -C "apps/frappe" fetch --depth 1 upstream "$base_branch"
           git -C "apps/frappe" checkout -q -f FETCH_HEAD
-          git -C "apps/erpnext" fetch --depth 1 upstream "${GITHUB_BASE_REF:-${GITHUB_REF##*/}}"
+          git -C "apps/erpnext" fetch --depth 1 upstream "$base_branch"
           git -C "apps/erpnext" checkout -q -f FETCH_HEAD
           git -C "apps/hrms" checkout -q -f "$GITHUB_SHA"
 

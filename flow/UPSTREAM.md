@@ -20,8 +20,8 @@ app's briskrew look in `frontend/`, and small additions to `hrms/hooks.py`, `pac
 - **Checks:** `.github/workflows/briskrew.yml` runs on pull requests into `main` and on pushes to
   `main`: it builds the front ends and runs briskrew's server and browser tests against Frappe and
   ERPNext `version-16`. Upstream's own CI also runs on pull requests;
-  `.github/helper/install.sh` maps `main` to Frappe and ERPNext `version-16`, since neither has
-  a `main` branch.
+  `.github/helper/install.sh` and `.github/workflows/patch.yml` map `main` to Frappe and ERPNext
+  `version-16`, since neither has a `main` branch.
 - **Moving briskrew changes across:** develop briskrew work on `develop`, then bring it over with
   `git checkout origin/develop -- flow hrms/briskrew` (and any hooks it needs) on a branch off
   `main`. Don't merge `develop` into `main`: that would bring Frappe HR v17.
@@ -90,7 +90,7 @@ upstream's own, so a conflict there means something went wrong; take upstream's 
 | `hrms/hr/print_style/briskrew/`, `hrms/payroll/print_format/salary_slip_briskrew/` | Print style and salary slip format (fork only) |
 | `package.json` (root) | `install-flow-deps`, `dev-flow` and `build-flow` scripts; `build` also builds briskrew |
 | `.gitignore` | Ignores the built briskrew files |
-| `.github/helper/install.sh` (main only) | Treats the `main` base branch as Frappe and ERPNext `version-16` |
+| `.github/helper/install.sh`, `.github/workflows/patch.yml` (main only) | Treat the `main` base branch as Frappe and ERPNext `version-16` |
 | `frontend/index.html`, `frontend/tailwind.config.js`, `frontend/vite.config.js` | briskrew name, colours and fonts for the employee app |
 | `frontend/src/main.js`, `frontend/src/theme/briskrew.css` | Loads the briskrew theme |
 | `frontend/src/components/BaseLayout.vue`, `InstallPrompt.vue`, `BriskrewMark.vue` | briskrew mark and name |
