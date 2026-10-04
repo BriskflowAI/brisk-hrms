@@ -1,0 +1,160 @@
+/* briskrew look for Frappe's sign-in pages. Styles only: the pages and their logic are Frappe's. */
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@400..800&display=swap");
+
+body[data-path="login"],
+body[data-path="update-password"] {
+	--bk-ink: #0e1433;
+	--bk-nav: #1f2750;
+	--bk-navtext: #9aa3c7;
+	--bk-paper: #f2f4f9;
+	--bk-surf: #fdfdff;
+	--bk-line: #d5dbe8;
+	--bk-mut: #5a6384;
+	--bk-acc: #2b3fe0;
+	--bk-tint: #e2e6ff;
+	--bk-lime: #c9f24b;
+	background: var(--bk-paper);
+	color: var(--bk-ink);
+	font-family: Geist, system-ui, sans-serif;
+}
+
+/* The card */
+body[data-path="login"] .page-card,
+body[data-path="update-password"] .page-card {
+	max-width: 400px;
+	background: var(--bk-surf);
+	border: 1px solid var(--bk-line);
+	border-radius: 16px;
+	padding: 32px;
+	box-shadow: 0 12px 40px -18px rgba(14, 20, 51, 0.25);
+}
+body[data-path="login"] .page-card .app-logo {
+	width: 44px;
+	height: 44px;
+	max-height: none;
+	object-fit: contain;
+	border-radius: 11px;
+}
+@media (max-width: 991px) {
+	body[data-path="login"] .page-card,
+	body[data-path="update-password"] .page-card {
+		min-height: 0;
+		height: auto;
+		margin: 24px auto;
+		padding: 24px;
+	}
+}
+body[data-path="login"] .page-card h4,
+body[data-path="update-password"] .page-card h4 {
+	font-family: Geist, system-ui, sans-serif;
+	font-size: 28px;
+	font-weight: 800;
+	letter-spacing: -0.02em;
+	color: var(--bk-ink);
+}
+body[data-path="login"] .page-card-subtitle {
+	color: var(--bk-mut);
+}
+body[data-path="login"] .page-card label,
+body[data-path="update-password"] .page-card label {
+	color: var(--bk-mut);
+	font-weight: 600;
+}
+
+/* Fields */
+body[data-path="login"] .form-control,
+body[data-path="update-password"] .form-control {
+	height: 42px;
+	background: var(--bk-paper);
+	border: 1px solid var(--bk-line);
+	border-radius: 10px;
+	color: var(--bk-ink);
+	font-size: 15px;
+}
+body[data-path="login"] .form-control:focus,
+body[data-path="update-password"] .form-control:focus {
+	background: var(--bk-surf);
+	border-color: var(--bk-acc);
+	box-shadow: 0 0 0 3px var(--bk-tint);
+}
+
+/* Buttons */
+body[data-path="login"] .es-button,
+body[data-path="update-password"] .btn {
+	height: 42px;
+	border-radius: 10px;
+	font-size: 15px;
+	font-weight: 700;
+}
+body[data-path="login"] .es-button[data-variant="solid"]:not(.btn-login-option),
+body[data-path="update-password"] .btn-primary {
+	background: var(--bk-ink);
+	border-color: var(--bk-ink);
+	color: #fff;
+}
+body[data-path="login"] .es-button[data-variant="solid"]:not(.btn-login-option):hover,
+body[data-path="update-password"] .btn-primary:hover {
+	background: var(--bk-acc);
+	border-color: var(--bk-acc);
+}
+body[data-path="login"] .btn-login-option {
+	background: var(--bk-surf);
+	border: 1px solid var(--bk-line);
+	color: var(--bk-ink);
+}
+body[data-path="login"] .btn-login-option:hover {
+	background: var(--bk-paper);
+}
+body[data-path="login"] .page-card a,
+body[data-path="update-password"] .page-card a {
+	color: var(--bk-acc);
+	font-weight: 600;
+}
+body[data-path="login"] :focus-visible {
+	outline: 2px solid var(--bk-acc);
+	outline-offset: 2px;
+}
+
+/* Wide screens: a brand panel on the left, the form on the right. */
+@media (min-width: 992px) {
+	body[data-path="login"]::before {
+		content: "";
+		position: fixed;
+		inset: 0 auto 0 0;
+		width: 42vw;
+		background:
+			url("/assets/hrms/briskrew/mark.svg") 56px 56px / 48px no-repeat,
+			radial-gradient(circle at 85% 110%, rgba(43, 63, 224, 0.55), transparent 55%),
+			var(--bk-ink);
+	}
+	body[data-path="login"]::after {
+		content: "briskrew";
+		position: fixed;
+		left: 56px;
+		bottom: 112px;
+		font-family: Geist, system-ui, sans-serif;
+		font-size: 76px;
+		font-weight: 800;
+		letter-spacing: -0.03em;
+		line-height: 1;
+		color: #fff;
+	}
+	body[data-path="login"] #page-login::before {
+		content: "People, time and pay, in one place.";
+		position: fixed;
+		left: 58px;
+		bottom: 72px;
+		font-size: 18px;
+		color: var(--bk-navtext);
+	}
+	body[data-path="login"] #page-login {
+		margin-left: 42vw;
+		min-height: 100vh;
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+	}
+	body[data-path="login"] .page-card .app-logo {
+		display: none;
+	}
+}

@@ -1,0 +1,14 @@
+{
+ "creation": "2026-10-03 00:00:00",
+ "css": "/* briskrew print style */\n.print-format {\n\tfont-family: Geist, \"Helvetica Neue\", Arial, sans-serif;\n\tfont-size: 12.5px;\n\tcolor: #0e1433;\n\tbackground: white;\n}\n\n.print-heading {\n\tborder-bottom: 3px solid #c9f24b;\n\tpadding-bottom: 8px;\n\tmargin-bottom: 16px;\n\ttext-align: left;\n}\n\n.print-heading h2 {\n\tfont-size: 24px;\n\tfont-weight: 800;\n\tletter-spacing: -0.01em;\n\tcolor: #0e1433;\n}\n\n.print-heading h2 div {\n\tfont-weight: 800;\n}\n\n.print-heading small {\n\tfont-size: 12.5px !important;\n\tfont-weight: normal;\n\tcolor: #5a6384;\n}\n\n.print-format .letter-head {\n\tmargin-bottom: 24px;\n}\n\n.print-format label {\n\tfont-weight: 600;\n\tfont-size: 11px;\n\ttext-transform: uppercase;\n\tletter-spacing: 0.06em;\n\tcolor: #5a6384;\n\tmargin-bottom: 0;\n}\n\n.print-format .value {\n\tcolor: #0e1433;\n\tline-height: 1.7;\n}\n\n.print-format .row:not(.section-break) {\n\tline-height: 1.6;\n\tmargin-top: 12px !important;\n}\n\n.print-format .important .value {\n\tfont-weight: 700;\n}\n\n.print-format h3,\n.print-format h4,\n.print-format .section-title {\n\tcolor: #2b3fe0;\n\tfont-weight: 700;\n}\n\n.print-format th {\n\tbackground-color: #f2f4f9 !important;\n\tcolor: #394264;\n\tfont-size: 11px;\n\tfont-weight: 700;\n\ttext-transform: uppercase;\n\tletter-spacing: 0.04em;\n\tborder-bottom-width: 1px !important;\n}\n\n.print-format .table-bordered,\n.print-format .table-bordered td,\n.print-format .table-bordered th {\n\tborder: 1px solid #e5e9f2;\n}\n\n.print-format td,\n.print-format th {\n\tpadding: 7px 10px !important;\n}\n\n.print-format .primary.compact-item {\n\tfont-weight: 700;\n}\n",
+ "disabled": 0,
+ "docstatus": 0,
+ "doctype": "Print Style",
+ "idx": 0,
+ "modified": "2026-10-03 00:00:00",
+ "modified_by": "Administrator",
+ "name": "briskrew",
+ "owner": "Administrator",
+ "print_style_name": "briskrew",
+ "standard": 1
+}

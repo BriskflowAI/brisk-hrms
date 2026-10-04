@@ -39,8 +39,14 @@ app_include_css = "hrms.bundle.css"
 # website
 
 # include js, css files in header of web template
-# web_include_css = "/assets/hrms/css/hrms.css"
+# briskrew look for the sign-in pages
+web_include_css = "/assets/hrms/briskrew/website.css"
 # web_include_js = "/assets/hrms/js/hrms.js"
+
+website_context = {
+	"favicon": "/assets/hrms/briskrew/mark.svg",
+	"splash_image": "/assets/hrms/briskrew/mark.svg",
+}
 
 # include custom scss in every website theme (without file extension ".scss")
 # website_theme_scss = "hrms/public/scss/website"
@@ -74,9 +80,18 @@ doctype_js = {
 # home_page = "login"
 
 # website user home page (by Role)
-# role_home_page = {
-# 	"Role": "home_page"
-# }
+# People who run HR, approve requests or pay people land in briskrew after signing in.
+# A home page set on the Role itself still wins.
+role_home_page = {
+	"HR Manager": "flow",
+	"HR User": "flow",
+	"Leave Approver": "flow",
+	"Expense Approver": "flow",
+	"Accounts Manager": "flow",
+}
+
+# Footer line on outgoing emails (the last app's line is the one shown, see templates/emails/email_footer.html)
+default_mail_footer = "Sent from briskrew"
 
 calendars = ["Leave Application"]
 
