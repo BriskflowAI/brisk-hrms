@@ -115,6 +115,56 @@ body[data-path="login"] :focus-visible {
 	outline-offset: 2px;
 }
 
+/* Frappe v16's sign-in page uses Bootstrap buttons and nests its field styles deeper, so the same
+   look needs more specific selectors there. Newer Frappe uses the rules above. */
+body[data-path="login"] .page-card .page-card-body .form-label {
+	color: var(--bk-mut);
+	font-weight: 600;
+}
+body[data-path="login"] .page-card .page-card-body input.form-control {
+	height: 42px;
+	background: var(--bk-paper);
+	border: 1px solid var(--bk-line);
+	border-radius: 10px;
+	color: var(--bk-ink);
+	font-size: 15px;
+}
+body[data-path="login"] .page-card .page-card-body input.form-control:focus {
+	background: var(--bk-surf);
+	border-color: var(--bk-acc);
+	box-shadow: 0 0 0 3px var(--bk-tint);
+}
+body[data-path="login"] .page-card .page-card-actions .btn {
+	height: 42px;
+	border-radius: 10px;
+	font-size: 15px;
+	font-weight: 700;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+body[data-path="login"] .page-card .page-card-actions .btn.btn-login {
+	background: var(--bk-ink);
+	border-color: var(--bk-ink);
+	color: #fff;
+}
+body[data-path="login"] .page-card .page-card-actions .btn.btn-login:hover {
+	background: var(--bk-acc);
+	border-color: var(--bk-acc);
+}
+body[data-path="login"] .page-card .page-card-actions .btn.btn-login-option {
+	background: var(--bk-surf);
+	border: 1px solid var(--bk-line);
+	color: var(--bk-acc);
+}
+body[data-path="login"] .page-card .page-card-actions .btn.btn-login-option:hover {
+	background: var(--bk-paper);
+}
+body[data-path="login"] .page-card .page-card-body .forgot-password-message > a {
+	color: var(--bk-acc);
+	font-weight: 600;
+}
+
 /* Wide screens: a brand panel on the left, the form on the right. */
 @media (min-width: 992px) {
 	body[data-path="login"]::before {

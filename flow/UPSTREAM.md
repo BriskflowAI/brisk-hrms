@@ -7,8 +7,10 @@ how they come in, where conflicts can happen, and what to check before merging.
 ## Production branch: version-16-briskrew
 
 Production runs Frappe HR v16, so it is built from `version-16-briskrew`: upstream `version-16`
-plus briskrew (`flow/`, `hrms/briskrew/`, `hrms/www/flow.py`, `hrms/public/briskrew/mark.svg`,
-and small additions to `hrms/hooks.py`, `package.json`, `.gitignore` and `.github/`). It never
+plus briskrew — `flow/`, `hrms/briskrew/`, `hrms/www/flow.py`, `hrms/public/briskrew/`, the
+branding (print style, Salary Slip format, email footer, the branding patch and its line in
+`hrms/patches.txt`, `hrms/install.py`), the employee app's briskrew look in `frontend/`, and small
+additions to `hrms/hooks.py`, `package.json`, `.gitignore` and `.github/`. It never
 merges `develop`.
 
 - **Weekly sync:** `.github/workflows/upstream-sync-v16.yml` merges upstream `version-16` into
@@ -20,7 +22,8 @@ merges `develop`.
   `git checkout origin/develop -- flow hrms/briskrew` (and any hooks it needs) on a branch off
   `version-16-briskrew`. Don't merge `develop` into it: that would bring Frappe HR v17.
 - **What to check:** `git diff upstream/version-16 -- hrms/ frontend/` must show only the
-  briskrew additions listed above.
+  briskrew additions listed above. Frappe v16's sign-in page has its own markup, so
+  `hrms/public/briskrew/website.css` carries a v16 block of rules as well.
 
 To sync by hand:
 
