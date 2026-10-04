@@ -11,6 +11,8 @@ sudo apt install libcups2-dev redis-server mariadb-client libmariadb-dev
 pip install frappe-bench
 
 githubbranch=${GITHUB_BASE_REF:-${GITHUB_REF##*/}}
+# briskrew fork: main is the Frappe HR v16 production line; Frappe and ERPNext have no main branch.
+[ "$githubbranch" = "main" ] && githubbranch="version-16"
 frappeuser=${FRAPPE_USER:-"frappe"}
 frappebranch=${FRAPPE_BRANCH:-$githubbranch}
 erpnextbranch=${ERPNEXT_BRANCH:-$githubbranch}

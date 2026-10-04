@@ -4,23 +4,27 @@ briskrew lives in a fork of [frappe/hrms](https://github.com/frappe/hrms). The F
 code is unchanged, so new upstream fixes and features should flow in regularly. This page covers
 how they come in, where conflicts can happen, and what to check before merging.
 
-## Production branch: version-16-briskrew
+## Production line: main
 
-Production runs Frappe HR v16, so it is built from `version-16-briskrew`: upstream `version-16`
-plus briskrew — `flow/`, `hrms/briskrew/`, `hrms/www/flow.py`, `hrms/public/briskrew/`, the
-branding (print style, Salary Slip format, email footer, the branding patch and its line in
-`hrms/patches.txt`, `hrms/install.py`), the employee app's briskrew look in `frontend/`, and small
-additions to `hrms/hooks.py`, `package.json`, `.gitignore` and `.github/`. It never
-merges `develop`.
+`main` is the default branch and the production line until Frappe HR v17 is released. Production
+runs Frappe HR v16, so `main` is upstream `version-16` plus briskrew — `flow/`, `hrms/briskrew/`,
+`hrms/www/flow.py`, `hrms/public/briskrew/`, the branding (print style, Salary Slip format, email
+footer, the branding patch and its line in `hrms/patches.txt`, `hrms/install.py`), the employee
+app's briskrew look in `frontend/`, and small additions to `hrms/hooks.py`, `package.json`,
+`.gitignore` and `.github/`. It never merges `develop`. (`main` was created from
+`version-16-briskrew`, which is kept but no longer moves.)
 
 - **Weekly sync:** `.github/workflows/upstream-sync-v16.yml` merges upstream `version-16` into
-  `sync/v16-upstream-<date>` and opens a pull request to `version-16-briskrew`. GitHub only runs a
-  schedule from the default branch, so this file must also be on `develop` for the schedule to fire.
-- **Checks:** `.github/workflows/briskrew.yml` on this branch builds the front ends and runs
-  briskrew's tests against Frappe and ERPNext `version-16`.
+  `sync/v16-upstream-<date>`, a branch off `main`, and opens a pull request into `main`. It runs on
+  a schedule because `main` is the default branch.
+- **Checks:** `.github/workflows/briskrew.yml` runs on pull requests into `main` and on pushes to
+  `main`: it builds the front ends and runs briskrew's server and browser tests against Frappe and
+  ERPNext `version-16`. Upstream's own CI also runs on pull requests;
+  `.github/helper/install.sh` and `.github/workflows/patch.yml` map `main` to Frappe and ERPNext
+  `version-16`, since neither has a `main` branch.
 - **Moving briskrew changes across:** develop briskrew work on `develop`, then bring it over with
   `git checkout origin/develop -- flow hrms/briskrew` (and any hooks it needs) on a branch off
-  `version-16-briskrew`. Don't merge `develop` into it: that would bring Frappe HR v17.
+  `main`. Don't merge `develop` into `main`: that would bring Frappe HR v17.
 - **What to check:** `git diff upstream/version-16 -- hrms/ frontend/` must show only the
   briskrew additions listed above. Frappe v16's sign-in page has its own markup, so
   `hrms/public/briskrew/website.css` carries a v16 block of rules as well.
@@ -29,11 +33,13 @@ To sync by hand:
 
 ```bash
 git fetch upstream version-16
-git checkout -b sync/v16-upstream-$(date -u +%F) origin/version-16-briskrew
+git checkout -b sync/v16-upstream-$(date -u +%F) origin/main
 git merge upstream/version-16
 ```
 
-The rest of this page describes `develop`, which follows upstream `develop` (Frappe HR v17).
+The rest of this page describes `develop`, which follows upstream `develop` (Frappe HR v17). Its
+own workflows (`upstream-sync.yml` and the weekly `briskrew` run) only fire on a schedule from the
+default branch, so with `main` as default they run only on pull requests, pushes or by hand.
 
 ## The routine
 
@@ -69,7 +75,7 @@ upstream's own, so a conflict there means something went wrong; take upstream's 
 - `hrms/briskrew/`: its server endpoints and tests
 - `hrms/public/briskrew/`: logo, fonts and print styles
 - `.devcontainer/`: the codespace
-- `.github/workflows/briskrew.yml` and `upstream-sync.yml`
+- `.github/workflows/briskrew.yml`, `upstream-sync.yml` (develop) and `upstream-sync-v16.yml` (main)
 
 **Upstream files the fork changes.** Keep both sides:
 
@@ -84,6 +90,7 @@ upstream's own, so a conflict there means something went wrong; take upstream's 
 | `hrms/hr/print_style/briskrew/`, `hrms/payroll/print_format/salary_slip_briskrew/` | Print style and salary slip format (fork only) |
 | `package.json` (root) | `install-flow-deps`, `dev-flow` and `build-flow` scripts; `build` also builds briskrew |
 | `.gitignore` | Ignores the built briskrew files |
+| `.github/helper/install.sh`, `.github/workflows/patch.yml` (main only) | Treat the `main` base branch as Frappe and ERPNext `version-16` |
 | `frontend/index.html`, `frontend/tailwind.config.js`, `frontend/vite.config.js` | briskrew name, colours and fonts for the employee app |
 | `frontend/src/main.js`, `frontend/src/theme/briskrew.css` | Loads the briskrew theme |
 | `frontend/src/components/BaseLayout.vue`, `InstallPrompt.vue`, `BriskrewMark.vue` | briskrew mark and name |
@@ -138,9 +145,9 @@ Actions must be on for any of this to run (**Settings → Actions → General**)
 
 The fork also carries upstream's own workflows. Turn these off in the **Actions** tab (select the
 workflow, then **••• → Disable workflow**), because they release, publish or tidy up frappe/hrms and
-make no sense on the fork:
+make no sense on the fork. Disabling applies to every branch at once:
 
-- Build and Upload Assets
+- Build and Upload Assets (fails on every push to a `version-*` branch here)
 - Build Container Image
 - Create weekly release pull requests
 - Generate Semantic Release
