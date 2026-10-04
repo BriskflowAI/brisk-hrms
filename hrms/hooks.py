@@ -80,14 +80,13 @@ doctype_js = {
 # home_page = "login"
 
 # website user home page (by Role)
-# People who run HR, approve requests or pay people land in briskrew after signing in.
-# A home page set on the Role itself still wins.
+# People who run HR or approve requests land in briskrew after signing in. Accountants keep the
+# desk, where ERPNext's accounting lives. A home page set on the Role itself still wins.
 role_home_page = {
 	"HR Manager": "flow",
 	"HR User": "flow",
 	"Leave Approver": "flow",
 	"Expense Approver": "flow",
-	"Accounts Manager": "flow",
 }
 
 # Footer line on outgoing emails (the last app's line is the one shown, see templates/emails/email_footer.html)

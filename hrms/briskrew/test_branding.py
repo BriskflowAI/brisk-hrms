@@ -11,8 +11,14 @@ class TestBriskrewBranding(HRMSTestSuite):
 		branding.apply()
 		self.assertEqual(frappe.db.get_single_value("Website Settings", "app_name"), "briskrew")
 		self.assertEqual(frappe.db.get_single_value("Website Settings", "app_logo"), branding.LOGO)
-		self.assertEqual(frappe.db.get_single_value("Print Settings", "print_style"), "briskrew")
 		self.assertEqual(frappe.get_meta("Salary Slip").default_print_format, branding.SALARY_SLIP_FORMAT)
+
+	def test_leaves_the_site_print_style_alone(self):
+		# The print style applies to every document (ERPNext invoices too), so branding never sets it.
+		frappe.db.set_single_value("Print Settings", "print_style", "Redesign")
+		branding.apply()
+		self.assertEqual(frappe.db.get_single_value("Print Settings", "print_style"), "Redesign")
+		self.assertTrue(frappe.db.exists("Print Style", branding.PRINT_STYLE))
 
 	def test_keeps_what_an_admin_set(self):
 		frappe.db.set_single_value("Website Settings", "app_name", "Acme People")

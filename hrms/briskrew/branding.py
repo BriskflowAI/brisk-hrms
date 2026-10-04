@@ -12,7 +12,6 @@ SALARY_SLIP_FORMAT = "Salary Slip briskrew"
 
 # Product names Frappe and its apps set by default; these are replaced, anything else is kept.
 DEFAULT_NAMES = {"", "Frappe", "ERPNext", "Frappe HR", "Frappe Framework"}
-DEFAULT_PRINT_STYLES = {"", "Redesign", "Modern", "Classic", "Monochrome"}
 
 
 def apply():
@@ -24,11 +23,9 @@ def apply():
 	if not frappe.db.get_single_value("Website Settings", "app_logo"):
 		frappe.db.set_single_value("Website Settings", "app_logo", LOGO)
 
-	if (
-		frappe.db.exists("Print Style", PRINT_STYLE)
-		and (frappe.db.get_single_value("Print Settings", "print_style") or "") in DEFAULT_PRINT_STYLES
-	):
-		frappe.db.set_single_value("Print Settings", "print_style", PRINT_STYLE)
+	# Print Settings' style is site-wide (invoices, orders, every ERPNext print), so it is left
+	# alone. HR prints get the briskrew look from their own format; the briskrew Print Style is
+	# installed for anyone who chooses it.
 
 	if (
 		frappe.db.exists("Print Format", SALARY_SLIP_FORMAT)
