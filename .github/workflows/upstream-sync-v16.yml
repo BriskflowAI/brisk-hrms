@@ -1,12 +1,11 @@
 name: Upstream sync (v16)
 
-# Once a week, merge frappe/hrms version-16 into a branch off version-16-briskrew and open a pull
-# request, so the production branch picks up upstream v16 fixes. The pull request runs the briskrew
-# checks; a person merges it. If the merge conflicts, the run fails and lists the files to resolve
-# by hand (see flow/UPSTREAM.md).
+# Once a week, merge frappe/hrms version-16 into a branch off main (the production line, Frappe HR
+# v16) and open a pull request into main, so production picks up upstream v16 fixes. The pull
+# request runs the briskrew checks; a person merges it. If the merge conflicts, the run fails and
+# lists the files to resolve by hand (see flow/UPSTREAM.md).
 #
-# GitHub runs scheduled workflows only from the default branch, so for the schedule to fire this
-# file must also be on develop. The copy on version-16-briskrew can be started by hand once it is.
+# GitHub runs scheduled workflows only from the default branch, which is main.
 on:
   schedule:
     - cron: "53 3 * * 1" # Mondays 03:53 UTC
@@ -23,7 +22,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: version-16-briskrew
+          ref: main
           fetch-depth: 0
 
       - name: Merge upstream version-16
@@ -53,11 +52,11 @@ jobs:
         run: |
           branch="${{ steps.merge.outputs.branch }}"
           # If Actions may not open pull requests, the branch is still pushed: leave a link.
-          gh pr create --base version-16-briskrew --head "$branch" \
+          gh pr create --base main --head "$branch" \
             --title "chore: sync with upstream Frappe HR version-16 (${{ steps.merge.outputs.behind }} commits)" \
-            --body "Merges frappe/hrms version-16 into version-16-briskrew. Before merging: the briskrew checks pass, and run the screen audit on a v16 site (flow/UPSTREAM.md)." \
+            --body "Merges frappe/hrms version-16 into main. Before merging: the briskrew checks pass, and run the screen audit on a v16 site (flow/UPSTREAM.md)." \
           || {
-            url="${{ github.server_url }}/${{ github.repository }}/compare/version-16-briskrew...$branch?expand=1"
+            url="${{ github.server_url }}/${{ github.repository }}/compare/main...$branch?expand=1"
             echo "::warning::Couldn't open the pull request. Open it here: $url"
             echo "Upstream merged into \`$branch\`. [Open the pull request]($url)" >> "$GITHUB_STEP_SUMMARY"
           }

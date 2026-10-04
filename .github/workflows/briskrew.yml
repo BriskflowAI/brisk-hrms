@@ -1,13 +1,13 @@
 name: briskrew
 
-# Guards briskrew on the v16 production branch: the three front ends build, and briskrew's server
-# tests pass on Frappe and ERPNext version-16. Runs on pull requests into version-16-briskrew, on
-# pushes to it, and by hand (the weekly v16 sync starts it on its branch).
+# Guards briskrew on main, the production line (Frappe HR v16): the three front ends build, and
+# briskrew's server tests pass on Frappe and ERPNext version-16. Runs on pull requests into main, on
+# pushes to main, and by hand (the weekly v16 sync starts it on its branch).
 on:
   pull_request:
-    branches: [version-16-briskrew]
+    branches: [main]
   push:
-    branches: [version-16-briskrew]
+    branches: [main]
   workflow_dispatch:
 
 concurrency:
