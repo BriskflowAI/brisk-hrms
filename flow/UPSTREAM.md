@@ -91,6 +91,7 @@ upstream's own, so a conflict there means something went wrong; take upstream's 
 | `package.json` (root) | `install-flow-deps`, `dev-flow` and `build-flow` scripts; `build` also builds briskrew |
 | `.gitignore` | Ignores the built briskrew files |
 | `.github/helper/install.sh`, `.github/workflows/patch.yml` (main only) | Treat the `main` base branch as Frappe and ERPNext `version-16` |
+| `.github/workflows/ci.yml` (main only) | Coverage upload to Codecov may fail without failing the run (the fork has no Codecov token) |
 | `frontend/index.html`, `frontend/tailwind.config.js`, `frontend/vite.config.js` | briskrew name, colours and fonts for the employee app |
 | `frontend/src/main.js`, `frontend/src/theme/briskrew.css` | Loads the briskrew theme |
 | `frontend/src/components/BaseLayout.vue`, `InstallPrompt.vue`, `BriskrewMark.vue` | briskrew mark and name |

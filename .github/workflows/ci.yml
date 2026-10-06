@@ -143,5 +143,6 @@ jobs:
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          fail_ci_if_error: true
+          # briskrew fork: no Codecov token here, so a failed upload must not fail the nightly run.
+          fail_ci_if_error: false
           verbose: true
