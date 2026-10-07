@@ -1,39 +1,48 @@
 <template>
 	<nav
 		:aria-label="__('Areas')"
-		class="flex w-[68px] shrink-0 flex-col items-center gap-0.5 bg-ink px-0 pb-3.5 pt-3"
+		class="flex h-full w-[68px] shrink-0 flex-col items-center gap-0.5 bg-ink px-0 pb-3.5 pt-3"
 	>
 		<router-link
 			to="/"
 			:aria-label="`${brand.name} home`"
-			class="mb-3 flex h-[38px] w-[38px] items-center justify-center rounded-[11px] bg-lime pb-[3px] font-display text-[22px] font-extrabold text-ink"
+			class="mb-3 flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[11px] bg-lime pb-[3px] font-display text-[22px] font-extrabold text-ink"
 		>
 			{{ brand.mark }}
 		</router-link>
 
-		<router-link
-			v-for="area in visibleAreas"
-			:key="area.key"
-			:to="entryFor(area)"
-			:aria-current="area.key === active ? 'page' : undefined"
-			class="relative flex w-14 flex-col items-center gap-[3px] rounded-[10px] pb-1.5 pt-[7px] text-[10.5px] transition-colors"
-			:class="
-				area.key === active
-					? 'bg-ink-nav font-bold text-surf'
-					: 'font-medium text-ink-navtext hover:bg-ink-nav/60'
-			"
+		<!-- Areas scroll on short screens; the brand mark and account stay put. -->
+		<div
+			class="rail-scroll flex min-h-0 w-full flex-1 flex-col items-center gap-0.5 overflow-y-auto"
 		>
-			<Icon :name="area.icon" :size="20" :class="area.key === active ? 'text-lime' : ''" />
-			{{ __(area.label) }}
-			<span
-				v-if="area.key === 'inbox' && inboxCount"
-				class="absolute right-2 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-lime px-1 text-[10px] font-extrabold text-ink"
+			<router-link
+				v-for="area in visibleAreas"
+				:key="area.key"
+				:to="entryFor(area)"
+				:aria-current="area.key === active ? 'page' : undefined"
+				class="relative flex w-14 flex-col items-center gap-[3px] rounded-[10px] pb-1.5 pt-[7px] text-[10.5px] transition-colors"
+				:class="
+					area.key === active
+						? 'bg-ink-nav font-bold text-surf'
+						: 'font-medium text-ink-navtext hover:bg-ink-nav/60'
+				"
 			>
-				{{ inboxCount > 99 ? "99+" : inboxCount }}
-			</span>
-		</router-link>
+				<Icon
+					:name="area.icon"
+					:size="20"
+					:class="area.key === active ? 'text-lime' : ''"
+				/>
+				{{ __(area.label) }}
+				<span
+					v-if="area.key === 'inbox' && inboxCount"
+					class="absolute right-2 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-lime px-1 text-[10px] font-extrabold text-ink"
+				>
+					{{ inboxCount > 99 ? "99+" : inboxCount }}
+				</span>
+			</router-link>
+		</div>
 
-		<div class="mt-auto flex flex-col items-center gap-2.5">
+		<div class="mt-2 flex shrink-0 flex-col items-center gap-2.5">
 			<a
 				v-if="canReadDoctype('HR Settings')"
 				href="/app/hr-settings"
