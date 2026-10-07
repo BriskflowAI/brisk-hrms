@@ -24,6 +24,9 @@ AREAS = {
 	"pay": {"title": "Pay", "dashboards": ["Payroll"]},
 	"expenses": {"title": "Expenses", "dashboards": ["Expense Claims"]},
 	"hiring": {"title": "Hiring", "dashboards": ["Recruitment"]},
+	# ERPNext's own Stock and Asset dashboards, card for card.
+	"stock": {"title": "Stock", "dashboards": ["Stock"]},
+	"assets": {"title": "Assets", "dashboards": ["Asset"]},
 	"growth": {
 		"title": "Growth",
 		"cards": ["Trainings (This Month)", "Promotions (This Month)"],
@@ -181,13 +184,19 @@ def _custom_chart(chart):
 	source = frappe.get_doc("Dashboard Chart Source", chart.source)
 	module = scrub(source.module)
 	app = frappe.local.module_app.get(module)
-	method = f"{app}.{module}.dashboard_chart_source.{scrub(source.name)}.{scrub(source.name)}.get_data"
+	path = f"{app}.{module}.dashboard_chart_source.{scrub(source.name)}.{scrub(source.name)}"
+	# Sources name their entry point in their desk config (`method: "...get"`); most use get_data.
+	module_obj = frappe.get_module(path)
+	fn = getattr(module_obj, "get_data", None) or module_obj.get
 	filters = frappe.parse_json(chart.filters_json or "{}") or {}
 	for key, expr in (frappe.parse_json(chart.dynamic_filters_json or "{}") or {}).items():
 		value = _dynamic(expr)
 		if value is not None:
 			filters[key] = value
-	return frappe.get_attr(method)(chart_name=chart.name, filters=frappe.as_json(filters), refresh=1)
+	# Sources filter by company (the desk fills in the user's); use the one chosen on screen.
+	if company := _default_company():
+		filters["company"] = company
+	return fn(chart_name=chart.name, filters=frappe.as_json(filters), refresh=1)
 
 
 # ---------------------------------------------------------------------------------------

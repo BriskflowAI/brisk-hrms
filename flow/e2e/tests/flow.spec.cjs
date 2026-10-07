@@ -255,3 +255,126 @@ test("a record updates instantly when someone else saves it", async ({
   expect(sockets.some((u) => u.includes("socket.io"))).toBeTruthy();
   await admin.dispose();
 });
+
+// Stock and assets (demo data from hrms.briskrew.demo_inventory).
+async function inventorySeeded(page) {
+  const summary = await api(page, "hrms.briskrew.inventory.stock_summary");
+  return (summary?.items || 0) > 0;
+}
+
+test("stock levels flag what needs reordering and open the item page", async ({
+  page,
+}) => {
+  const problems = watch(page);
+  await signIn(page, ADMIN);
+  test.skip(!(await inventorySeeded(page)), "no stock demo data on this site");
+  await page.goto("/flow/stock-levels");
+  await expect(
+    page.getByRole("heading", { name: "Stock levels" }),
+  ).toBeVisible();
+  const ink = page.locator("tbody tr", { hasText: "BR-INK" }).first();
+  await expect(ink).toBeVisible();
+  await expect(ink.getByText("Reorder")).toBeVisible();
+
+  await ink.getByRole("link", { name: "Printer Ink Cartridge" }).click();
+  await expect(page).toHaveURL(/\/flow\/item\/BR-INK/);
+  await expect(
+    page.getByRole("heading", { name: "Stock by warehouse" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Recent movements" }),
+  ).toBeVisible();
+  expect(problems).toEqual([]);
+});
+
+test("asset register opens an asset's page", async ({ page }) => {
+  const problems = watch(page);
+  await signIn(page, ADMIN);
+  test.skip(!(await inventorySeeded(page)), "no assets demo data on this site");
+  await page.goto("/flow/asset-register");
+  await expect(
+    page.getByRole("heading", { name: "Asset register" }),
+  ).toBeVisible();
+  await page.getByRole("link", { name: "Laptop 01" }).first().click();
+  await expect(page).toHaveURL(/\/flow\/asset\//);
+  await expect(
+    page.getByRole("heading", { name: "Depreciation schedule" }),
+  ).toBeVisible();
+  await expect(page.locator("tbody tr").first()).toBeVisible();
+  expect(problems).toEqual([]);
+});
+
+// ERPNext's own Stock Entry controller runs in briskrew: the type sets the purpose and picking
+// an item fills its unit and rate.
+test("makes a stock entry with ERPNext's form script", async ({ page }) => {
+  const problems = watch(page);
+  await signIn(page, ADMIN);
+  test.skip(!(await inventorySeeded(page)), "no stock demo data on this site");
+  const [stores] = await api(page, "frappe.client.get_list", {
+    doctype: "Warehouse",
+    filters: JSON.stringify({ warehouse_name: "Stores", is_group: 0 }),
+    fields: JSON.stringify(["name"]),
+    limit_page_length: 1,
+  });
+
+  await page.goto(
+    `/flow/r/Stock%20Entry/new?stock_entry_type=Material%20Receipt&to_warehouse=${encodeURIComponent(
+      stores.name,
+    )}`,
+  );
+  await expect
+    .poll(() => page.evaluate(() => window.cur_frm?.doc?.purpose))
+    .toBe("Material Receipt");
+
+  await page.getByRole("button", { name: "+ Add row" }).first().click();
+  const item = page.locator('[id$="-item_code"]').first();
+  await item.fill("BR-CHAIR");
+  await page
+    .getByRole("option", { name: /BR-CHAIR/ })
+    .first()
+    .click();
+  await expect
+    .poll(() => page.evaluate(() => window.cur_frm?.doc?.items?.[0]?.uom))
+    .toBe("Nos");
+  const qty = page.locator('[id$="-qty"]').first();
+  await qty.fill("2");
+  await qty.blur();
+  await page.keyboard.press("Control+s");
+  await expect(page).toHaveURL(/\/flow\/r\/Stock%20Entry\/MAT-STE-/);
+  const name = decodeURIComponent(page.url().split("/").pop());
+  const saved = await api(page, "frappe.client.get", {
+    doctype: "Stock Entry",
+    name,
+  });
+  expect(saved.purpose).toBe("Material Receipt");
+  expect(saved.items[0].t_warehouse).toBe(stores.name);
+  expect(saved.items[0].qty).toBe(2);
+  expect(problems).toEqual([]);
+});
+
+// ERPNext's "Get Items From" picker (MultiSelectDialog and the server-side mapper).
+test("gets items from a material request into a purchase order", async ({
+  page,
+}) => {
+  const problems = watch(page);
+  await signIn(page, ADMIN);
+  test.skip(!(await inventorySeeded(page)), "no stock demo data on this site");
+  await page.goto(
+    "/flow/r/Purchase%20Order/new?supplier=Brisk%20Office%20Supplies",
+  );
+  await page.getByRole("button", { name: /Get Items From/ }).click();
+  await page.getByRole("menuitem", { name: "Material Request" }).click();
+  const dialog = page.getByRole("dialog");
+  const row = dialog.locator("tbody tr", { hasText: "MAT-MR-" }).first();
+  await expect(row).toBeVisible();
+  await row.locator('input[type="checkbox"]').first().check();
+  await dialog.getByRole("button", { name: "Get Items" }).click();
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        (window.cur_frm?.doc?.items || []).map((r) => r.item_code).sort(),
+      ),
+    )
+    .toEqual(["BR-INK", "BR-PAPER"]);
+  expect(problems).toEqual([]);
+});
