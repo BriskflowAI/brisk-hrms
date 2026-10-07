@@ -241,12 +241,25 @@ const OUT = process.env.AUDIT_OUT || "audit.json";
       )
         .map((x) => x.trim().replace(/\s+/g, " "))
         .filter((x) => x && !["•••"].includes(x));
+      // A report that refuses to run without some filter says so (HTTP 417), as in the desk:
+      // that's expected, not a failure.
+      let errors = [...new Set(errs)];
+      let needsFilters = "";
+      if (
+        kind === "report" &&
+        errors.length &&
+        errors.every((e) => e === "417 method/frappe.desk.query_report.run")
+      ) {
+        needsFilters = alerts;
+        errors = [];
+      }
       res.screens.push({
         kind,
         name: kind === "existing" ? existing : null,
         unsupported: banner.replace(/\s+/g, " "),
-        errors: [...new Set(errs)],
-        alerts,
+        errors,
+        alerts: needsFilters ? "" : alerts,
+        needs_filters: needsFilters,
         buttons,
       });
     }

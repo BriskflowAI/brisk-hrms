@@ -2554,7 +2554,9 @@ function makeFrm(form) {
 		copy_doc: () => record("frm.copy_doc"),
 		print_doc: () => window.open(form.printUrl(), "_blank"),
 		email_doc: () => record("frm.email_doc (use the classic desk to email)"),
-		add_custom_button: (label, fn, group) => addButton(label, fn, group),
+		// An old-style icon class in place of a group ("fa fa-money") is ignored, as in the desk.
+		add_custom_button: (label, fn, group) =>
+			addButton(label, fn, group && String(group).includes("fa fa-") ? "" : group),
 		remove_custom_button: (label, group) =>
 			(form.buttons = form.buttons.filter(
 				(b) => !(b.label === label && (b.group || "") === (group || "")),
@@ -3202,12 +3204,33 @@ export async function attachReportScript(report) {
 			},
 			page: lenient(
 				{
-					add_inner_button: (label, fn) => report.buttons.push({ label, action: fn }),
+					// Returns the button, jQuery-style: .addClass("btn-primary") makes it primary.
+					add_inner_button: (label, fn, group) => {
+						const b = { label, action: fn, group: group || "", primary: false };
+						report.buttons.push(b);
+						const $b = jQuery("<button>");
+						$b.addClass = (cls) => {
+							if (String(cls).includes("btn-primary"))
+								report.buttons = report.buttons.map((x) =>
+									x === b ? { ...x, primary: true } : x,
+								);
+							return $b;
+						};
+						return $b;
+					},
 					set_title: () => {},
 				},
 				"frappe.query_report.page",
 			),
-			datatable: silent(),
+			// The desk's DataTable: scripts read the ticked rows.
+			datatable: lenient(
+				{
+					rowmanager: { getCheckedRows: () => [...(report.checked || [])] },
+					refresh: () => {},
+					style: { setStyle: () => {} },
+				},
+				"frappe.query_report.datatable",
+			),
 			chart: silent(),
 			toggle_nothing_to_show: () => {},
 			toggle_message: () => {},
