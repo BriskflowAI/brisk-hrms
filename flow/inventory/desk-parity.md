@@ -78,7 +78,11 @@ and Expense Approver roles.
 |---|---|
 | Organizational chart | ✅ Org chart |
 | Team updates | ✅ Team updates |
-| Workspaces and dashboards | ✅ Overviews per area (number cards and charts) |
+| Workspaces and dashboards | ✅ Overviews per area (number cards and charts), Stock and Assets included |
+| Stock Summary | ✅ Stock levels (same data; reorder levels flagged, Move and Request actions) |
+| Item dashboard (stock by warehouse) | ✅ Item page: stock by warehouse, reorder levels, recent movements, prices |
+| Asset dashboard and value graph | ✅ Asset register and asset page (value now, depreciation schedule, movements, maintenance, repairs); the Asset form also draws its value graph |
+| Warehouse Capacity Summary, Point of Sale | ❌ Classic desk only (see `stock-assets-api.md`) |
 
 ## Left in the classic desk
 
@@ -86,7 +90,7 @@ and Expense Approver roles.
 |---|---|
 | Email inbox list view (Communication as a mailbox) | Emails are on each record's activity, with reply and reply all; the mailbox view stays in the desk |
 | Workspace and dashboard editing, Customize Form, DocType editing, system settings | On purpose (admin tools); reachable from Setup and the apps screen |
-| ERPNext areas (accounting, stock, selling, buying…) | briskrew covers Frappe HR for now; the apps screen opens the others in the classic desk |
+| ERPNext areas other than stock and assets (accounting, selling, buying…) | briskrew covers Frappe HR, Stock and Assets; the apps screen opens the others in the classic desk. Their records still open in briskrew when linked (a Purchase Order from a Material Request, say) |
 
 ## Notes
 
