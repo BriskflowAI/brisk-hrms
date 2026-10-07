@@ -83,6 +83,7 @@ const SKIP = new Set([
 ]);
 
 let currentList = null; // { list, router } while a list screen is open
+const globalHandlers = {}; // frappe.ui.form.on(...) calls made while no form was open
 
 function record(path) {
 	const f = current?.form || currentList?.list;
@@ -96,13 +97,19 @@ function record(path) {
 const internal = (prop) =>
 	typeof prop === "symbol" || SKIP.has(prop) || String(prop).startsWith("__v_");
 
+// Every stand-in, so tooling (the screen audit, an API coverage check) can tell a real desk
+// API from a placeholder.
+const standIns = new WeakSet();
+
 function stub(path) {
 	const fn = function () {
 		record(path);
 		return stub(`${path}()`);
 	};
-	return new Proxy(fn, {
+	const proxy = new Proxy(fn, {
 		get(t, prop) {
+			// A script counting on a property it sets itself later ((frm.x || 0) + 1) gets 0.
+			if (prop === Symbol.toPrimitive) return (hint) => (hint === "number" ? 0 : "");
 			if (internal(prop)) return undefined;
 			return stub(`${path}.${String(prop)}`);
 		},
@@ -110,6 +117,8 @@ function stub(path) {
 			return true;
 		},
 	});
+	standIns.add(proxy);
+	return proxy;
 }
 
 // Purely visual desk internals (sidebar images, toolbar navigation...). Scripts poke at
@@ -143,11 +152,85 @@ function lenient(obj, path) {
 // Helpers every desk script can use as globals
 // ---------------------------------------------------------------------------------------
 
-const flt = (v, precision) => {
+const flt = (v, precision, rounding_method) => {
 	let n = parseFloat(typeof v === "string" ? v.replace(/,/g, "") : v);
 	if (Number.isNaN(n)) n = 0;
-	return precision === undefined || precision === null ? n : Number(n.toFixed(precision));
+	return precision === undefined || precision === null
+		? n
+		: _round(n, precision, rounding_method);
 };
+
+// Frappe's rounding (number_format.js), so totals match the desk and the server to the paisa.
+function _round(num, precision, rounding_method) {
+	rounding_method =
+		rounding_method || booted?.sysdefaults?.rounding_method || "Banker's Rounding (legacy)";
+	const negative = num < 0;
+	if (rounding_method === "Banker's Rounding (legacy)") {
+		const d = cint(precision);
+		const m = Math.pow(10, d);
+		const n = +(d ? Math.abs(num) * m : Math.abs(num)).toFixed(8);
+		const i = Math.floor(n);
+		const f = n - i;
+		let r = !precision && f === 0.5 ? (i % 2 === 0 ? i : i + 1) : Math.round(n);
+		r = d ? r / m : r;
+		return negative ? -r : r;
+	}
+	if (rounding_method === "Banker's Rounding") {
+		if (num === 0) return 0;
+		const multiplier = Math.pow(10, cint(precision));
+		let n = Math.abs(num) * multiplier;
+		const floor = Math.floor(n);
+		const decimal = n - floor;
+		const epsilon = 2.0 ** (Math.log2(Math.abs(n)) - 52.0);
+		const tie = epsilon < 0.5 ? Math.abs(decimal - 0.5) < epsilon : decimal === 0.5;
+		n = tie ? (floor % 2 === 0 ? floor : floor + 1) : Math.round(n);
+		n = n / multiplier;
+		return negative ? -n : n;
+	}
+	if (rounding_method === "Commercial Rounding") {
+		if (num === 0) return 0;
+		const multiplier = Math.pow(10, cint(precision));
+		const n = num * multiplier;
+		let epsilon = 2.0 ** (Math.log2(Math.abs(n)) - 52.0);
+		if (epsilon >= 0.25) epsilon = 0;
+		return (Math.sign(n) * Math.round(Math.abs(n) + epsilon)) / multiplier;
+	}
+	throw new Error(`Unknown rounding method ${rounding_method}`);
+}
+
+function remainder(numerator, denominator, precision) {
+	precision = cint(precision);
+	const multiplier = Math.pow(10, precision);
+	const r = precision
+		? ((numerator * multiplier) % (denominator * multiplier)) / multiplier
+		: numerator % denominator;
+	return flt(r, precision);
+}
+
+// Rounds to the currency's smallest coin (e.g. 0.05), as invoices do with rounding adjustment.
+function round_based_on_smallest_currency_fraction(value, currency, precision) {
+	const smallest = flt(
+		window.frappe?.model?.get_value?.(
+			":Currency",
+			currency,
+			"smallest_currency_fraction_value",
+		),
+	);
+	if (!smallest) return _round(value);
+	const rem = remainder(value, smallest, precision);
+	return rem > smallest / 2 ? value + smallest - rem : value - rem;
+}
+
+// Promises scripts chain jQuery-style (.done, .fail, .always) onto, as on frappe.call's.
+function deskPromise(p) {
+	p.catch(() => {});
+	p.done = (fn) => (p.then(fn), p);
+	p.fail = (fn) => (p.catch(fn), p);
+	p.always = (fn) => (p.then(fn, fn), p);
+	const then = p.then.bind(p);
+	p.then = (...a) => deskPromise(then(...a));
+	return p;
+}
 const cint = (v) => {
 	const n = parseInt(v, 10);
 	return Number.isNaN(n) ? 0 : n;
@@ -205,6 +288,20 @@ function microtemplate(str, data) {
 // Server calls with desk semantics (full response, server messages shown)
 // ---------------------------------------------------------------------------------------
 
+// Objects and lists go as JSON strings, as the desk's frappe.call sends them: typed server
+// methods (v16 checks argument types) expect a string there.
+function deskArgs(args) {
+	const out = {};
+	for (const [k, v] of Object.entries(args || {}))
+		out[k] =
+			v &&
+			typeof v === "object" &&
+			(Array.isArray(v) || Object.getPrototypeOf(v) === Object.prototype)
+				? JSON.stringify(v)
+				: v;
+	return out;
+}
+
 async function rawCall(method, args = {}) {
 	const res = await fetch(method.startsWith("/") ? method : `/api/method/${method}`, {
 		method: "POST",
@@ -213,7 +310,7 @@ async function rawCall(method, args = {}) {
 			"Content-Type": "application/json; charset=utf-8",
 			"X-Frappe-CSRF-Token": window.csrf_token,
 		},
-		body: JSON.stringify(args || {}),
+		body: JSON.stringify(deskArgs(args)),
 	});
 	let data = {};
 	try {
@@ -262,7 +359,7 @@ function syncCall(o) {
 	xhr.setRequestHeader("Accept", "application/json");
 	xhr.setRequestHeader("Content-Type", "application/json; charset=utf-8");
 	xhr.setRequestHeader("X-Frappe-CSRF-Token", window.csrf_token);
-	xhr.send(JSON.stringify(body));
+	xhr.send(JSON.stringify(deskArgs(body)));
 	let r = {};
 	try {
 		r = JSON.parse(xhr.responseText || "{}");
@@ -336,12 +433,8 @@ function frappeCall(opts, args, callback) {
 			if (o.always) o.always();
 		}
 	};
-	const p = run();
-	p.catch(() => {}); // callers using callbacks don't handle rejections
-	// jQuery-style hooks some scripts chain on.
-	p.done = (fn) => (p.then(fn), p);
-	p.fail = (fn) => (p.catch(fn), p);
-	return p;
+	// Callers using callbacks don't handle rejections; some chain jQuery-style hooks.
+	return deskPromise(run());
 }
 
 // Put returned docs back where scripts read them: the open form, or the local cache.
@@ -740,6 +833,322 @@ export class Dialog {
 // The `frappe` global
 // ---------------------------------------------------------------------------------------
 
+// frappe.ui.form.MultiSelectDialog: ERPNext's "Get Items From" picker (Delivery Note from Sales
+// Order, Purchase Receipt from Purchase Order, Stock Entry from Material Request...). Searches
+// the source documents the way the desk does (frappe.desk.search.search_widget with the
+// setters, the date and the script's get_query), lists them with a tick box, and optionally
+// their item rows, then calls the script's action(selected_names, args).
+class MultiSelectDialog {
+	constructor(opts) {
+		Object.assign(this, opts);
+		this.page_length = 20;
+		this.args = {};
+		this.meta = metaFromCache(this.doctype) || { fields: [] };
+		this.childDoctype = this.child_fieldname
+			? this.meta.fields.find((d) => d.fieldname === this.child_fieldname)?.options
+			: null;
+		this.make();
+	}
+	setterFields() {
+		if (Array.isArray(this.setters))
+			return this.setters.map((df) => ({ ...df, onchange: () => this.refresh() }));
+		return Object.entries(this.setters || {}).map(([fieldname, value]) => {
+			const base = this.meta.fields.find((d) => d.fieldname === fieldname) || {};
+			return {
+				fieldname,
+				label: base.label || frappeUnscrub(fieldname),
+				fieldtype: ["Link", "Select", "Dynamic Link"].includes(base.fieldtype)
+					? base.fieldtype
+					: "Data",
+				options: base.options,
+				default: value,
+				read_only: (this.read_only_setters || []).includes(fieldname) ? 1 : 0,
+				onchange: () => this.refresh(),
+			};
+		});
+	}
+	columns() {
+		const cols = [...this.setterFields().map((d) => d.fieldname)];
+		if (this.date_field) cols.push(this.date_field);
+		return cols.slice(0, 4);
+	}
+	make() {
+		const setters = this.setterFields();
+		const resultFields = [
+			{ fieldname: "select", label: __("Select"), fieldtype: "Check", in_list_view: 1 },
+			{
+				fieldname: "name",
+				label: __(this.doctype),
+				fieldtype: "Data",
+				read_only: 1,
+				in_list_view: 1,
+			},
+			...this.columns().map((f) => ({
+				fieldname: f,
+				label: this.meta.fields.find((d) => d.fieldname === f)?.label || frappeUnscrub(f),
+				fieldtype: "Data",
+				read_only: 1,
+				in_list_view: 1,
+			})),
+		];
+		const childFields = this.childDoctype
+			? [
+					{
+						fieldname: "select",
+						label: __("Select"),
+						fieldtype: "Check",
+						in_list_view: 1,
+					},
+					{
+						fieldname: "parent",
+						label: __(this.doctype),
+						fieldtype: "Data",
+						read_only: 1,
+						in_list_view: 1,
+					},
+					...(this.child_columns || []).slice(0, 4).map((f) => ({
+						fieldname: f,
+						label: frappeUnscrub(f),
+						fieldtype: "Data",
+						read_only: 1,
+						in_list_view: 1,
+					})),
+			  ]
+			: [];
+		this.dialog = new Dialog({
+			title: __("Select {0}", [__(this.doctype)]),
+			size: "large",
+			fields: [
+				{
+					fieldname: "search_term",
+					label: __("Search"),
+					fieldtype: "Data",
+					onchange: () => this.refresh(),
+				},
+				...setters,
+				...(this.date_field
+					? [
+							{
+								fieldname: "__from",
+								label: __("From date"),
+								fieldtype: "Date",
+								onchange: () => this.refresh(),
+							},
+							{
+								fieldname: "__to",
+								label: __("To date"),
+								fieldtype: "Date",
+								onchange: () => this.refresh(),
+							},
+					  ]
+					: []),
+				...(this.childDoctype && this.allow_child_item_selection
+					? [
+							{
+								fieldname: "allow_child_item_selection",
+								label: __("Select items"),
+								fieldtype: "Check",
+								onchange: () => this.loadChildren(),
+							},
+					  ]
+					: []),
+				{ fieldname: "__sec", fieldtype: "Section Break" },
+				{
+					fieldname: "results",
+					label: __(this.doctype),
+					fieldtype: "Table",
+					cannot_add_rows: 1,
+					cannot_delete_rows: 1,
+					fields: resultFields,
+					data: [],
+					onchange: () => this.loadChildren(),
+				},
+				...(this.childDoctype
+					? [
+							{
+								fieldname: "child_results",
+								label: __("Items"),
+								fieldtype: "Table",
+								cannot_add_rows: 1,
+								cannot_delete_rows: 1,
+								fields: childFields,
+								data: [],
+								depends_on: "eval:doc.allow_child_item_selection",
+							},
+					  ]
+					: []),
+				...(this.data_fields || []),
+			],
+			primary_action_label: this.primary_action_label || __("Get Items"),
+			primary_action: () => {
+				const v = this.dialog.state.values;
+				const picked = (v.results || []).filter((r) => r.select).map((r) => r.name);
+				const children = (v.child_results || []).filter((r) => r.select);
+				const data = {};
+				for (const df of this.data_fields || []) data[df.fieldname] = v[df.fieldname];
+				this.action([...new Set([...picked, ...children.map((r) => r.parent)])], {
+					...this.args,
+					...data,
+					filtered_children: children.map((r) => r.name),
+				});
+			},
+		});
+		this.dialog.show();
+		this.refresh();
+	}
+	filters() {
+		const v = this.dialog.state.values;
+		const fromQuery = (this.get_query ? this.get_query()?.filters : null) || {};
+		const list = Array.isArray(fromQuery)
+			? fromQuery.map((f) => (f.length === 3 ? [this.doctype, ...f] : f))
+			: Object.entries(fromQuery).map(([k, val]) =>
+					Array.isArray(val)
+						? [this.doctype, k, val[0], val[1]]
+						: [this.doctype, k, "=", val],
+			  );
+		const fields = [];
+		for (const df of this.setterFields()) {
+			const value = v[df.fieldname] ?? undefined;
+			this.args[df.fieldname] = value || undefined;
+			fields.push(df.fieldname);
+			if (value === undefined || value === null || value === "") continue;
+			list.push(
+				df.fieldtype === "Data"
+					? [this.doctype, df.fieldname, "like", `%${value}%`]
+					: [this.doctype, df.fieldname, "=", value],
+			);
+		}
+		if (this.date_field && (v.__from || v.__to)) {
+			fields.push(this.date_field);
+			if (v.__from) list.push([this.doctype, this.date_field, ">=", v.__from]);
+			if (v.__to) list.push([this.doctype, this.date_field, "<=", v.__to]);
+		} else if (this.date_field) fields.push(this.date_field);
+		return [list, fields];
+	}
+	async refresh() {
+		const [filters, filter_fields] = this.filters();
+		const seq = (this.seq = (this.seq || 0) + 1);
+		const r = await frappeCall({
+			method: "frappe.desk.search.search_widget",
+			args: {
+				doctype: this.doctype,
+				txt: this.dialog.state.values.search_term || "",
+				filters,
+				// A JSON string, as the desk sends it (the server checks the type).
+				filter_fields: JSON.stringify(filter_fields),
+				page_length: this.page_length + 5,
+				query: this.get_query ? this.get_query()?.query || "" : "",
+				query_filters_as_dict: true,
+				as_dict: 1,
+			},
+			silent: true,
+		}).catch(() => ({ message: [] }));
+		if (seq !== this.seq) return;
+		const picked = new Set(
+			(this.dialog.state.values.results || []).filter((x) => x.select).map((x) => x.name),
+		);
+		this.dialog.state.values.results = (r.message || [])
+			.slice(0, this.page_length)
+			.map((d) => ({
+				...Object.fromEntries(
+					Object.entries(d).map(([k, val]) => [k, val === null ? "" : String(val)]),
+				),
+				name: d.name,
+				select: picked.has(d.name) ? 1 : 0,
+				doctype: "__dialog_results",
+				__islocal: 1,
+			}));
+		this.loadChildren();
+	}
+	async loadChildren() {
+		const v = this.dialog.state.values;
+		if (!this.childDoctype || !v.allow_child_item_selection) return;
+		const parents = (v.results || []).filter((r) => r.select).map((r) => r.name);
+		if (!parents.length) {
+			v.child_results = [];
+			return;
+		}
+		const r = await frappeCall({
+			method: "frappe.client.get_list",
+			args: {
+				doctype: this.childDoctype,
+				filters: [
+					["parentfield", "=", this.child_fieldname],
+					["parent", "in", parents],
+				],
+				fields: ["name", "parent", ...(this.child_columns || [])],
+				parent: this.doctype,
+				limit_page_length: 200,
+				order_by: "parent",
+			},
+			silent: true,
+		}).catch(() => ({ message: [] }));
+		v.child_results = (r.message || []).map((d) => ({
+			...d,
+			select: 1,
+			doctype: "__dialog_child_results",
+			__islocal: 1,
+		}));
+	}
+}
+
+// frappe.DataTable for the tables desk scripts draw into a form (an asset's depreciation
+// entries, a ledger preview): a plain briskrew table with the same options.
+class DeskDataTable {
+	constructor(wrapper, opts = {}) {
+		this.wrapper = wrapper?.get ? wrapper.get(0) : wrapper;
+		this.options = opts;
+		this.style = { setStyle: () => {} };
+		this.rowmanager = { getCheckedRows: () => [...this.checked] };
+		this.checked = new Set();
+		this.refresh(opts.data, opts.columns);
+	}
+	refresh(data = this.options.data, columns = this.options.columns) {
+		this.options.data = data || [];
+		this.options.columns = columns || [];
+		const cols = this.options.columns.map((c) =>
+			typeof c === "string"
+				? { name: c, id: c }
+				: { ...c, id: c.id || c.fieldname || c.name },
+		);
+		const cell = (row, c, i) => {
+			const raw = Array.isArray(row) ? row[i] : row[c.id] ?? row[c.fieldname];
+			return c.format ? c.format(raw, row, c) : escapeHtml(raw ?? "");
+		};
+		const head = cols
+			.map((c) => `<th>${escapeHtml(c.name || c.label || c.id || "")}</th>`)
+			.join("");
+		const body = this.options.data
+			.map(
+				(row, r) =>
+					`<tr>${
+						this.options.checkboxColumn
+							? `<td><input type="checkbox" data-row="${r}"></td>`
+							: ""
+					}${cols.map((c, i) => `<td>${cell(row, c, i)}</td>`).join("")}</tr>`,
+			)
+			.join("");
+		if (!this.wrapper) return;
+		this.wrapper.innerHTML = `<div class="bk-dt"><table><thead><tr>${
+			this.options.checkboxColumn ? "<th></th>" : ""
+		}${head}</tr></thead><tbody>${body}</tbody></table></div>`;
+		this.wrapper
+			.querySelectorAll("input[data-row]")
+			.forEach((el) =>
+				el.addEventListener("change", () =>
+					el.checked
+						? this.checked.add(+el.dataset.row)
+						: this.checked.delete(+el.dataset.row),
+				),
+			);
+	}
+}
+
+const frappeUnscrub = (s) =>
+	String(s || "")
+		.replace(/[_-]/g, " ")
+		.replace(/\b\w/g, (c) => c.toUpperCase());
+
 function routeTo(args) {
 	const router = current?.router;
 	const parts = args.flat().filter((x) => x !== undefined && x !== null);
@@ -804,7 +1213,25 @@ function findLocal(doctype, name) {
 			if (row) return row;
 		}
 	}
-	return localDocs.get(name) || null;
+	return localDocs.get(name) || bootDocs[doctype]?.[name] || null;
+}
+
+// Documents installed apps put in the desk's boot (ERPNext's ":Company" and ":Currency"),
+// which scripts read from locals (erpnext.get_currency, tree options).
+const bootDocs = {};
+function loadBootDocs(docs) {
+	for (const d of docs || []) if (d?.doctype && d.name) (bootDocs[d.doctype] ||= {})[d.name] = d;
+}
+
+// The route before this one, as the desk's frappe.get_prev_route() gives it.
+function prevRoute() {
+	const back = window.history.state?.back;
+	if (!back) return [];
+	const parts = String(back).split("?")[0].split("/").filter(Boolean).map(decodeURIComponent);
+	if (parts[0] === "r" && parts.length >= 3) return ["Form", parts[1], parts[2]];
+	if (parts[0] === "r" && parts[1]) return ["List", parts[1]];
+	if (parts[0] === "report" && parts[1]) return ["query-report", parts[1]];
+	return parts;
 }
 
 function modelSetValue(doctype, name, field, value) {
@@ -848,6 +1275,16 @@ const datetime = {
 	month_end: (d) => dayjs(d).endOf("month").format("YYYY-MM-DD"),
 	year_start: (d) => dayjs(d).startOf("year").format("YYYY-MM-DD"),
 	year_end: (d) => dayjs(d).endOf("year").format("YYYY-MM-DD"),
+	// Ports of frappe/public/js/frappe/utils/datetime.js (MIT).
+	global_date_format: (d) => {
+		const hasTime = /\d{2}:\d{2}/.test(String(d || ""));
+		return d ? dayjs(d).format(hasTime ? "D MMMM YYYY, hh:mm A" : "D MMMM YYYY") : "";
+	},
+	get_time: (timestamp) => dayjs(timestamp).format("hh:mm A"),
+	system_datetime: (asObj = false) =>
+		asObj ? new Date() : dayjs().format("YYYY-MM-DD HH:mm:ss"),
+	is_timezone_same: () => true,
+	is_system_time_zone: () => true,
 	get_user_date_fmt: () => "dd-mm-yyyy",
 	get_user_time_fmt: () => "HH:mm:ss",
 	convert_to_user_tz: (d) => d,
@@ -902,9 +1339,116 @@ function userFullName(uid) {
 	return userNames.get(uid);
 }
 
+// frappe.utils.filter_dict, ported from frappe/public/js/frappe/utils/utils.js (MIT): a list or
+// {name: doc} of docs, filtered by {field: value} or {field: [operator, value]}.
+function filterDict(dict, filters) {
+	const list = Array.isArray(dict) ? dict : Object.values(dict || {});
+	if (typeof filters === "string") return [dict?.[filters]].filter(Boolean);
+	if (!filters) return list;
+	return list.filter((d) =>
+		Object.entries(filters).every(([key, f]) => {
+			if (!Array.isArray(f)) return d[key] == f; // eslint-disable-line eqeqeq
+			const [op, val] = f;
+			if (op === "in") return [].concat(val).includes(d[key]);
+			if (op === "not in") return ![].concat(val).includes(d[key]);
+			if (op === "<") return d[key] < val;
+			if (op === "<=") return d[key] <= val;
+			if (op === ">") return d[key] > val;
+			if (op === ">=") return d[key] >= val;
+			return true;
+		}),
+	);
+}
+
+function commaSep(list, sep) {
+	if (!Array.isArray(list)) return list;
+	if (list.length <= 1) return list[0] ?? "";
+	return `${list.slice(0, -1).join(", ")}${sep}${list[list.length - 1]}`;
+}
+
+// Field names of a doctype matching a test, from the open form's metas.
+function fieldnamesOf(doctype, test) {
+	const f = current?.form;
+	const fields = (f?.doctype === doctype ? f.meta.fields : metaFromCache(doctype)?.fields) || [];
+	return fields.filter(test).map((d) => d.fieldname);
+}
+
+// Docs of a doctype that the open form knows: the form's own record, its rows, and loaded docs.
+function docsOf(doctype) {
+	const out = [];
+	const doc = current?.form?.doc;
+	if (doc?.doctype === doctype) out.push(doc);
+	for (const v of Object.values(doc || {}))
+		if (Array.isArray(v)) out.push(...v.filter((r) => r?.doctype === doctype));
+	for (const d of localDocs.values())
+		if (d?.doctype === doctype && !out.includes(d)) out.push(d);
+	return out;
+}
+
+// Addresses and contacts of a customer, supplier, warehouse... from what the server sends with
+// the record (__onload.addr_list / contact_list), as the desk shows them.
+function renderAddressAndContact(frm) {
+	const onload = frm.doc.__onload || {};
+	const card = (title, lines, href) =>
+		`<a href="${href}" class="bk-addr-card">${[
+			`<strong>${escapeHtml(title)}</strong>`,
+			...lines.filter(Boolean).map(escapeHtml),
+		].join("<br>")}</a>`;
+	const link = (dt, name) => `/flow/r/${encodeURIComponent(dt)}/${encodeURIComponent(name)}`;
+	const newLink = (dt) =>
+		`<a href="${link(dt, "new")}?link_doctype=${encodeURIComponent(
+			frm.doctype,
+		)}&link_name=${encodeURIComponent(frm.doc.name)}" class="bk-addr-new">+ ${escapeHtml(
+			__("New {0}", [__(dt)]),
+		)}</a>`;
+	if (frm.fields_dict.address_html && "addr_list" in onload) {
+		const html = (onload.addr_list || [])
+			.map((a) =>
+				card(
+					a.address_title || a.name,
+					[
+						a.address_type,
+						a.address_line1,
+						a.address_line2,
+						[a.city, a.state, a.pincode].filter(Boolean).join(", "),
+						a.country,
+					],
+					link("Address", a.name),
+				),
+			)
+			.join("");
+		jQuery(frm.fields_dict.address_html.wrapper).html(
+			`<div class="bk-addr-list">${
+				html || `<p>${escapeHtml(__("No address yet."))}</p>`
+			}${newLink("Address")}</div>`,
+		);
+	}
+	if (frm.fields_dict.contact_html && "contact_list" in onload) {
+		const html = (onload.contact_list || [])
+			.map((c) =>
+				card(
+					[c.first_name, c.last_name].filter(Boolean).join(" ") || c.name,
+					[c.designation, c.email_id, c.phone || c.mobile_no],
+					link("Contact", c.name),
+				),
+			)
+			.join("");
+		jQuery(frm.fields_dict.contact_html.wrapper).html(
+			`<div class="bk-addr-list">${
+				html || `<p>${escapeHtml(__("No contact yet."))}</p>`
+			}${newLink("Contact")}</div>`,
+		);
+	}
+}
+
+// frappe.provide("erpnext.stock"): real namespaces, never a stand-in. The lenient stand-ins
+// answer any name, so ask whether the namespace exists rather than whether it's truthy.
 function provide(path) {
 	let obj = window;
-	for (const part of path.split(".")) obj = obj[part] ||= {};
+	for (const part of path.split(".")) {
+		if (!(part in obj) || obj[part] === undefined || obj[part] === null) obj[part] = {};
+		obj = obj[part];
+	}
 	return obj;
 }
 
@@ -913,6 +1457,23 @@ function buildFrappe() {
 	const roles = b.roles || [];
 	const frappe = {
 		provide,
+		user_defaults: b.defaults || {},
+		DataTable: DeskDataTable,
+		// Display formatters scripts register per doctype (ERPNext: "Item: Item Name").
+		form: { link_formatters: {}, formatters: {} },
+		route_hooks: {},
+		msgprint_dialog: { hide_on_page_refresh: false, hide: () => {} },
+		dynamic_link: {},
+		contacts: lenient(
+			{
+				render_address_and_contact: renderAddressAndContact,
+				clear_address_and_contact: (frm) => {
+					for (const f of ["address_html", "contact_html"])
+						if (frm.fields_dict[f]) jQuery(frm.fields_dict[f].wrapper).empty();
+				},
+			},
+			"frappe.contacts",
+		),
 		call: frappeCall,
 		xcall: (method, args) => frappeCall({ method, args, silent: true }).then((r) => r.message),
 		msgprint,
@@ -984,7 +1545,10 @@ function buildFrappe() {
 		user_roles: roles,
 		boot: lenient(
 			{
-				user: { name: b.user, roles },
+				// What installed apps add to the desk's boot (ERPNext's settings, party types...).
+				...(b.desk || {}),
+				user: { name: b.user, roles, ...(b.desk?.user_perms || {}) },
+				docs: b.desk?.docs || [],
 				sysdefaults: b.sysdefaults || {},
 				sysdefaults_currency: b.sysdefaults?.currency,
 			},
@@ -1001,6 +1565,8 @@ function buildFrappe() {
 						(b.defaults || {})[k] ?? (b.defaults || {})[String(k).toLowerCase()] ?? [],
 					),
 				get_global_default: (k) => (b.sysdefaults || {})[k] ?? null,
+				// { Company: [{ doc, applicable_for, is_default }...] }, as the desk loads them
+				get_user_permissions: () => b.desk?.user_permissions || {},
 			},
 			"frappe.defaults",
 		),
@@ -1033,10 +1599,20 @@ function buildFrappe() {
 					}
 				},
 				icon: () => "",
-				filter_dict: (list, filters) =>
-					(list || []).filter((d) =>
-						Object.entries(filters).every(([k, v]) => d[k] === v),
-					),
+				filter_dict: filterDict,
+				comma_or: (list) => commaSep(list, ` ${__("or")} `),
+				comma_and: (list) => commaSep(list, ` ${__("and")} `),
+				comma_sep: commaSep,
+				html2text: (html) =>
+					new DOMParser().parseFromString(String(html ?? ""), "text/html").body
+						.textContent,
+				guess_colour: () => "blue",
+				bind_actions_with_object: (wrapper, object) =>
+					jQuery(wrapper)
+						.find("[data-action]")
+						.each((i, el) =>
+							jQuery(el).on("click", (e) => object[el.dataset.action]?.(e, el)),
+						),
 				get_random: (n = 8) =>
 					Math.random()
 						.toString(36)
@@ -1104,14 +1680,22 @@ function buildFrappe() {
 					);
 				},
 				set_value: modelSetValue,
+				// As in the desk: with a callback it asks the server, otherwise it reads only what
+				// is loaded locally (":Currency" lookups and the like).
 				get_value: (doctype, filters, fieldname, cb) => {
-					const local = typeof filters === "string" ? findLocal(doctype, filters) : null;
-					if (local) return local[fieldname];
-					return frappeCall({
-						method: "frappe.client.get_value",
-						args: { doctype, filters, fieldname },
-						callback: cb && ((r) => cb(r.message)),
-					});
+					if (cb)
+						return frappeCall({
+							method: "frappe.client.get_value",
+							args: { doctype, filters, fieldname },
+							callback: (r) => cb(r.message),
+						});
+					const local =
+						typeof filters === "string"
+							? findLocal(doctype, filters)
+							: Object.values(bootDocs[doctype] || {}).find((d) =>
+									Object.entries(filters || {}).every(([k, v]) => d[k] === v),
+							  );
+					return local ? local[fieldname] : null;
 				},
 				get_doc: (doctype, name) => findLocal(doctype, name),
 				get_new_doc: (doctype, parent, parentfield) =>
@@ -1180,9 +1764,71 @@ function buildFrappe() {
 							} is required`,
 						);
 				},
-				round_floats_in: () => {},
-				get_list: (doctype, filters) =>
-					current?.form?.doc?.doctype === doctype ? [current.form.doc] : [],
+				// Ports of frappe/public/js/frappe/model/model.js (MIT).
+				round_floats_in(doc, fieldnames) {
+					if (!doc) return;
+					fieldnames ||= fieldnamesOf(doc.doctype, (d) =>
+						["Currency", "Float"].includes(d.fieldtype),
+					);
+					for (const f of fieldnames) doc[f] = flt(doc[f], window.precision(f, doc));
+				},
+				get_list: (doctype, filters) => filterDict(docsOf(doctype), filters),
+				unscrub: (s) =>
+					String(s || "")
+						.replace(/[_-]/g, " ")
+						.replace(/\b\w/g, (c) => c.toUpperCase()),
+				remove_from_locals: (doctype, name) => localDocs.delete(name),
+				copy_doc(doc, from_amend, parent_doc, parentfield) {
+					const copy = newLocalDoc(doc.doctype, parent_doc, parentfield);
+					const skip = [
+						"name",
+						"owner",
+						"creation",
+						"modified",
+						"modified_by",
+						"docstatus",
+					];
+					for (const [k, v] of Object.entries(doc)) {
+						if (skip.includes(k) || k.startsWith("__")) continue;
+						copy[k] = Array.isArray(v)
+							? v.map((row) => {
+									const r = { ...row, name: localName(row.doctype) };
+									r.__islocal = 1;
+									r.parent = copy.name;
+									return r;
+							  })
+							: v;
+					}
+					if (from_amend) copy.amended_from = doc.name;
+					return copy;
+				},
+				make_new_doc_and_get_name: (doctype) => newLocalDoc(doctype).name,
+				trigger: (fieldname, value, doc) =>
+					current?.form &&
+					dispatch(
+						current.form,
+						doc?.doctype || current.form.doctype,
+						fieldname,
+						doc?.doctype,
+						doc?.name,
+					),
+				core_doctypes_list: [
+					"DocType",
+					"DocField",
+					"DocPerm",
+					"User",
+					"Role",
+					"Has Role",
+					"Page",
+					"Module Def",
+					"Print Format",
+					"Report",
+					"Customize Form",
+					"Customize Form Field",
+					"Property Setter",
+					"Custom Field",
+					"Client Script",
+				],
 				scrub: (s) =>
 					String(s || "")
 						.toLowerCase()
@@ -1216,7 +1862,39 @@ function buildFrappe() {
 				get_field_currency: (df, doc) =>
 					(doc && df?.options && doc[df.options]) || booted?.sysdefaults?.currency,
 				get_field_precision: (df) => df?.precision ?? 2,
-				docfield_map: {},
+				// { doctype: { fieldname: docfield } } for every loaded doctype, as in the desk
+				// (scripts tweak print_hide and the like on these).
+				docfield_map: new Proxy(
+					{},
+					{
+						get(t, dt) {
+							if (typeof dt === "symbol") return undefined;
+							if (!t[dt]) {
+								const meta = metaFromCache(dt);
+								if (!meta) return undefined;
+								t[dt] = Object.fromEntries(
+									meta.fields.map((d) => [d.fieldname, d]),
+								);
+							}
+							return t[dt];
+						},
+					},
+				),
+				get_docfields: (dt, name, filters) =>
+					filterDict(metaFromCache(dt)?.fields || [], filters),
+				get_fieldnames: (dt, name, filters) =>
+					filterDict(metaFromCache(dt)?.fields || [], filters).map((d) => d.fieldname),
+				get_translated_label: (dt, fieldname) =>
+					__(
+						metaFromCache(dt)?.fields.find((d) => d.fieldname === fieldname)?.label ||
+							fieldname,
+					),
+				get_parentfield: (parent_dt, child_dt) =>
+					metaFromCache(parent_dt)?.fields.find(
+						(d) =>
+							["Table", "Table MultiSelect"].includes(d.fieldtype) &&
+							d.options === child_dt,
+					)?.fieldname,
 			},
 			"frappe.meta",
 		),
@@ -1278,6 +1956,12 @@ function buildFrappe() {
 					),
 				delete_doc: (doctype, name) =>
 					frappeCall({ method: "frappe.client.delete", args: { doctype, name } }),
+				get_link_options: (doctype, txt = "", filters = {}, page_length = 0) =>
+					frappeCall({
+						method: "frappe.desk.search.search_link",
+						args: { doctype, txt, filters, page_length },
+						silent: true,
+					}).then((r) => r.message),
 			},
 			"frappe.db",
 		),
@@ -1285,27 +1969,42 @@ function buildFrappe() {
 			{
 				form: lenient(
 					{
-						on: (doctype, handlers) => {
-							if (!current) return;
-							(current.handlers[doctype] ||= []).push(handlers);
+						// Handlers registered while no form is open (ERPNext's bundle does this on
+						// app_ready) apply to every later form of that type, as in the desk.
+						on: (doctype, handlers, fn) => {
+							const h = typeof handlers === "string" ? { [handlers]: fn } : handlers;
+							if (!current) (globalHandlers[doctype] ||= []).push(h);
+							else (current.handlers[doctype] ||= []).push(h);
 						},
 						Controller: class {
 							constructor(opts) {
 								Object.assign(this, opts);
 							}
 						},
+						MultiSelectDialog,
+						trigger: (doctype, fieldname) =>
+							current?.frm?.script_manager.trigger(fieldname, doctype),
+						is_saving: false,
+						// Base classes ERPNext's desk bundle extends when it loads (phone and quick
+						// entry controls). Their desk-only rendering is not used in briskrew.
+						ControlData: class {
+							constructor(opts) {
+								Object.assign(this, opts);
+							}
+						},
+						QuickEntryForm: class {
+							constructor(doctype, after_insert) {
+								this.doctype = doctype;
+								this.after_insert = after_insert;
+							}
+						},
 						qz_connect: () => {},
 						set_controller: (doctype, Klass) => {
 							if (!current || doctype !== current.form.doctype) return;
-							const inst = new Klass({ frm: current.frm });
-							Object.assign(current.frm.cscript, inst);
-							// Class methods live on the prototype; expose them as cscript handlers.
-							for (const k of Object.getOwnPropertyNames(
-								Object.getPrototypeOf(inst),
-							)) {
-								if (k !== "constructor" && typeof inst[k] === "function")
-									current.frm.cscript[k] = inst[k].bind(inst);
-							}
+							window.extend_cscript(
+								current.frm.cscript,
+								new Klass({ frm: current.frm }),
+							);
 						},
 					},
 					"frappe.ui.form",
@@ -1365,9 +2064,10 @@ function buildFrappe() {
 			return p;
 		},
 		get_route: () => ["Form", current?.form?.doctype, current?.form?.doc?.name],
+		get_prev_route: prevRoute,
 		get_route_str: () => `Form/${current?.form?.doctype}/${current?.form?.doc?.name}`,
 		flags: {},
-		help: { help_links: {} },
+		help: { help_links: {}, youtube_id: {} },
 		search: { utils: {} },
 		ready: (fn) => fn && fn(),
 		after_ajax: (fn) => fn && setTimeout(fn, 0),
@@ -1493,6 +2193,27 @@ function fieldHandle(form, fieldname, table = "") {
 				description: d,
 			}),
 		set_input: (v) => form.setValue(fieldname, v),
+		// HTML fields: frm.get_field("help").html("<p>…</p>")
+		html: (content) => htmlWrapper(form, fieldname, el).html(content),
+		// Table fields: frm.fields_dict.items.get_field("Batch No") is the column's fieldname
+		// (matched by fieldname or label), if the rows have one.
+		get_field: (field) => {
+			const want = String(field || "").toLowerCase();
+			const dt = form.tableDoctype(fieldname);
+			const hit = (dt ? form.fieldsOf(dt) : []).find(
+				(d) =>
+					!NO_VALUE.has(d.fieldtype) &&
+					(d.fieldname.toLowerCase() === want ||
+						String(d.label || "").toLowerCase() === want ||
+						String(__(d.label || "")).toLowerCase() === want),
+			);
+			return hit?.fieldname;
+		},
+		// Geolocation fields: the desk's map; briskrew shows coordinates, so this keeps the view
+		// a script sets and reports the drawn point (or the default centre) as the centre.
+		get map() {
+			return (mapShims[`${table}|${fieldname}`] ||= geoMap(form, fieldname));
+		},
 		get $wrapper() {
 			// HTML fields: whatever a script writes here is shown in the field.
 			return htmlWrapper(form, fieldname, el);
@@ -1502,6 +2223,8 @@ function fieldHandle(form, fieldname, table = "") {
 		// so an HTML field shows that element itself rather than a copy of its markup.
 		get wrapper() {
 			const key = `${table}|${fieldname}`;
+			// Sections and tabs are jQuery objects in the desk (scripts .find() inside them).
+			if (BREAKS.has(form.df(fieldname, table)?.fieldtype)) return jQuery(el);
 			// Keep it in the document from the start: scripts bind handlers with page-wide
 			// selectors right after rendering, before the field moves it into place.
 			if (!el.isConnected) detachedHolder().appendChild(el);
@@ -1519,9 +2242,83 @@ function fieldHandle(form, fieldname, table = "") {
 			return form.queries[`${table}|${fieldname}`];
 		},
 		grid: gridHandle(form, fieldname),
+		// The field's layout row: scripts show or hide the whole field with it.
+		get row() {
+			const $w = jQuery(el);
+			$w.toggle = (show) => {
+				const key = `${table}|${fieldname}`;
+				form.overrides[key] = {
+					...(form.overrides[key] || {}),
+					hidden: show === false ? 1 : 0,
+				};
+				return $w;
+			};
+			return { wrapper: $w };
+		},
 		frm: current?.frm,
 	};
 	return handle;
+}
+
+const BREAKS = new Set(["Section Break", "Tab Break", "Column Break"]);
+const NO_VALUE = new Set([
+	"Section Break",
+	"Column Break",
+	"Tab Break",
+	"HTML",
+	"Table",
+	"Table MultiSelect",
+	"Button",
+	"Image",
+	"Fold",
+	"Heading",
+]);
+const mapShims = {};
+
+function geoMap(form, fieldname) {
+	let view = null;
+	const point = () => {
+		try {
+			const v = form.doc?.[fieldname];
+			const geo = typeof v === "string" ? JSON.parse(v) : v;
+			const c = geo?.features?.[0]?.geometry?.coordinates;
+			if (Array.isArray(c) && typeof c[0] === "number") return { lat: c[1], lng: c[0] };
+		} catch {
+			// not GeoJSON
+		}
+		return null;
+	};
+	const noop = function () {
+		return map;
+	};
+	const map = {
+		setView: (center, zoom) => {
+			view = {
+				lat: Number(center[0] ?? center.lat),
+				lng: Number(center[1] ?? center.lng),
+				zoom,
+			};
+			return map;
+		},
+		getCenter: () => {
+			if (view) return { lat: view.lat, lng: view.lng };
+			const p = point();
+			if (p) return p;
+			const center = window.frappe?.utils?.map_defaults?.center;
+			const [lat, lng] = Array.isArray(center) ? center : [19.08, 72.8961];
+			return { lat, lng };
+		},
+		getZoom: () => view?.zoom ?? 13,
+		fitBounds: noop,
+		flyTo: noop,
+		panTo: noop,
+		invalidateSize: noop,
+		on: noop,
+		off: noop,
+		addLayer: noop,
+		removeLayer: noop,
+	};
+	return map;
 }
 
 function detachedHolder() {
@@ -1568,7 +2365,11 @@ function gridHandle(form, tableField) {
 	};
 	return lenient(
 		{
+			// Always a holder, as in the desk (scripts set get_query on columns that may not exist).
 			get_field: (field) => ({
+				get df() {
+					return form.df(field, tableField);
+				},
 				set get_query(fn) {
 					form.queries[`${tableField}|${field}`] = fn;
 				},
@@ -1576,6 +2377,13 @@ function gridHandle(form, tableField) {
 					return form.queries[`${tableField}|${field}`];
 				},
 			}),
+			// The row type's fields, with what scripts changed applied.
+			get docfields() {
+				const dt = form.tableDoctype(tableField);
+				return dt ? form.fieldsOf(dt).map((d) => form.df(d.fieldname, tableField)) : [];
+			},
+			// "Add multiple": pick several of what the link field points to, one row each.
+			set_multiple_add: (link, qty) => setTable("multiple_add", { link, qty: qty || null }),
 			update_docfield_property: set,
 			toggle_display: (field, show) => set(field, "hidden", show ? 0 : 1),
 			toggle_reqd: (field, reqd) => set(field, "reqd", reqd ? 1 : 0),
@@ -1792,9 +2600,32 @@ function makeFrm(form) {
 		toggle_comments: () => {},
 		add_web_link: () => {},
 		set_read_only: () => {},
-		script_manager: {
-			trigger: (event, cdt, cdn) => dispatch(form, cdt || form.doctype, event, cdt, cdn),
-		},
+		script_manager: lenient(
+			{
+				trigger: (event, cdt, cdn) => dispatch(form, cdt || form.doctype, event, cdt, cdn),
+				// cur_frm.script_manager.make(erpnext.stock.LandedCostVoucher)
+				make: (Klass) => window.extend_cscript(frm.cscript, new Klass({ frm })),
+				has_handler: (event) =>
+					(current?.handlers[form.doctype] || []).some(
+						(h) => typeof h[event] === "function",
+					),
+				has_handlers: (event, doctype) =>
+					(current?.handlers[doctype || form.doctype] || []).some(
+						(h) => typeof h[event] === "function",
+					) || typeof frm.cscript[event] === "function",
+				// A new row takes these values from the first row (the desk's own helper).
+				copy_from_first_row: (parentfield, row, fieldnames) => {
+					const rows = form.doc[parentfield] || [];
+					if (rows.length === 1 || rows[0] === row || rows[0]?.name === row?.name)
+						return;
+					for (const f of [].concat(fieldnames))
+						modelSetValue(row.doctype, row.name, f, rows[0][f]);
+				},
+				setup: () => {},
+				log_error: (caller, e) => console.error(`[briskrew] ${caller}:`, e),
+			},
+			"frm.script_manager",
+		),
 		page: lenient(
 			{
 				set_indicator: (label, color) => (form.indicator = { label, color }),
@@ -1845,6 +2676,15 @@ function makeFrm(form) {
 						label: `${title}: ${Math.round(percent)}%`,
 						color: "blue",
 					}),
+				// frm.dashboard.render_graph({ title, data: { labels, datasets }, type })
+				render_graph: (args) =>
+					(form.chart = args?.data?.labels?.length
+						? markRaw({
+								title: args.title || "",
+								data: args.data,
+								type: args.type || "line",
+						  })
+						: null),
 				set_badge_count: () => {},
 				stats_area: jQuery("<div>"),
 				wrapper: jQuery("<div>"),
@@ -1867,7 +2707,7 @@ function makeFrm(form) {
 // Event dispatch, desk order
 // ---------------------------------------------------------------------------------------
 
-async function dispatch(form, doctype, event, cdt, cdn) {
+async function dispatch(form, doctype, event, cdt, cdn, { legacy = true } = {}) {
 	const list = current?.handlers[doctype] || [];
 	const frm = current.frm;
 	for (const handlers of list) {
@@ -1878,17 +2718,20 @@ async function dispatch(form, doctype, event, cdt, cdn) {
 		} catch (e) {
 			if (e.fromThrow) return false;
 			form.error = `${event}: ${e.message}`;
-			if (import.meta.env.DEV) console.error(e);
+			if (import.meta.env.DEV || window.__briskrewDebug) console.error(e);
 		}
 	}
 	// Legacy style: cur_frm.cscript.<event>(doc, cdt, cdn) and controller classes.
-	const cs = frm.cscript;
-	if (doctype === form.doctype && cs && typeof cs[event] === "function") {
+	// As in the desk they run for row events too (a controller's item_code(doc, cdt, cdn)).
+	const cs = legacy ? frm.cscript : null;
+	for (const name of [event, `custom_${event}`]) {
+		if (!cs || typeof cs[name] !== "function") continue;
 		try {
-			await cs[event].call(cs, form.doc, cdt || doctype, cdn || form.doc?.name);
+			await cs[name].call(cs, form.doc, cdt || doctype, cdn || form.doc?.name);
 		} catch (e) {
 			if (e.fromThrow) return false;
 			form.error = `${event}: ${e.message}`;
+			if (import.meta.env.DEV || window.__briskrewDebug) console.error(e);
 		}
 	}
 	return true;
@@ -1905,6 +2748,7 @@ async function runRefresh(form) {
 		form.dashboard = [];
 		form.sections = [];
 		form.indicator = null;
+		form.chart = null;
 		form.saveDisabled = false;
 		await dispatch(form, form.doctype, "refresh");
 		await dispatch(form, form.doctype, "onload_post_render");
@@ -1945,8 +2789,14 @@ function loadDeskAsset(name) {
 // Built desk bundles (scripts or stylesheets) for screens that reuse them, such as maps.
 export { loadDeskAsset };
 
-async function install() {
-	if (booted) return;
+// Runs once; screens opened while it's loading wait for the same promise.
+let installing = null;
+function install() {
+	installing ||= doInstall();
+	return installing;
+}
+
+async function doInstall() {
 	const { call } = await import("frappe-ui");
 	booted = await call("hrms.briskrew.api.boot").catch(() => ({}));
 	window.jQuery = window.$ = jQuery;
@@ -1958,6 +2808,9 @@ async function install() {
 	window.moment = Object.assign((...a) => dayjs(...a), dayjs, { duration: dayjs.duration });
 	window.__ = translate;
 	window.flt = flt;
+	window._round = _round;
+	window.remainder = remainder;
+	window.round_based_on_smallest_currency_fraction = round_based_on_smallest_currency_fraction;
 	window.cint = cint;
 	window.cstr = cstr;
 	window.in_list = in_list;
@@ -1975,8 +2828,10 @@ async function install() {
 		return cint(sys.float_precision || 3);
 	};
 	window.format_currency = formatCurrency;
+	loadBootDocs(booted?.desk?.docs);
 	window.frappe = buildFrappe();
 	window.erpnext = buildErpnext();
+	window.__briskrewIsStandIn = (v) => standIns.has(v);
 	window.locals = new Proxy(
 		{},
 		{
@@ -1986,11 +2841,27 @@ async function install() {
 					{
 						get: (x, name) =>
 							typeof name === "symbol" ? undefined : findLocal(doctype, name),
+						// Iterating locals[":Company"] lists the boot's documents of that type.
+						ownKeys: () => Object.keys(bootDocs[doctype] || {}),
+						getOwnPropertyDescriptor: (x, name) =>
+							bootDocs[doctype]?.[name]
+								? {
+										value: bootDocs[doctype][name],
+										enumerable: true,
+										configurable: true,
+								  }
+								: undefined,
 					},
 				),
 		},
 	);
-	window.extend_cscript = (a, b) => Object.assign(a, b);
+	window.extend_cscript = (cscript, controller) => {
+		Object.assign(cscript, controller);
+		// As in the desk: the controller's class methods (inherited ones too) become handlers.
+		if (cscript && controller)
+			Object.setPrototypeOf(cscript, Object.getPrototypeOf(controller));
+		return cscript;
+	};
 	window.set_field_options = (field, options) =>
 		current?.frm.set_df_property(field, "options", options);
 	window.refresh_field = () => {};
@@ -2001,6 +2872,17 @@ async function install() {
 		const name = path.split("/").pop().replace(".html", "");
 		window.frappe.templates[name] = html;
 	}
+	// ERPNext's own desk code (transaction and stock controllers, serial/batch selector,
+	// queries...), the same bundle the desk loads, so its forms run their real logic.
+	if ((booted?.installed_apps || []).includes("erpnext")) {
+		try {
+			await loadDeskAsset("erpnext.bundle.js");
+		} catch (e) {
+			console.warn("[briskrew compat] couldn't load ERPNext's desk bundle:", e);
+		}
+	}
+	jQuery(document).trigger("app_ready");
+
 	// Frappe HR's shared desk helpers (hrms.*), loaded from their original source.
 	for (const [label, src] of [
 		["hrms utils", hrmsUtils],
@@ -2029,6 +2911,7 @@ function runScript(code, label) {
 export async function attachFormScript(form, router) {
 	await install();
 	const handlers = {};
+	for (const [dt, hs] of Object.entries(globalHandlers)) handlers[dt] = [...hs];
 	current = { form, router, handlers, frm: null };
 	current.frm = makeFrm(form);
 	window.cur_frm = current.frm;
@@ -2055,7 +2938,8 @@ export async function attachFormScript(form, router) {
 	form.on("row_add", (table, row) =>
 		Promise.all([
 			dispatch(form, row.doctype, `${table}_add`, row.doctype, row.name),
-			dispatch(form, form.doctype, `${table}_add`, row.doctype, row.name),
+			// The controller's own items_add runs once, as in the desk.
+			dispatch(form, form.doctype, `${table}_add`, row.doctype, row.name, { legacy: false }),
 		]),
 	);
 	form.on("row_remove", (table, row) =>
