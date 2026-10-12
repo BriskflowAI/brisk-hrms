@@ -159,6 +159,20 @@ def _reorder_level(item_code, warehouse, level, qty):
 	item.save()
 
 
+def _maintenance_user():
+	"""Someone tasks can be assigned to: the demo lead, else any enabled desk user. (Administrator
+	is refused as an assignee, and a test session's user may have no User record.)"""
+	for user in ("lead@briskrew.demo", frappe.session.user):
+		if user not in ("Administrator", "Guest") and frappe.db.exists("User", {"name": user, "enabled": 1}):
+			return user
+	return frappe.db.get_value(
+		"User",
+		{"enabled": 1, "user_type": "System User", "name": ["not in", ["Administrator", "Guest"]]},
+		"name",
+		order_by="creation asc",
+	)
+
+
 def _party(doctype, name):
 	if not frappe.db.exists(doctype, name):
 		field = "supplier_name" if doctype == "Supplier" else "customer_name"
@@ -340,9 +354,9 @@ def _assets(co, category, today):
 		)
 
 	team = "briskrew IT Team"
-	# A real user: Administrator has no user record to assign tasks to.
-	member = "lead@briskrew.demo" if frappe.db.exists("User", "lead@briskrew.demo") else frappe.session.user
-	if not frappe.db.exists("Asset Maintenance Team", team):
+	member = _maintenance_user()
+	# Without a desk user to look after it, the asset simply has no maintenance plan.
+	if member and not frappe.db.exists("Asset Maintenance Team", team):
 		frappe.get_doc(
 			{
 				"doctype": "Asset Maintenance Team",
@@ -354,7 +368,7 @@ def _assets(co, category, today):
 				],
 			}
 		).insert(ignore_permissions=True)
-	if not frappe.db.exists("Asset Maintenance", names[0]):
+	if member and not frappe.db.exists("Asset Maintenance", names[0]):
 		frappe.db.set_value("Asset", names[0], "maintenance_required", 1, update_modified=False)
 		frappe.get_doc(
 			{
