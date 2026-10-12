@@ -27,6 +27,8 @@ export default defineConfig({
 				name: "briskrew",
 				short_name: "briskrew",
 				start_url: "/hrms",
+				scope: "/hrms",
+				id: "/hrms",
 				description: "Everyday HR & Payroll operations at your fingertips",
 				theme_color: "#fdfdff",
 				background_color: "#0e1433",
