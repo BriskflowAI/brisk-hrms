@@ -131,3 +131,65 @@
 .desk-html .hide {
 	display: none;
 }
+
+/* Addresses and contacts of a record (customers, suppliers, warehouses). */
+.desk-html .bk-addr-list {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+	gap: 10px;
+}
+.desk-html .bk-addr-card {
+	display: block;
+	border: 1px solid theme("colors.line.DEFAULT");
+	border-radius: 10px;
+	padding: 10px 12px;
+	font-size: 13px;
+	line-height: 1.5;
+	color: theme("colors.ink.2");
+}
+.desk-html .bk-addr-card:hover {
+	background: theme("colors.side");
+}
+.desk-html .bk-addr-card strong {
+	color: theme("colors.ink.DEFAULT");
+}
+.desk-html .bk-addr-new {
+	align-self: center;
+	font-size: 13px;
+	font-weight: 600;
+	color: theme("colors.acc.DEFAULT");
+}
+
+/* Tables desk scripts draw into a form (frappe.DataTable). */
+.desk-html .bk-dt {
+	overflow-x: auto;
+	border: 1px solid theme("colors.line.DEFAULT");
+	border-radius: 10px;
+}
+.desk-html .bk-dt table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 13px;
+}
+.desk-html .bk-dt th {
+	text-align: left;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: theme("colors.mut");
+	background: theme("colors.side");
+	padding: 8px 10px;
+}
+.desk-html .bk-dt td {
+	padding: 8px 10px;
+	border-top: 1px solid theme("colors.line.2");
+}
+
+/* The rail scrolls on short screens without showing a scrollbar. */
+.rail-scroll {
+	scrollbar-width: none;
+}
+.rail-scroll::-webkit-scrollbar {
+	display: none;
+}

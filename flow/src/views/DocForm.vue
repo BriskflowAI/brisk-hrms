@@ -91,12 +91,15 @@
 							</button>
 							<div
 								v-if="menu === g.group"
+								role="menu"
+								:aria-label="__(g.group)"
 								class="absolute right-0 top-full z-30 mt-1 min-w-[200px] rounded-lg border border-line bg-surf py-1 shadow-xl"
 							>
 								<button
 									v-for="b in g.buttons"
 									:key="b.label"
 									type="button"
+									role="menuitem"
 									class="block w-full px-3 py-1.5 text-left text-[13.5px] hover:bg-acc-tint"
 									@click="runButton(b)"
 								>
@@ -378,6 +381,12 @@
 					</summary>
 					<div class="desk-html mt-2 overflow-x-auto text-[13.5px]" v-html="sec.html" />
 				</details>
+				<section v-if="form.chart" class="rounded-xl border border-line bg-surf px-5 py-3">
+					<h2 class="text-[14px] font-semibold">
+						{{ __(form.chart.title) || __("Chart") }}
+					</h2>
+					<ReportChart :chart="form.chart" :title="form.chart.title" />
+				</section>
 				<div v-if="form.dashboard.length" class="flex flex-wrap gap-2">
 					<span
 						v-for="d in form.dashboard"
@@ -507,6 +516,7 @@ import Icon from "@/components/Icon.vue";
 import Avatar from "@/components/Avatar.vue";
 import StatusChip from "@/components/StatusChip.vue";
 import Field from "@/components/fields/Field.vue";
+import ReportChart from "@/components/charts/ReportChart.vue";
 import DocSidebar from "@/components/DocSidebar.vue";
 import CompatDialogs from "@/components/CompatDialogs.vue";
 import { createForm, messageOf } from "@/engine/form";
@@ -872,6 +882,7 @@ onBeforeRouteLeave(() => {
 onMounted(async () => {
 	window.addEventListener("keydown", onKey);
 	await form.load();
+	const prefilled = [];
 	if (form.isNew) {
 		const raw = sessionStorage.getItem(`briskrew:copy:${props.doctype}`);
 		if (raw) {
@@ -885,9 +896,19 @@ onMounted(async () => {
 		}
 		// Values passed in the URL (e.g. from a list filter or a script) prefill the new record.
 		for (const [k, v] of Object.entries(router.currentRoute.value.query))
-			if (k !== "from" && form.meta.fields.some((d) => d.fieldname === k)) form.doc[k] = v;
+			if (k !== "from" && form.meta.fields.some((d) => d.fieldname === k)) {
+				form.doc[k] = v;
+				prefilled.push(k);
+			}
 	}
 	if (form.ready) await attachFormScript(form, router);
+	// As the desk does for a new record's links: fetch what they bring and run their scripts
+	// (a Stock Entry type sets the purpose).
+	for (const k of prefilled) {
+		const df = form.df(k);
+		if (df?.fieldtype === "Link" && form.doc[k]) await form.fetchFrom(df, form.doc[k]);
+		await form.trigger("change", k);
+	}
 });
 onBeforeUnmount(() => {
 	window.removeEventListener("keydown", onKey);

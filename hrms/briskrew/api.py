@@ -28,6 +28,18 @@ def boot() -> dict:
 			or (companies[0] if len(companies) == 1 else None)
 		)
 	companies = frappe.get_all("Company", fields=["name", "default_currency", "abbr"])
+	sysdefaults = {
+		"currency": frappe.db.get_default("currency"),
+		"date_format": frappe.db.get_default("date_format") or "dd-mm-yyyy",
+		"time_format": frappe.db.get_default("time_format") or "HH:mm:ss",
+		"number_format": frappe.db.get_default("number_format") or "#,###.##",
+		"float_precision": frappe.db.get_default("float_precision") or 3,
+		"currency_precision": frappe.db.get_default("currency_precision"),
+		"first_day_of_the_week": frappe.db.get_default("first_day_of_the_week") or "Monday",
+		"country": frappe.db.get_default("country"),
+		"time_zone": frappe.utils.get_system_timezone(),
+	}
+	desk = _desk_boot(sysdefaults)
 	return {
 		"user": user,
 		"user_fullname": frappe.utils.get_fullname(user),
@@ -35,19 +47,60 @@ def boot() -> dict:
 		"roles": frappe.get_roles(user),
 		"employee": employee and employee.name,
 		"defaults": defaults,
-		"sysdefaults": {
-			"currency": frappe.db.get_default("currency"),
-			"date_format": frappe.db.get_default("date_format") or "dd-mm-yyyy",
-			"time_format": frappe.db.get_default("time_format") or "HH:mm:ss",
-			"number_format": frappe.db.get_default("number_format") or "#,###.##",
-			"float_precision": frappe.db.get_default("float_precision") or 3,
-			"currency_precision": frappe.db.get_default("currency_precision"),
-			"first_day_of_the_week": frappe.db.get_default("first_day_of_the_week") or "Monday",
-			"country": frappe.db.get_default("country"),
-			"time_zone": frappe.utils.get_system_timezone(),
-		},
+		"sysdefaults": desk.pop("sysdefaults"),
+		"desk": desk,
+		"installed_apps": frappe.get_installed_apps(),
 		"companies": {c.name: {"currency": c.default_currency, "abbr": c.abbr} for c in companies},
 	}
+
+
+def _desk_boot(sysdefaults: dict) -> dict:
+	"""What installed apps add to the desk's boot through their `boot_session` hooks (ERPNext's
+	selling and accounts settings, party account types, SLA doctypes, its company and currency
+	lookups...), which their desk scripts read from frappe.boot and locals. Large or desk-only
+	parts are left out."""
+	bootinfo = frappe._dict(sysdefaults=frappe._dict(sysdefaults), docs=[], page_info={})
+	for method in frappe.get_hooks("boot_session"):
+		try:
+			frappe.get_attr(method)(bootinfo)
+		except Exception:
+			frappe.log_error(title=f"briskrew: boot_session hook {method} failed")
+	# Frappe's own boot adds the ":Currency" lookups (fractions, symbols) that scripts round with.
+	try:
+		from frappe.boot import load_currency_docs
+
+		load_currency_docs(bootinfo)
+	except ImportError:
+		pass
+	for key in ("page_info", "website_route_rules"):
+		bootinfo.pop(key, None)
+	# Only the small lookup documents scripts read from locals (":Company", ":Currency").
+	bootinfo.docs = [d for d in bootinfo.docs if str(d.get("doctype", "")).startswith(":")]
+
+	# The parts of Frappe's own boot that desk scripts read.
+	from frappe.utils.change_log import get_versions
+
+	bootinfo.versions = {k: v["version"] for k, v in get_versions().items()}
+	bootinfo.sms_gateway_enabled = bool(frappe.db.get_single_value("SMS Settings", "sms_gateway_url"))
+	bootinfo.setup_complete = frappe.is_setup_complete()
+	from frappe.core.doctype.user_permission.user_permission import get_user_permissions
+
+	bootinfo.user_permissions = get_user_permissions()
+	user = frappe.get_user().load_user()
+	bootinfo.user_perms = {
+		k: user.get(k) or []
+		for k in (
+			"can_create",
+			"can_read",
+			"can_write",
+			"can_submit",
+			"can_cancel",
+			"can_delete",
+			"all_reports",
+		)
+	}
+	# Through JSON so dates and sets reach the browser as plain values.
+	return frappe.parse_json(frappe.as_json(bootinfo))
 
 
 @frappe.whitelist()

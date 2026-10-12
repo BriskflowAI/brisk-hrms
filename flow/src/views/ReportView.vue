@@ -9,7 +9,7 @@
 				v-for="b in report.buttons"
 				:key="b.label"
 				type="button"
-				class="btn-ghost"
+				:class="b.primary ? 'btn-ink' : 'btn-ghost'"
 				@click="b.action()"
 			>
 				{{ b.label }}
@@ -128,6 +128,34 @@
 		>
 			{{ report.error }}
 		</p>
+		<div
+			v-if="report.prepared"
+			class="flex flex-wrap items-center gap-3 rounded-lg bg-acc-tint px-4 py-3 text-[13.5px]"
+		>
+			<span class="flex-grow">
+				<template v-if="report.prepared.preparing">{{
+					__("Preparing this report in the background. It shows here when it's ready.")
+				}}</template>
+				<template v-else-if="report.prepared.doc">
+					{{ __("Prepared") }} {{ ago(report.prepared.doc.report_end_time) }}
+					{{ __("for these filters.") }}
+				</template>
+				<template v-else>{{
+					__("This report is prepared in the background. Prepare it for these filters.")
+				}}</template>
+				<span v-if="report.prepared.failed" role="alert" class="block text-neg">{{
+					report.prepared.failed
+				}}</span>
+			</span>
+			<button
+				type="button"
+				class="btn-ghost"
+				:disabled="report.prepared.preparing || !!report.missing.length"
+				@click="prepare"
+			>
+				{{ report.prepared.doc ? __("Prepare again") : __("Prepare report") }}
+			</button>
+		</div>
 		<p
 			v-if="report.message"
 			class="desk-html rounded-lg bg-acc-tint px-4 py-3 text-[13.5px]"
@@ -194,6 +222,9 @@
 			<table class="w-full border-collapse text-[13px]">
 				<thead class="sticky top-0 bg-paper">
 					<tr>
+						<th v-if="checkable" class="w-8 border-b border-line px-3 py-2">
+							<span class="sr-only">{{ __("Select") }}</span>
+						</th>
 						<th
 							v-for="c in shownColumns"
 							:key="c.fieldname"
@@ -211,6 +242,16 @@
 						class="border-b border-line-2 hover:bg-paper"
 						:class="row.__total && 'bg-paper font-bold'"
 					>
+						<td v-if="checkable" class="px-3 py-1.5">
+							<input
+								v-if="!row.__total"
+								type="checkbox"
+								class="h-4 w-4 rounded border-line text-acc focus:ring-acc"
+								:checked="report.checked.includes(i)"
+								:aria-label="`${__('Select row')} ${i + 1}`"
+								@change="toggleRow(i, $event.target.checked)"
+							/>
+						</td>
 						<td
 							v-for="c in shownColumns"
 							:key="c.fieldname"
@@ -267,6 +308,7 @@ import ReportChart from "@/components/charts/ReportChart.vue";
 import { useRouter } from "vue-router";
 import { attachReportScript, reportCell } from "@/engine/compat";
 import { messageOf } from "@/engine/form";
+import { ago } from "@/composables/format";
 
 const props = defineProps({ name: { type: String, required: true } });
 
@@ -282,6 +324,10 @@ const report = reactive({
 	message: "",
 	error: "",
 	loading: false,
+	// Rows ticked in reports whose script asks for a checkbox column (datatable rowmanager).
+	checked: [],
+	// Reports prepared in the background: { doc, preparing, failed }
+	prepared: null,
 	buttons: [],
 	unsupported: [],
 	htmlFormat: "",
@@ -334,6 +380,55 @@ function normaliseColumn(c, i) {
 	};
 }
 
+// A report script's get_datatable_options({ checkboxColumn: true }) gives rows a tick box.
+const checkable = computed(() => {
+	try {
+		return !!report.settings?.get_datatable_options?.({})?.checkboxColumn;
+	} catch {
+		return false;
+	}
+});
+function toggleRow(i, on) {
+	report.checked = on
+		? [...new Set([...report.checked, i])]
+		: report.checked.filter((x) => x !== i);
+}
+
+// Heavy reports (Stock Balance and the like) are prepared by a background job, as in the desk:
+// start one with these filters, wait for it, then show its result.
+async function prepare() {
+	const filters = Object.fromEntries(
+		Object.entries(report.values).filter(([, v]) => v !== null && v !== undefined && v !== ""),
+	);
+	report.prepared = { ...(report.prepared || {}), preparing: true, failed: "" };
+	try {
+		const { name } = await call(
+			"frappe.core.doctype.prepared_report.prepared_report.make_prepared_report",
+			{ report_name: props.name, filters },
+		);
+		const started = Date.now();
+		for (;;) {
+			await new Promise((r) => setTimeout(r, 2500));
+			const d = await call("frappe.client.get_value", {
+				doctype: "Prepared Report",
+				filters: { name },
+				fieldname: ["status", "error_message"],
+			});
+			if (d?.status === "Completed") break;
+			if (d?.status === "Error" || d?.status === "Failed")
+				throw new Error(d.error_message || "The report couldn't be prepared.");
+			if (Date.now() - started > 15 * 60_000)
+				throw new Error(
+					"Still preparing. Come back in a while; it keeps going in the background.",
+				);
+		}
+		report.prepared.preparing = false;
+		await run();
+	} catch (e) {
+		report.prepared = { ...(report.prepared || {}), preparing: false, failed: messageOf(e) };
+	}
+}
+
 let seq = 0;
 async function run() {
 	if (report.missing.length) {
@@ -355,10 +450,9 @@ async function run() {
 			ignore_prepared_report: false,
 		});
 		if (mine !== seq) return;
-		if (res?.prepared_report && !res.result?.length) {
-			report.message =
-				"This report runs in the background. Open it in the classic desk to see the prepared result.";
-		}
+		report.prepared = res?.prepared_report
+			? { doc: res.doc || null, preparing: report.prepared?.preparing || false }
+			: null;
 		report.columns = (res?.columns || []).map(normaliseColumn).filter((c) => !c.hidden);
 		const rows = (res?.result || []).map((r) =>
 			Array.isArray(r)
@@ -377,6 +471,7 @@ async function run() {
 			rows.push(total);
 		}
 		report.rows = rows;
+		report.checked = [];
 		chart.value = chartFor(res, rows);
 		report.message = res?.message || report.message;
 		report.summary = (res?.report_summary || []).map((s) => ({

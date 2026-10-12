@@ -34,6 +34,25 @@ policy checks). Server side: `hrms/briskrew/inbox.py`.
 - Approvals wait 5 seconds before being sent, so they can be undone.
 - Keyboard: `J`/`K` move, `A` approve, `R` reject (asks for a reason), `C` comment.
 
+## Stock and assets
+
+With ERPNext installed, briskrew has Stock and Assets areas next to the HR ones (main, Frappe
+v16). Every stock and asset record type opens in briskrew's list and record screens, running
+ERPNext's own form scripts (briskrew loads ERPNext's desk bundle, `erpnext.bundle.js`), so
+transactions behave as in the desk: item details, rates, warehouses, Get Items From, the asset
+value graph. Designed screens on top (server side: `hrms/briskrew/inventory.py`):
+
+- `/flow/stock-levels`: stock by item and warehouse (ERPNext's Stock Summary data), filtered by
+  warehouse, item group or item, with what's below its reorder level flagged.
+- `/flow/item/<item>`: an item's stock by warehouse, reorder levels, recent movements, prices.
+- `/flow/asset-register`: every asset with its value now, where it is and who has it, and
+  maintenance or depreciation coming up.
+- `/flow/asset/<asset>`: an asset's depreciation schedule, movements, maintenance and repairs.
+
+`inventory/stock-assets-api.md` lists every ERPNext stock and assets API and how briskrew
+reaches it. `hrms.briskrew.demo.seed` also seeds stock and assets demo data
+(`hrms/briskrew/demo_inventory.py`).
+
 ## Default approvers
 
 `hrms/briskrew/approvers.py`. Any empty leave, expense or shift approver on an employee

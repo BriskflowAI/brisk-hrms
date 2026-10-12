@@ -30,6 +30,10 @@ const ROUTE_NEEDS = {
 	"/overview/hiring": "Job Opening",
 	"/overview/growth": "Appraisal",
 	"/leave-policies": "Leave Policy",
+	"/overview/stock": "Bin",
+	"/stock-levels": "Bin",
+	"/overview/assets": "Asset",
+	"/asset-register": "Asset",
 };
 
 export function canOpen(item) {

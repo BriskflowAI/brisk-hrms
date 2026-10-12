@@ -18,3 +18,30 @@ export function plainText(html) {
 	if (!html) return "";
 	return new DOMParser().parseFromString(String(html), "text/html").body.textContent.trim();
 }
+
+// An amount in a currency ("₹1,20,000.00"), or a plain number when the currency is unknown.
+export function money(n, currency, digits = 2) {
+	try {
+		return Number(n || 0).toLocaleString(
+			undefined,
+			currency
+				? { style: "currency", currency, maximumFractionDigits: digits }
+				: { minimumFractionDigits: digits, maximumFractionDigits: digits },
+		);
+	} catch {
+		return Number(n || 0).toFixed(digits);
+	}
+}
+
+// A quantity without trailing zeros ("12", "2.5").
+export const qty = (n) => Number(n || 0).toLocaleString(undefined, { maximumFractionDigits: 3 });
+
+// "7 Oct 2026"
+export const day = (d) =>
+	d
+		? new Date(String(d).slice(0, 10) + "T00:00:00").toLocaleDateString(undefined, {
+				day: "numeric",
+				month: "short",
+				year: "numeric",
+		  })
+		: "";

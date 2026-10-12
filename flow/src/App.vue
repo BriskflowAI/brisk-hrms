@@ -60,6 +60,10 @@ const area = computed(() => {
 	if (["People", "OrgChart", "TeamUpdates"].includes(route.name))
 		return areas.find((a) => a.key === "people");
 	if (route.name === "LeavePolicies") return areas.find((a) => a.key === "time");
+	if (["StockLevels", "ItemProfile"].includes(route.name))
+		return areas.find((a) => a.key === "stock");
+	if (["AssetRegister", "AssetProfile"].includes(route.name))
+		return areas.find((a) => a.key === "assets");
 	if (route.name === "Overview") return areas.find((a) => a.key === route.params.area);
 	if (route.name === "Inbox") return areas.find((a) => a.key === "inbox");
 	if (route.params.doctype) {
@@ -82,6 +86,18 @@ const crumbs = computed(() => {
 	}
 	if (route.name === "About") out.push({ label: "About" });
 	if (route.name === "LeavePolicies") out.push({ label: "Leave policies" });
+	if (route.name === "StockLevels") out.push({ label: "Stock levels" });
+	if (route.name === "ItemProfile")
+		out.push(
+			{ label: "Items", to: { name: "List", params: { doctype: "Item" } } },
+			{ label: route.params.name },
+		);
+	if (route.name === "AssetRegister") out.push({ label: "Asset register" });
+	if (route.name === "AssetProfile")
+		out.push(
+			{ label: "Asset register", to: { name: "AssetRegister" } },
+			{ label: route.params.name },
+		);
 	if (route.name === "OrgChart") out.push({ label: "Org chart" });
 	if (route.name === "TeamUpdates") out.push({ label: "Team updates" });
 	if (route.name === "Overview") out.push({ label: "Overview" });

@@ -28,7 +28,20 @@
 							class="max-w-[220px] truncate px-2.5 py-2"
 							:class="num(c) && 'text-right'"
 						>
-							<FieldValue :field="c" :value="row[c.fieldname]" />
+							<!-- Ticks toggle in place, as in the desk's grids. -->
+							<input
+								v-if="
+									c.fieldtype === 'Check' && editable && !form.readOnly(c, row)
+								"
+								type="checkbox"
+								class="h-4 w-4 rounded border-line text-acc focus:ring-acc"
+								:checked="!!Number(row[c.fieldname])"
+								:aria-label="`${c.label}, row ${row.idx}`"
+								@change="
+									form.setValue(c.fieldname, $event.target.checked ? 1 : 0, row)
+								"
+							/>
+							<FieldValue v-else :field="c" :value="row[c.fieldname]" />
 						</td>
 						<td class="whitespace-nowrap px-1.5 py-1 text-right">
 							<button
@@ -109,6 +122,14 @@
 			>
 				{{ __("+ Add row") }}
 			</button>
+			<button
+				v-if="multipleAdd"
+				type="button"
+				class="ml-3 text-[13px] font-semibold text-acc hover:text-acc-hover"
+				@click="addMultiple"
+			>
+				{{ __("+ Add multiple") }}
+			</button>
 		</div>
 	</div>
 </template>
@@ -130,9 +151,19 @@ const open = ref(null);
 const rows = computed(() => props.form.doc?.[props.df.fieldname] || []);
 const childFields = computed(() => props.form.fieldsOf(props.df.options));
 const rowFields = computed(() => childFields.value.filter((c) => !isLayout(c)));
+// With what form scripts changed (a column hidden or added to the grid) applied.
 const columns = computed(() => {
-	const listed = rowFields.value.filter((c) => c.in_list_view && !c.hidden);
-	return (listed.length ? listed : rowFields.value.filter((c) => !c.hidden)).slice(0, 6);
+	const fields = rowFields.value.map((c) => props.form.df(c.fieldname, props.df.fieldname) || c);
+	const listed = fields.filter((c) => c.in_list_view && !c.hidden);
+	return (listed.length ? listed : fields.filter((c) => !c.hidden)).slice(0, 6);
+});
+// A script's grid.set_multiple_add("item_code"): pick several, one row each.
+const multipleAdd = computed(() => {
+	const link = props.form.overrides?.[`|${props.df.fieldname}`]?.multiple_add?.link;
+	const target = link && props.form.df(link, props.df.fieldname);
+	return target?.fieldtype === "Link" && window.frappe?.ui?.form?.MultiSelectDialog
+		? target
+		: null;
 });
 const editable = computed(() => !props.form.readOnly(props.df));
 const num = (f) => ["Currency", "Float", "Int", "Percent"].includes(f.fieldtype);
@@ -143,6 +174,25 @@ function toggle(row) {
 async function add() {
 	const row = await props.form.addRow(props.df.fieldname);
 	open.value = row.name;
+}
+function addMultiple() {
+	const link = multipleAdd.value;
+	const qty = props.form.overrides[`|${props.df.fieldname}`].multiple_add.qty;
+	const picker = new window.frappe.ui.form.MultiSelectDialog({
+		doctype: link.options,
+		target: props.form,
+		setters: {},
+		get_query: () => props.form.linkQuery(link, { parentfield: props.df.fieldname }),
+		action: async (names) => {
+			picker.dialog.hide();
+			for (const name of names || []) {
+				const row = await props.form.addRow(props.df.fieldname);
+				await props.form.setValue(link.fieldname, name, row);
+				if (qty && props.form.df(qty, props.df.fieldname) && !row[qty])
+					await props.form.setValue(qty, 1, row);
+			}
+		},
+	});
 }
 function moveRow(i, step) {
 	const list = props.form.doc[props.df.fieldname];

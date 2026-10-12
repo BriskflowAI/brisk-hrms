@@ -55,6 +55,9 @@ const formatted = computed(() => {
 			return dayjs(v).format("D MMM YYYY");
 		case "Datetime":
 			return dayjs(v).format("D MMM YYYY, HH:mm");
+		case "Time":
+			// "12:49:32.401331" -> "12:49:32"
+			return String(v).split(".")[0];
 		default:
 			return v;
 	}

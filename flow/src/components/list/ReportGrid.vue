@@ -393,8 +393,9 @@ async function load(more = false) {
 		}
 		const res = await call("frappe.desk.reportview.get", args);
 		if (mine !== seq) return;
-		const keys = res?.keys || [];
-		const page = (res?.values || []).map((v) =>
+		// With no rows the server sends [] rather than { keys, values } ([].values is a function).
+		const keys = Array.isArray(res?.keys) ? res.keys : [];
+		const page = (Array.isArray(res?.values) ? res.values : []).map((v) =>
 			Object.fromEntries(keys.map((k, i) => [k, v[i]])),
 		);
 		rows.value = more ? [...rows.value, ...page] : page;
