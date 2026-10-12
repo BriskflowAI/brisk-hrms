@@ -256,6 +256,15 @@ test("a record updates instantly when someone else saves it", async ({
   await admin.dispose();
 });
 
+// Once the form's scripts have finished loading, nothing went wrong: no message box (which
+// would block the next click) and no failed call. A failure names what was shown.
+async function settledWithoutMessages(page, problems) {
+  await page.waitForLoadState("networkidle");
+  await page.waitForTimeout(500);
+  const messages = await page.getByRole("alertdialog").allInnerTexts();
+  expect({ messages, problems }).toEqual({ messages: [], problems: [] });
+}
+
 // Stock and assets (demo data from hrms.briskrew.demo_inventory).
 async function inventorySeeded(page) {
   const summary = await api(page, "hrms.briskrew.inventory.stock_summary");
@@ -375,6 +384,7 @@ test("gets items from a material request into a purchase order", async ({
     supplier: "Brisk Office Supplies",
   });
   await page.goto(`/flow/r/Purchase%20Order/new?${query}`);
+  await settledWithoutMessages(page, problems);
   await page.getByRole("button", { name: /Get Items From/ }).click();
   await page.getByRole("menuitem", { name: "Material Request" }).click();
   const dialog = page.getByRole("dialog");
