@@ -289,16 +289,20 @@ function microtemplate(str, data) {
 // ---------------------------------------------------------------------------------------
 
 // Objects and lists go as JSON strings, as the desk's frappe.call sends them: typed server
-// methods (v16 checks argument types) expect a string there.
+// methods (v16 checks argument types) expect a string there. An undefined argument is sent
+// empty, as the desk's form encoding does, rather than left out: methods with a required
+// argument (get_shipping_address(company)) would fail without it.
 function deskArgs(args) {
 	const out = {};
 	for (const [k, v] of Object.entries(args || {}))
 		out[k] =
-			v &&
-			typeof v === "object" &&
-			(Array.isArray(v) || Object.getPrototypeOf(v) === Object.prototype)
-				? JSON.stringify(v)
-				: v;
+			v === undefined
+				? ""
+				: v &&
+				    typeof v === "object" &&
+				    (Array.isArray(v) || Object.getPrototypeOf(v) === Object.prototype)
+				  ? JSON.stringify(v)
+				  : v;
 	return out;
 }
 
@@ -1238,7 +1242,10 @@ function modelSetValue(doctype, name, field, value) {
 	const f = current?.form;
 	const target = findLocal(doctype, name);
 	if (!target) return Promise.resolve();
-	const pairs = typeof field === "object" ? Object.entries(field) : [[field, value]];
+	// A stand-in (an unknown desk API's placeholder) is never a value: it stands for undefined.
+	const pairs = (typeof field === "object" ? Object.entries(field) : [[field, value]]).map(
+		([k, v]) => [k, standIns.has(v) ? undefined : v],
+	);
 	const isRow = f && target !== f.doc && target.parentfield;
 	return Promise.all(
 		pairs.map(([k, v]) =>
@@ -2087,7 +2094,11 @@ function buildFrappe() {
 	return lenient(frappe, "frappe");
 }
 
-function buildErpnext() {
+// With ERPNext installed its own desk bundle fills this namespace, so it is a plain object as in
+// the desk: an unknown property is undefined (scripts test erpnext.last_selected_company and the
+// like). Without the bundle, unknown parts are stand-ins that the screen audit reports.
+function buildErpnext(plain = false) {
+	const wrap = (obj, path) => (plain ? obj : lenient(obj, path));
 	const erpnext = {
 		// Same as ERPNext: show the naming series only while the record is new.
 		toggle_naming_series: () => {
@@ -2097,14 +2108,14 @@ function buildErpnext() {
 		},
 		get_currency: (company) =>
 			booted?.companies?.[company]?.currency || booted?.sysdefaults?.currency,
-		queries: lenient(
+		queries: wrap(
 			{
 				employee: () => ({ query: "erpnext.controllers.queries.employee_query" }),
 				company: () => ({ query: "erpnext.controllers.queries.company_query" }),
 			},
 			"erpnext.queries",
 		),
-		accounts: lenient(
+		accounts: wrap(
 			{
 				dimensions: {
 					// Accounting dimension fields (cost center, project, custom ones) filtered by company.
@@ -2131,7 +2142,7 @@ function buildErpnext() {
 			},
 			"erpnext.accounts",
 		),
-		utils: lenient(
+		utils: wrap(
 			{
 				get_fiscal_year: (d) => booted?.defaults?.fiscal_year,
 				add_dimensions: () => {},
@@ -2142,10 +2153,10 @@ function buildErpnext() {
 			},
 			"erpnext.utils",
 		),
-		setup: lenient({ utils: {} }, "erpnext.setup"),
+		setup: wrap({ utils: {} }, "erpnext.setup"),
 		hr: {},
 	};
-	return lenient(erpnext, "erpnext");
+	return wrap(erpnext, "erpnext");
 }
 
 // ---------------------------------------------------------------------------------------
@@ -2484,6 +2495,8 @@ function makeFrm(form) {
 		set_value(field, value, ifMissing) {
 			if (typeof field === "object")
 				return Promise.all(Object.entries(field).map(([k, v]) => frm.set_value(k, v)));
+			// A stand-in (an unknown desk API's placeholder) is never a value: it stands for undefined.
+			if (standIns.has(value)) value = undefined;
 			if (ifMissing && form.doc[field]) return Promise.resolve();
 			const df = form.df(field);
 			if (
@@ -2832,7 +2845,8 @@ async function doInstall() {
 	window.format_currency = formatCurrency;
 	loadBootDocs(booted?.desk?.docs);
 	window.frappe = buildFrappe();
-	window.erpnext = buildErpnext();
+	const hasErpnext = (booted?.installed_apps || []).includes("erpnext");
+	window.erpnext = buildErpnext(hasErpnext);
 	window.__briskrewIsStandIn = (v) => standIns.has(v);
 	window.locals = new Proxy(
 		{},
@@ -2881,6 +2895,7 @@ async function doInstall() {
 			await loadDeskAsset("erpnext.bundle.js");
 		} catch (e) {
 			console.warn("[briskrew compat] couldn't load ERPNext's desk bundle:", e);
+			window.erpnext = buildErpnext(false);
 		}
 	}
 	jQuery(document).trigger("app_ready");

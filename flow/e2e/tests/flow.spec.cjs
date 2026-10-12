@@ -313,15 +313,17 @@ test("makes a stock entry with ERPNext's form script", async ({ page }) => {
   const [stores] = await api(page, "frappe.client.get_list", {
     doctype: "Warehouse",
     filters: JSON.stringify({ warehouse_name: "Stores", is_group: 0 }),
-    fields: JSON.stringify(["name"]),
+    fields: JSON.stringify(["name", "company"]),
     limit_page_length: 1,
   });
 
-  await page.goto(
-    `/flow/r/Stock%20Entry/new?stock_entry_type=Material%20Receipt&to_warehouse=${encodeURIComponent(
-      stores.name,
-    )}`,
-  );
+  // Test sites have several companies and no default one: name it, as a user would pick it.
+  const query = new URLSearchParams({
+    company: stores.company,
+    stock_entry_type: "Material Receipt",
+    to_warehouse: stores.name,
+  });
+  await page.goto(`/flow/r/Stock%20Entry/new?${query}`);
   await expect
     .poll(() => page.evaluate(() => window.cur_frm?.doc?.purpose))
     .toBe("Material Receipt");
@@ -359,9 +361,20 @@ test("gets items from a material request into a purchase order", async ({
   const problems = watch(page);
   await signIn(page, ADMIN);
   test.skip(!(await inventorySeeded(page)), "no stock demo data on this site");
-  await page.goto(
-    "/flow/r/Purchase%20Order/new?supplier=Brisk%20Office%20Supplies",
-  );
+  const [request] = await api(page, "frappe.client.get_list", {
+    doctype: "Material Request",
+    filters: JSON.stringify({
+      docstatus: 1,
+      material_request_type: "Purchase",
+    }),
+    fields: JSON.stringify(["company"]),
+    limit_page_length: 1,
+  });
+  const query = new URLSearchParams({
+    company: request.company,
+    supplier: "Brisk Office Supplies",
+  });
+  await page.goto(`/flow/r/Purchase%20Order/new?${query}`);
   await page.getByRole("button", { name: /Get Items From/ }).click();
   await page.getByRole("menuitem", { name: "Material Request" }).click();
   const dialog = page.getByRole("dialog");
