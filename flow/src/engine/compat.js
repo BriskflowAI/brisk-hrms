@@ -393,11 +393,76 @@ function syncCall(o) {
 	return p;
 }
 
+// Same comparisons as the desk's fast-deep-equal helper (MIT).
+function deepEqual(a, b) {
+	if (a === b) return true;
+	if (a && b && typeof a === "object" && typeof b === "object") {
+		if (a.constructor !== b.constructor) return false;
+		if (Array.isArray(a)) {
+			if (a.length !== b.length) return false;
+			for (let i = a.length - 1; i >= 0; i--) if (!deepEqual(a[i], b[i])) return false;
+			return true;
+		}
+		if (a.constructor === RegExp) return a.source === b.source && a.flags === b.flags;
+		if (a.valueOf !== Object.prototype.valueOf) return a.valueOf() === b.valueOf();
+		if (a.toString !== Object.prototype.toString) return a.toString() === b.toString();
+		const keys = Object.keys(a);
+		return (
+			keys.length === Object.keys(b).length &&
+			keys.every((key) => Object.prototype.hasOwnProperty.call(b, key)) &&
+			keys.every((key) => deepEqual(a[key], b[key]))
+		);
+	}
+	return a !== a && b !== b;
+}
+
+const callLogs = new Map();
+function isFresh(method, args, threshold) {
+	const past = callLogs.get(method) || [];
+	const now = Date.now();
+	if (
+		past.some(
+			(request) => now - request.timestamp < threshold && deepEqual(args, request.args),
+		)
+	)
+		return true;
+	past.push({ args, timestamp: now });
+	callLogs.set(method, past);
+	return false;
+}
+
+let pendingCalls = 0;
+const callWaiters = [];
+function afterServerCall() {
+	return pendingCalls ? new Promise((resolve) => callWaiters.push(resolve)) : null;
+}
+
+function afterAjax(fn) {
+	return new Promise((resolve) => {
+		const done = () => resolve(fn ? fn() : undefined);
+		if (pendingCalls) callWaiters.push(done);
+		else done();
+	});
+}
+
 function frappeCall(opts, args, callback) {
 	if (typeof opts === "string") opts = { method: opts, args, callback };
 	const o = { args: {}, ...opts };
+	if (o.debounce) {
+		const callArgs = o.doc
+			? { ...o.args, docs: o.doc, method: o.method, args: o.args }
+			: { ...o.args };
+		if (isFresh(o.method, callArgs, o.debounce)) return Promise.resolve();
+	}
 	if (o.async === false) return syncCall(o);
 	if (o.freeze) ui.frozen = o.freeze_message || "Working…";
+	pendingCalls++;
+	let pending = true;
+	const finish = () => {
+		if (!pending) return;
+		pending = false;
+		if (!--pendingCalls) callWaiters.splice(0).forEach((resolve) => resolve());
+	};
 	const run = async () => {
 		let r;
 		try {
@@ -416,10 +481,12 @@ function frappeCall(opts, args, callback) {
 			if (o.callback) {
 				// A bug inside the script's own callback is the script's, not the server's:
 				// like the desk, log it rather than interrupt the user.
+				const onError = (e) => console.error(`[briskrew] ${o.method} callback:`, e);
 				try {
-					await o.callback(r);
+					// Desk doesn't await callback promises; they can wait for this call's cleanup.
+					Promise.resolve(o.callback(r)).catch(onError);
 				} catch (scriptError) {
-					console.error(`[briskrew] ${o.method} callback:`, scriptError);
+					onError(scriptError);
 				}
 			}
 			return r;
@@ -434,7 +501,11 @@ function frappeCall(opts, args, callback) {
 			throw e;
 		} finally {
 			if (o.freeze) ui.frozen = "";
-			if (o.always) o.always();
+			try {
+				if (o.always) o.always();
+			} finally {
+				finish();
+			}
 		}
 	};
 	// Callers using callbacks don't handle rejections; some chain jQuery-style hooks.
@@ -2077,7 +2148,8 @@ function buildFrappe() {
 		help: { help_links: {}, youtube_id: {} },
 		search: { utils: {} },
 		ready: (fn) => fn && fn(),
-		after_ajax: (fn) => fn && setTimeout(fn, 0),
+		after_server_call: afterServerCall,
+		after_ajax: afterAjax,
 		is_mobile: () => window.innerWidth < 768,
 		is_large_screen: () => window.innerWidth > 1200,
 		get_abbr: (s) =>
@@ -2729,7 +2801,9 @@ async function dispatch(form, doctype, event, cdt, cdn, { legacy = true } = {}) 
 		const fn = handlers[event];
 		if (typeof fn !== "function") continue;
 		try {
-			await fn.call(handlers, frm, cdt || doctype, cdn || form.doc?.name);
+			const result = fn.call(handlers, frm, cdt || doctype, cdn || form.doc?.name);
+			// Setup runs immediately; other handlers finish their calls before the next handler.
+			if (event !== "setup") await (result && result.then ? result : afterServerCall());
 		} catch (e) {
 			if (e.fromThrow) return false;
 			form.error = `${event}: ${e.message}`;
@@ -2742,7 +2816,8 @@ async function dispatch(form, doctype, event, cdt, cdn, { legacy = true } = {}) 
 	for (const name of [event, `custom_${event}`]) {
 		if (!cs || typeof cs[name] !== "function") continue;
 		try {
-			await cs[name].call(cs, form.doc, cdt || doctype, cdn || form.doc?.name);
+			const result = cs[name].call(cs, form.doc, cdt || doctype, cdn || form.doc?.name);
+			if (event !== "setup") await (result && result.then ? result : afterServerCall());
 		} catch (e) {
 			if (e.fromThrow) return false;
 			form.error = `${event}: ${e.message}`;

@@ -363,6 +363,74 @@ test("makes a stock entry with ERPNext's form script", async ({ page }) => {
   expect(problems).toEqual([]);
 });
 
+test("debounces purchase order taxes and waits for server callbacks", async ({
+  page,
+}) => {
+  const problems = watch(page);
+  await signIn(page, ADMIN);
+  test.skip(!(await inventorySeeded(page)), "no stock demo data on this site");
+  const { default_company: defaultCompany } = await api(
+    page,
+    "frappe.client.get_value",
+    {
+      doctype: "Global Defaults",
+      filters: "Global Defaults",
+      fieldname: "default_company",
+    },
+  );
+  const [company] = await api(page, "frappe.client.get_list", {
+    doctype: "Company",
+    filters: JSON.stringify(defaultCompany ? { name: defaultCompany } : {}),
+    fields: JSON.stringify(["name", "default_currency"]),
+    order_by: "creation asc, name asc",
+    limit_page_length: 1,
+  });
+  const [template] = await api(page, "frappe.client.get_list", {
+    doctype: "Purchase Taxes and Charges Template",
+    filters: JSON.stringify({ company: company.name, disabled: 0 }),
+    fields: JSON.stringify(["name"]),
+    order_by: "name asc",
+    limit_page_length: 1,
+  });
+  let taxRequests = 0;
+  page.on("request", (request) => {
+    if (
+      request
+        .url()
+        .endsWith(
+          "/api/method/erpnext.controllers.accounts_controller.get_default_taxes_and_charges",
+        )
+    )
+      taxRequests++;
+  });
+  const query = new URLSearchParams({
+    company: company.name,
+    supplier: "Brisk Office Supplies",
+    currency: company.default_currency,
+    taxes_and_charges: template?.name || "",
+  });
+  await page.goto(`/flow/r/Purchase%20Order/new?${query}`);
+  await settledWithoutMessages(page, problems);
+  expect(taxRequests).toBe(1);
+
+  await page.route("**/api/method/hrms.briskrew.api.boot", async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    await route.fulfill({ json: { message: {} } });
+  });
+  const order = await page.evaluate(async () => {
+    const events = [];
+    const call = window.frappe.call({
+      method: "hrms.briskrew.api.boot",
+      callback: () => events.push("callback"),
+    });
+    const after = window.frappe.after_ajax(() => events.push("after_ajax"));
+    await Promise.all([call, after]);
+    return events;
+  });
+  expect(order).toEqual(["callback", "after_ajax"]);
+  expect(problems).toEqual([]);
+});
+
 // ERPNext's "Get Items From" picker (MultiSelectDialog and the server-side mapper).
 test("gets items from a material request into a purchase order", async ({
   page,
