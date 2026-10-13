@@ -392,7 +392,7 @@ test("debounces purchase order taxes and waits for server callbacks", async ({
     order_by: "name asc",
     limit_page_length: 1,
   });
-  let taxRequests = 0;
+  const taxRequestTimes = [];
   page.on("request", (request) => {
     if (
       request
@@ -401,7 +401,7 @@ test("debounces purchase order taxes and waits for server callbacks", async ({
           "/api/method/erpnext.controllers.accounts_controller.get_default_taxes_and_charges",
         )
     )
-      taxRequests++;
+      taxRequestTimes.push(Date.now());
   });
   const query = new URLSearchParams({
     company: company.name,
@@ -411,7 +411,32 @@ test("debounces purchase order taxes and waits for server callbacks", async ({
   });
   await page.goto(`/flow/r/Purchase%20Order/new?${query}`);
   await settledWithoutMessages(page, problems);
-  expect(taxRequests).toBe(1);
+  expect(taxRequestTimes.length).toBeGreaterThan(0);
+  expect(
+    taxRequestTimes.filter((time) => time - taxRequestTimes[0] < 2000),
+  ).toHaveLength(1);
+
+  let controlledRequests = 0;
+  await page.route("**/api/method/hrms.briskrew.api.boot", (route) => {
+    controlledRequests++;
+    return route.fulfill({ json: { message: {} } });
+  });
+  for (const [args, expected] of [
+    [{ debounce_probe: "primitive" }, 1],
+    [{ debounce_probe: { value: "object" } }, 2],
+  ]) {
+    controlledRequests = 0;
+    await page.evaluate(async (args) => {
+      const opts = {
+        method: "hrms.briskrew.api.boot",
+        args,
+        debounce: 2000,
+      };
+      await Promise.all([window.frappe.call(opts), window.frappe.call(opts)]);
+    }, args);
+    expect(controlledRequests).toBe(expected);
+  }
+  await page.unroute("**/api/method/hrms.briskrew.api.boot");
 
   await page.route("**/api/method/hrms.briskrew.api.boot", async (route) => {
     await new Promise((resolve) => setTimeout(resolve, 500));

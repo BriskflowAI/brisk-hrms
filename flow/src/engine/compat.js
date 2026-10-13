@@ -393,41 +393,27 @@ function syncCall(o) {
 	return p;
 }
 
-// Same comparisons as the desk's fast-deep-equal helper (MIT).
-function deepEqual(a, b) {
-	if (a === b) return true;
-	if (a && b && typeof a === "object" && typeof b === "object") {
-		if (a.constructor !== b.constructor) return false;
-		if (Array.isArray(a)) {
-			if (a.length !== b.length) return false;
-			for (let i = a.length - 1; i >= 0; i--) if (!deepEqual(a[i], b[i])) return false;
-			return true;
-		}
-		if (a.constructor === RegExp) return a.source === b.source && a.flags === b.flags;
-		if (a.valueOf !== Object.prototype.valueOf) return a.valueOf() === b.valueOf();
-		if (a.toString !== Object.prototype.toString) return a.toString() === b.toString();
-		const keys = Object.keys(a);
-		return (
-			keys.length === Object.keys(b).length &&
-			keys.every((key) => Object.prototype.hasOwnProperty.call(b, key)) &&
-			keys.every((key) => deepEqual(a[key], b[key]))
-		);
-	}
-	return a !== a && b !== b;
-}
-
+// Desk drops only primitive repeats; key by method so compat never drops a call desk would send.
 const callLogs = new Map();
-function isFresh(method, args, threshold) {
-	const past = callLogs.get(method) || [];
+function isFresh(key, args, threshold) {
+	const past = callLogs.get(key) || [];
 	const now = Date.now();
+	const keys = Object.keys(args);
 	if (
 		past.some(
-			(request) => now - request.timestamp < threshold && deepEqual(args, request.args),
+			(request) =>
+				now - request.timestamp < threshold &&
+				keys.length === Object.keys(request.args).length &&
+				keys.every(
+					(k) =>
+						Object.prototype.hasOwnProperty.call(request.args, k) &&
+						args[k] === request.args[k],
+				),
 		)
 	)
 		return true;
 	past.push({ args, timestamp: now });
-	callLogs.set(method, past);
+	callLogs.set(key, past);
 	return false;
 }
 
@@ -448,11 +434,13 @@ function afterAjax(fn) {
 function frappeCall(opts, args, callback) {
 	if (typeof opts === "string") opts = { method: opts, args, callback };
 	const o = { args: {}, ...opts };
-	if (o.debounce) {
-		const callArgs = o.doc
-			? { ...o.args, docs: o.doc, method: o.method, args: o.args }
-			: { ...o.args };
-		if (isFresh(o.method, callArgs, o.debounce)) return Promise.resolve();
+	if (
+		o.debounce &&
+		!o.doc &&
+		!Object.values(o.args || {}).some((v) => Array.isArray(v) || jQuery.isPlainObject(v))
+	) {
+		const key = JSON.stringify([o.method, !!o.url]);
+		if (isFresh(key, { ...o.args }, o.debounce)) return Promise.resolve();
 	}
 	if (o.async === false) return syncCall(o);
 	if (o.freeze) ui.frozen = o.freeze_message || "Working…";
