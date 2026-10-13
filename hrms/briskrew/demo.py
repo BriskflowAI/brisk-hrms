@@ -58,16 +58,22 @@ def setup_site(
 			frappe.throw(_("Setup wizard failed: {0}").format(res))
 		frappe.db.commit()  # nosemgrep
 
-	result = seed(frappe.db.get_value("Company", {}, "name"))
+	result = seed()
 	frappe.db.commit()  # nosemgrep
 	return result
+
+
+def _default_company() -> str | None:
+	return frappe.db.get_single_value("Global Defaults", "default_company") or frappe.db.get_value(
+		"Company", {}, "name", order_by="creation asc, name asc"
+	)
 
 
 def seed(company: str | None = None) -> dict:
 	if not frappe.conf.developer_mode and not frappe.flags.in_test:
 		frappe.throw(_("Demo data is for test sites only. Enable developer_mode on the site first."))
 
-	company = company or frappe.db.get_value("Company", {}, "name")
+	company = company or _default_company()
 	if not company:
 		frappe.throw(_("Create a company first (finish the setup wizard)."))
 
