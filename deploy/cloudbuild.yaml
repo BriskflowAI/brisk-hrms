@@ -1,0 +1,41 @@
+# Builds the production Frappe image (frappe + erpnext + hrms + crm) on Cloud Build.
+# Do not build on the VM: the build peaks past what the VM can spare while it serves traffic.
+#
+# Run from the root of a frappe/frappe_docker checkout (at FRAPPE_DOCKER_SHA from
+# deploy/build.env) that contains the rendered apps.json. The deploy workflow does this.
+# Use the workflow to render apps.json and add the HRMS checkout SHA assertion.
+# Manual builds must use the same assertion and substitutions, not a moving branch.
+#
+# Notes:
+#   1. DOCKER_BUILDKIT=1 is required: the Containerfile uses `RUN --mount=type=secret`.
+#   2. apps.json is passed as a BuildKit secret (id=apps_json), not as a build argument.
+
+substitutions:
+  _FRAPPE_REF: ""
+  _IMAGE: ""
+  _SOURCE_SHA: ""
+
+steps:
+  - name: gcr.io/cloud-builders/docker
+    env:
+      - DOCKER_BUILDKIT=1
+    args:
+      - build
+      - --secret=id=apps_json,src=apps.json
+      - --build-arg=FRAPPE_BRANCH=${_FRAPPE_REF}
+      - --build-arg=FRAPPE_PATH=https://github.com/frappe/frappe
+      - --build-arg=CACHE_BUST=${_SOURCE_SHA}
+      - --build-arg=HRMS_SOURCE_SHA=${_SOURCE_SHA}
+      - --label=org.opencontainers.image.revision=${_SOURCE_SHA}
+      - --tag=${_IMAGE}
+      - --file=images/layered/Containerfile
+      - .
+
+images:
+  - ${_IMAGE}
+
+options:
+  machineType: E2_HIGHCPU_8
+  logging: CLOUD_LOGGING_ONLY
+
+timeout: 3600s

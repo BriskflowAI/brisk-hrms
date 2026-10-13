@@ -1,0 +1,667 @@
+name: deploy
+
+# Production deploy for the Frappe v16 line (main).
+#
+#   1. briskrew finishes on a push to main and passes -> build the image for that exact commit.
+#   2. A required reviewer approves the `production` environment.
+#   3. Close writes, verify backups, snapshot, migrate, check closed sites, reopen, check HTTPS.
+#
+# workflow_dispatch deploys an existing image; older images require a matching restore folder.
+#
+# Security rules for this file:
+#   - No pull_request or pull_request_target trigger. workflow_run runs only for pushes to main.
+#   - Cloud access uses Workload Identity Federation. There are no stored keys.
+#   - Two cloud identities: the builder (this workflow on main) and the deployer (only the
+#     `production` environment). See docs/DEPLOYMENT.md.
+#   - Values come from repository variables and environment variables, not from this file.
+
+on:
+  workflow_run:
+    workflows: [briskrew]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: Existing image tag. Older or unlabelled images require restore_folder.
+        required: true
+        type: string
+
+      restore_folder:
+        description: Matching production-stack/deploys folder. OWNER accepts restoration and possible data loss.
+        required: false
+        type: string
+
+permissions: {}
+
+jobs:
+  plan:
+    name: Plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      go: ${{ steps.plan.outputs.go }}
+      build: ${{ steps.plan.outputs.build }}
+      sha: ${{ steps.plan.outputs.sha }}
+      tag: ${{ steps.plan.outputs.tag }}
+    env:
+      EVENT_NAME: ${{ github.event_name }}
+      REF: ${{ github.ref }}
+      RUN_EVENT: ${{ github.event.workflow_run.event }}
+      RUN_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+      RUN_BRANCH: ${{ github.event.workflow_run.head_branch }}
+      RUN_REPO: ${{ github.event.workflow_run.head_repository.full_name }}
+      RUN_SHA: ${{ github.event.workflow_run.head_sha }}
+      INPUT_TAG: ${{ inputs.image_tag }}
+      THIS_REPO: ${{ github.repository }}
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION }}
+      AR_REPOSITORY: ${{ vars.AR_REPOSITORY }}
+      IMAGE_NAME: ${{ vars.IMAGE_NAME }}
+      BUILD_BUCKET: ${{ vars.BUILD_BUCKET }}
+      CLOUDBUILD_SERVICE_ACCOUNT: ${{ vars.CLOUDBUILD_SERVICE_ACCOUNT }}
+      BUILDER_SERVICE_ACCOUNT: ${{ vars.BUILDER_SERVICE_ACCOUNT }}
+      WIF_PROVIDER_BUILD: ${{ vars.WIF_PROVIDER_BUILD }}
+      WIF_PROVIDER_DEPLOY: ${{ vars.WIF_PROVIDER_DEPLOY }}
+    steps:
+      - name: Wait for repository setup
+        id: setup
+        run: |
+          set -euo pipefail
+          python3 <<'CONFIG'
+          import ipaddress
+          import os
+          import pathlib
+          import re
+          import sys
+          
+          required = ['GCP_PROJECT_ID', 'GCP_REGION', 'AR_REPOSITORY', 'IMAGE_NAME', 'BUILD_BUCKET', 'CLOUDBUILD_SERVICE_ACCOUNT', 'BUILDER_SERVICE_ACCOUNT', 'WIF_PROVIDER_BUILD', 'WIF_PROVIDER_DEPLOY']
+          values = {name: os.environ.get(name, "") for name in required}
+          output = pathlib.Path(os.environ["GITHUB_OUTPUT"])
+          if not any(values.values()):
+              with output.open("a") as stream:
+                  stream.write("ready=false\n")
+              print("::notice::No repository variables are set. Deployment is idle.")
+              sys.exit(0)
+          errors = [name for name, value in values.items() if not value]
+          def matches(pattern, value):
+              return re.fullmatch(pattern, value) is not None
+          project = os.environ.get("GCP_PROJECT_ID", "")
+          def bucket(value):
+              if not matches(r"[a-z0-9][a-z0-9._-]+[a-z0-9]", value):
+                  return False
+              if len(value) > (222 if "." in value else 63) or any(not part or len(part)>63 for part in value.split(".")):
+                  return False
+              if value.startswith("goog") or "google" in value or "g00gle" in value:
+                  return False
+              try:
+                  ipaddress.ip_address(value)
+                  return False
+              except ValueError:
+                  return True
+          def provider(value):
+              return (matches(r"projects/[1-9][0-9]*/locations/global/workloadIdentityPools/[a-z0-9-]{4,32}/providers/[a-z0-9-]{4,32}", value)
+                      and not any(part.startswith("gcp-") for part in (value.split("/")[5], value.split("/")[7])))
+          def account(value):
+              return matches(r"[a-z][a-z0-9-]{4,28}[a-z0-9]@" + re.escape(project) + r"\.iam\.gserviceaccount\.com", value)
+          component = r"[a-z0-9]+(?:(?:[._]|__|-+)[a-z0-9]+)*"
+          rules = {
+              "GCP_PROJECT_ID": lambda value: matches(r"[a-z][a-z0-9-]{4,28}[a-z0-9]", value),
+              "GCP_REGION": lambda value: matches(r"[a-z]+-[a-z]+[0-9]+", value),
+              "AR_REPOSITORY": lambda value: matches(r"[a-z][a-z0-9_-]{0,62}", value) and matches(component, value),
+              "IMAGE_NAME": lambda value: matches(component + r"(?:/" + component + r")*", value) and len(os.environ.get("GCP_REGION", "") + "-docker.pkg.dev/" + project + "/" + os.environ.get("AR_REPOSITORY", "") + "/" + value)<=255,
+              "BUILD_BUCKET": bucket, "BACKUP_BUCKET": bucket,
+              "CLOUDBUILD_SERVICE_ACCOUNT": account, "BUILDER_SERVICE_ACCOUNT": account,
+              "DEPLOYER_SERVICE_ACCOUNT": account,
+              "WIF_PROVIDER_BUILD": provider, "WIF_PROVIDER_DEPLOY": provider,
+          }
+          
+          errors += [name for name, value in values.items() if value and not rules[name](value)]
+          if errors:
+              print("::error::Incomplete or invalid repository configuration: " + ", ".join(sorted(set(errors))))
+              sys.exit(1)
+          with output.open("a") as stream:
+              stream.write("ready=true\n")
+          CONFIG
+
+      - name: Check out the commit
+        if: steps.setup.outputs.ready == 'true' && github.event_name == 'workflow_run'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
+
+      - name: Decide what to run
+        if: steps.setup.outputs.ready == 'true'
+        id: plan
+        run: |
+          set -euo pipefail
+          go=false; build=false; sha=""; tag=""
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            [[ "$REF" == "refs/heads/main" ]] || { echo "::error::Run this workflow from main."; exit 1; }
+            [[ "$INPUT_TAG" =~ ^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$ ]] || { echo "::error::Invalid image tag."; exit 1; }
+            go=true; tag="$INPUT_TAG"
+          elif [[ "$RUN_EVENT" == "push" && "$RUN_CONCLUSION" == "success" \
+                  && "$RUN_BRANCH" == "main" && "$RUN_REPO" == "$THIS_REPO" ]]; then
+            [[ "$RUN_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::Invalid commit SHA."; exit 1; }
+            # shellcheck disable=SC1091
+            . deploy/build.env
+            go=true; build=true; sha="$RUN_SHA"; tag="${IMAGE_TAG_PREFIX}-${sha:0:12}"
+          else
+            echo "briskrew did not pass for a push to main. Nothing to deploy."
+          fi
+          {
+            echo "go=$go"; echo "build=$build"; echo "sha=$sha"; echo "tag=$tag"
+          } >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Build image
+    needs: plan
+    if: needs.plan.outputs.build == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    concurrency:
+      group: build-${{ needs.plan.outputs.sha }}
+      cancel-in-progress: false
+    permissions:
+      contents: write   # choice (b): create and verify immutable build-<sha12> source tag
+      id-token: write   # Workload Identity Federation
+    outputs:
+      image: ${{ steps.digest.outputs.image }}
+    env:
+      SHA: ${{ needs.plan.outputs.sha }}
+      TAG: ${{ needs.plan.outputs.tag }}
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION }}
+      AR_REPOSITORY: ${{ vars.AR_REPOSITORY }}
+      IMAGE_NAME: ${{ vars.IMAGE_NAME }}
+      BUILD_BUCKET: ${{ vars.BUILD_BUCKET }}
+      CLOUDBUILD_SERVICE_ACCOUNT: ${{ vars.CLOUDBUILD_SERVICE_ACCOUNT }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Check out this commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.plan.outputs.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Read the pinned build inputs
+        id: pins
+        run: |
+          set -euo pipefail
+          # shellcheck disable=SC1091
+          . deploy/build.env
+          {
+            echo "frappe_docker_sha=$FRAPPE_DOCKER_SHA"
+            echo "frappe_ref=$FRAPPE_REF"
+            echo "erpnext_ref=$ERPNEXT_REF"
+            echo "crm_ref=$CRM_REF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Check out frappe_docker at the pinned commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: frappe/frappe_docker
+          ref: ${{ steps.pins.outputs.frappe_docker_sha }}
+          path: frappe_docker
+          persist-credentials: false
+
+      - name: Authenticate to Google Cloud (builder)
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER_BUILD }}
+          service_account: ${{ vars.BUILDER_SERVICE_ACCOUNT }}
+
+      - name: Set up the Cloud SDK
+        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
+
+      - name: Verify or create the exact HRMS source tag
+        run: |
+          set -euo pipefail
+          tag="build-${SHA:0:12}"
+          refs="$(git ls-remote --tags "https://github.com/${GITHUB_REPOSITORY}.git" "refs/tags/$tag" "refs/tags/$tag^{}")"
+          if [[ -z "$refs" ]]; then
+            gh api -X POST "repos/${GITHUB_REPOSITORY}/git/refs" -f "ref=refs/tags/$tag" -f "sha=$SHA" >/dev/null
+            refs="$(git ls-remote --tags "https://github.com/${GITHUB_REPOSITORY}.git" "refs/tags/$tag" "refs/tags/$tag^{}")"
+          fi
+          target="$(awk '$2 ~ /\^\{\}$/ {print $1}' <<< "$refs")"
+          [[ -n "$target" ]] || target="$(awk '{print $1}' <<< "$refs")"
+          [[ "$target" == "$SHA" ]] || { echo "::error::Source tag does not point at tested SHA."; exit 1; }
+          echo "HRMS_REF=$tag" >> "$GITHUB_ENV"
+
+      - name: Require immutable tags and resolve existing image
+        id: exists
+        run: |
+          set -euo pipefail
+          immutable="$(gcloud artifacts repositories describe "$AR_REPOSITORY" --location "$GCP_REGION" --project "$GCP_PROJECT_ID" --format='value(dockerConfig.immutableTags)')"
+          [[ "${immutable,,}" == true ]] || { echo "::error::Artifact Registry tags must be immutable."; exit 1; }
+          image="${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${AR_REPOSITORY}/${IMAGE_NAME}:${TAG}"
+          echo "image=$image" >> "$GITHUB_OUTPUT"
+          # A failed lookup does not silently mask permission/network failures as absence.
+          gcloud artifacts docker images list "${image%:*}" --include-tags --project "$GCP_PROJECT_ID" --format=json > "$RUNNER_TEMP/images.json"
+          found="$(jq --arg tag "$TAG" '[.[] | select(any(.tags[]?; . == $tag or endswith(":"+$tag)))] | length > 0' "$RUNNER_TEMP/images.json")"
+          echo "found=$found" >> "$GITHUB_OUTPUT"
+
+      - name: Render apps.json
+        if: steps.exists.outputs.found == 'false'
+        env:
+          ERPNEXT_REF: ${{ steps.pins.outputs.erpnext_ref }}
+          CRM_REF: ${{ steps.pins.outputs.crm_ref }}
+        run: |
+          set -euo pipefail
+          export HRMS_REPO_URL="https://github.com/${GITHUB_REPOSITORY}"
+          # shellcheck disable=SC2016  # envsubst needs the literal variable names
+          envsubst '${ERPNEXT_REF} ${CRM_REF} ${HRMS_REPO_URL} ${HRMS_REF}' < deploy/apps.json > frappe_docker/apps.json
+          jq -e . frappe_docker/apps.json >/dev/null
+          # Assert the actual cloned HRMS HEAD before frappe_docker removes .git.
+          python3 - <<'PYTHON'
+          from pathlib import Path
+          path = Path("frappe_docker/images/layered/Containerfile")
+          text = path.read_text()
+          arg = 'ARG CACHE_BUST=""'
+          check = '  find apps -mindepth 1 -path "*/.git" | xargs rm -fr'
+          assert text.count(arg) == 1 and text.count(check) == 1
+          text = text.replace(arg, arg + "\nARG HRMS_SOURCE_SHA")
+          text = text.replace(check, '  test "$(git -C apps/hrms rev-parse HEAD)" = "${HRMS_SOURCE_SHA}" && ' + chr(92) + chr(10) + check)
+          path.write_text(text)
+          PYTHON
+          printf '.git\n' > frappe_docker/.gcloudignore
+
+      - name: Build and push on Cloud Build
+        if: steps.exists.outputs.found == 'false'
+        env:
+          IMAGE: ${{ steps.exists.outputs.image }}
+          FRAPPE_REF: ${{ steps.pins.outputs.frappe_ref }}
+        run: |
+          set -euo pipefail
+          gcloud builds submit frappe_docker \
+            --config deploy/cloudbuild.yaml \
+            --project "$GCP_PROJECT_ID" \
+            --service-account "projects/${GCP_PROJECT_ID}/serviceAccounts/${CLOUDBUILD_SERVICE_ACCOUNT}" \
+            --gcs-source-staging-dir "gs://${BUILD_BUCKET}/source" \
+            --suppress-logs \
+            --substitutions "_FRAPPE_REF=${FRAPPE_REF},_IMAGE=${IMAGE},_SOURCE_SHA=${SHA}"
+
+      - name: Bind the built image to the full SHA and digest
+        id: digest
+        env:
+          IMAGE: ${{ steps.exists.outputs.image }}
+        run: |
+          set -euo pipefail
+          gcloud auth configure-docker "${GCP_REGION}-docker.pkg.dev" --quiet
+          digest="$(gcloud artifacts docker images describe "$IMAGE" --project "$GCP_PROJECT_ID" --format='value(image_summary.digest)')"
+          [[ "$digest" =~ ^sha256:[0-9a-f]{64}$ ]]
+          immutable="${IMAGE%:*}@$digest"
+          docker pull "$immutable"
+          revision="$(docker image inspect "$immutable" --format '{{index .Config.Labels "org.opencontainers.image.revision"}}')"
+          [[ "$revision" == "$SHA" ]] || { echo "::error::Existing/built image has a different source SHA."; exit 1; }
+          echo "image=$immutable" >> "$GITHUB_OUTPUT"
+          {
+            echo "Tested commit: $SHA"
+            echo "Approved image: $immutable"
+            echo "Review patches and DocType changes; rehearse migration and restore on a throwaway stack."
+            git diff --name-only "${SHA}^" "$SHA" -- hrms/patches.txt ':(glob)hrms/**/doctype/**/*.json' ':(glob)hrms/**/custom/*.json'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  deploy:
+    name: Deploy to production
+    needs: [plan, build]
+    if: ${{ !cancelled() && needs.plan.outputs.go == 'true' && (needs.build.result == 'success' || needs.build.result == 'skipped') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 110
+    environment: production
+    # Latest pending run replaces the older pending run; running operations are never cancelled.
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      TAG: ${{ needs.plan.outputs.tag }}
+      APPROVED_IMAGE: ${{ needs.build.outputs.image }}
+      SOURCE_SHA: ${{ needs.plan.outputs.sha }}
+      RESTORE_FOLDER: ${{ inputs.restore_folder }}
+      AUTOMATIC: ${{ github.event_name == 'workflow_run' }}
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION }}
+      GCP_ZONE: ${{ vars.GCP_ZONE }}
+      VM_NAME: ${{ vars.VM_NAME }}
+      VM_DISK: ${{ vars.VM_DISK }}
+      AR_REPOSITORY: ${{ vars.AR_REPOSITORY }}
+      IMAGE_NAME: ${{ vars.IMAGE_NAME }}
+      DEPLOY_DIR: ${{ vars.DEPLOY_DIR }}
+      SITES: ${{ vars.SITES }}
+      FLOW_SITE: ${{ vars.FLOW_SITE }}
+      BACKUP_BUCKET: ${{ vars.BACKUP_BUCKET }}
+      DEPLOYER_SERVICE_ACCOUNT: ${{ vars.DEPLOYER_SERVICE_ACCOUNT }}
+      WIF_PROVIDER_DEPLOY: ${{ vars.WIF_PROVIDER_DEPLOY }}
+    steps:
+      - name: Validate production configuration
+        id: config
+        run: |
+          set -euo pipefail
+          python3 <<'CONFIG'
+          import ipaddress
+          import os
+          import pathlib
+          import re
+          import sys
+          
+          required = ['GCP_PROJECT_ID', 'GCP_REGION', 'GCP_ZONE', 'VM_NAME', 'VM_DISK', 'AR_REPOSITORY', 'IMAGE_NAME', 'DEPLOY_DIR', 'SITES', 'FLOW_SITE', 'BACKUP_BUCKET', 'DEPLOYER_SERVICE_ACCOUNT', 'WIF_PROVIDER_DEPLOY']
+          values = {name: os.environ.get(name, "") for name in required}
+          output = pathlib.Path(os.environ["GITHUB_OUTPUT"])
+          if not any(values.values()):
+              with output.open("a") as stream:
+                  stream.write("ready=false\n")
+              print("::notice::No production variables are set. Deployment is idle.")
+              sys.exit(0)
+          errors = [name for name, value in values.items() if not value]
+          def matches(pattern, value):
+              return re.fullmatch(pattern, value) is not None
+          project = os.environ.get("GCP_PROJECT_ID", "")
+          def bucket(value):
+              if not matches(r"[a-z0-9][a-z0-9._-]+[a-z0-9]", value):
+                  return False
+              if len(value) > (222 if "." in value else 63) or any(not part or len(part)>63 for part in value.split(".")):
+                  return False
+              if value.startswith("goog") or "google" in value or "g00gle" in value:
+                  return False
+              try:
+                  ipaddress.ip_address(value)
+                  return False
+              except ValueError:
+                  return True
+          def provider(value):
+              return (matches(r"projects/[1-9][0-9]*/locations/global/workloadIdentityPools/[a-z0-9-]{4,32}/providers/[a-z0-9-]{4,32}", value)
+                      and not any(part.startswith("gcp-") for part in (value.split("/")[5], value.split("/")[7])))
+          def account(value):
+              return matches(r"[a-z][a-z0-9-]{4,28}[a-z0-9]@" + re.escape(project) + r"\.iam\.gserviceaccount\.com", value)
+          component = r"[a-z0-9]+(?:(?:[._]|__|-+)[a-z0-9]+)*"
+          rules = {
+              "GCP_PROJECT_ID": lambda value: matches(r"[a-z][a-z0-9-]{4,28}[a-z0-9]", value),
+              "GCP_REGION": lambda value: matches(r"[a-z]+-[a-z]+[0-9]+", value),
+              "AR_REPOSITORY": lambda value: matches(r"[a-z][a-z0-9_-]{0,62}", value) and matches(component, value),
+              "IMAGE_NAME": lambda value: matches(component + r"(?:/" + component + r")*", value) and len(os.environ.get("GCP_REGION", "") + "-docker.pkg.dev/" + project + "/" + os.environ.get("AR_REPOSITORY", "") + "/" + value)<=255,
+              "BUILD_BUCKET": bucket, "BACKUP_BUCKET": bucket,
+              "CLOUDBUILD_SERVICE_ACCOUNT": account, "BUILDER_SERVICE_ACCOUNT": account,
+              "DEPLOYER_SERVICE_ACCOUNT": account,
+              "WIF_PROVIDER_BUILD": provider, "WIF_PROVIDER_DEPLOY": provider,
+          }
+          def hostname(value):
+              return (len(value)<=253 and "." in value and
+                      all(matches(r"[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?", part) for part in value.split(".")))
+          site_list = os.environ.get("SITES", "").split()
+          def sites(value):
+              return len(site_list)==2 and len(set(site_list))==2 and " ".join(site_list)==value and all(hostname(site) for site in site_list)
+          def deploy_dir(value):
+              return (matches(r"/(?:[A-Za-z0-9._-]+/)*[A-Za-z0-9._-]+", value)
+                      and all(part not in (".", "..") for part in value.split("/")[1:]))
+          rules.update({
+              "GCP_ZONE": lambda value: matches(re.escape(os.environ.get("GCP_REGION", "")) + r"-[a-z]", value),
+              "VM_NAME": lambda value: matches(r"[a-z](?:[a-z0-9-]{0,61}[a-z0-9])?", value),
+              "VM_DISK": lambda value: matches(r"[a-z](?:[a-z0-9-]{0,61}[a-z0-9])?", value),
+              "DEPLOY_DIR": deploy_dir, "SITES": sites,
+              "FLOW_SITE": lambda value: hostname(value) and value in site_list,
+          })
+          errors += [name for name, value in values.items() if value and not rules[name](value)]
+          if errors:
+              print("::error::Incomplete or invalid production configuration: " + ", ".join(sorted(set(errors))))
+              sys.exit(1)
+          with output.open("a") as stream:
+              stream.write("ready=true\n")
+          CONFIG
+
+      - name: Check out trusted deploy scripts from main
+        if: steps.config.outputs.ready == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+
+      - name: Authenticate to Google Cloud (deployer)
+        if: steps.config.outputs.ready == 'true'
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER_DEPLOY }}
+          service_account: ${{ vars.DEPLOYER_SERVICE_ACCOUNT }}
+
+      - name: Set up the Cloud SDK
+        if: steps.config.outputs.ready == 'true'
+        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
+
+      - name: Prepare one immutable VM request
+        if: steps.config.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          image="$APPROVED_IMAGE"
+          if [[ "$AUTOMATIC" != true ]]; then
+            tag_ref="${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${AR_REPOSITORY}/${IMAGE_NAME}:${TAG}"
+            digest="$(gcloud artifacts docker images describe "$tag_ref" --project "$GCP_PROJECT_ID" --format='value(image_summary.digest)')"
+            [[ "$digest" =~ ^sha256:[0-9a-f]{64}$ ]]
+            image="${tag_ref%:*}@$digest"
+          fi
+          [[ "$image" =~ ^[a-zA-Z0-9./:_-]+@sha256:[0-9a-f]{64}$ ]]
+          [[ -z "$RESTORE_FOLDER" || "$RESTORE_FOLDER" =~ ^production-stack/deploys/[A-Za-z0-9_-]+$ ]]
+          id="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          jq -n --arg id "$id" --arg image "$image" --arg sha "$SOURCE_SHA" \
+            --arg deploy_dir "$DEPLOY_DIR" --arg sites "$SITES" --arg backup_bucket "$BACKUP_BUCKET" \
+            --arg project "$GCP_PROJECT_ID" --arg zone "$GCP_ZONE" --arg region "$GCP_REGION" \
+            --arg disk "$VM_DISK" --arg repository "$GITHUB_REPOSITORY" \
+            --arg restore_folder "$RESTORE_FOLDER" --argjson automatic "$AUTOMATIC" \
+            '{id:$id,image:$image,sha:$sha,deploy_dir:$deploy_dir,sites:$sites,backup_bucket:$backup_bucket,
+              project:$project,zone:$zone,region:$region,disk:$disk,repository:$repository,
+              restore_folder:$restore_folder,automatic:$automatic}' > "$RUNNER_TEMP/request.json"
+          # All remote arguments are quoted; JSON is parsed as data on the VM.
+          cat > "$RUNNER_TEMP/vm.sh" <<'HELPER'
+          #!/usr/bin/env bash
+          set -euo pipefail
+          id="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          if [[ "$1" == start ]]; then
+            script="/tmp/deploy-on-vm-$id.sh"
+          else
+            script="/var/lib/brisk-deploy/$id/deploy-on-vm.sh"
+          fi
+          printf -v cmd 'sudo bash %q' "$script"
+          for a in "$@"; do printf -v q '%q' "$a"; cmd+=" $q"; done
+          timeout 45s gcloud compute ssh "$VM_NAME" --zone "$GCP_ZONE" --project "$GCP_PROJECT_ID" \
+            --tunnel-through-iap --quiet --ssh-flag=-oConnectTimeout=20 --command "$cmd"
+          HELPER
+          chmod +x "$RUNNER_TEMP/vm.sh"
+
+      - name: Launch the supervised transaction
+        if: steps.config.outputs.ready == 'true'
+        id: launch
+        run: |
+          set -euo pipefail
+          id="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          gcloud compute scp deploy/deploy-on-vm.sh "${VM_NAME}:/tmp/deploy-on-vm-$id.sh" \
+            --zone "$GCP_ZONE" --project "$GCP_PROJECT_ID" --tunnel-through-iap --quiet
+          gcloud compute scp "$RUNNER_TEMP/request.json" "${VM_NAME}:/tmp/deploy-request-$id.json" \
+            --zone "$GCP_ZONE" --project "$GCP_PROJECT_ID" --tunnel-through-iap --quiet
+          "$RUNNER_TEMP/vm.sh" start "/tmp/deploy-request-$id.json"
+
+      - name: Poll durable state, then check HTTPS from the runner
+        if: steps.config.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          id="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          # Each polling window lasts at most ten minutes. The VM has a 90-minute
+          # systemd runtime bound; no workflow cancellation stops its supervised recovery.
+          for window in {1..10}; do
+            echo "Polling window $window of 10"
+            deadline=$((SECONDS + 600))
+            while (( SECONDS < deadline )); do
+              if "$RUNNER_TEMP/vm.sh" status "$id" > "$RUNNER_TEMP/state.json"; then
+                phase="$(jq -er '.phase' "$RUNNER_TEMP/state.json")"
+                case "$phase" in
+                  awaiting_https)
+                    read -r -a hosts <<< "$SITES"
+                    verdict=fail
+                    # Reserve one helper timeout plus clock/transport margin for verdict delivery.
+                    readiness_deadline="$(($(jq -er '.verdict_deadline' "$RUNNER_TEMP/state.json") - 60))"
+                    if VERIFY_DEADLINE="$readiness_deadline" bash deploy/verify-sites.sh --flow-site "$FLOW_SITE" "${hosts[@]}"; then verdict=pass; fi
+                    "$RUNNER_TEMP/vm.sh" verdict "$id" "$verdict"
+                    ;;
+                  succeeded) exit 0 ;;
+                  recovered|aborted_untouched|preflight_failed|needs_owner) exit 1 ;;
+                esac
+              fi
+              sleep 15
+            done
+          done
+          echo "::error::Polling timed out. Consult the VM record; do not launch another deployment."
+          exit 1
+
+      - name: Prune snapshots after a successful deploy
+        if: success() && steps.launch.outcome == 'success' && steps.config.outputs.ready == 'true'
+        timeout-minutes: 10
+        run: |
+          set -euo pipefail
+          python3 <<'PYTHON'
+          import datetime
+          import json
+          import os
+          import pathlib
+          import re
+          import subprocess
+
+          project = os.environ["GCP_PROJECT_ID"]
+          run_id = os.environ["GITHUB_RUN_ID"] + "-" + os.environ["GITHUB_RUN_ATTEMPT"]
+          current = "pre-deploy-" + run_id
+          source = "/projects/" + project + "/zones/" + os.environ["GCP_ZONE"] + "/disks/" + os.environ["VM_DISK"]
+          state = json.loads((pathlib.Path(os.environ["RUNNER_TEMP"]) / "state.json").read_text())
+          if (state["id"], state["phase"], state["snapshot"]) != (run_id, "succeeded", current):
+              raise RuntimeError("Snapshot cleanup requires this run's successful VM record.")
+
+          def cloud(*args):
+              return subprocess.run(
+                  ["gcloud", "compute", "snapshots", *args, "--project", project],
+                  check=True, capture_output=True, text=True, timeout=60,
+              ).stdout
+
+          def managed(snapshot):
+              labels = snapshot.get("labels", {})
+              return (re.fullmatch(r"[0-9]+-[0-9]+(?:-recover-[0-9]+)?", labels.get("cd_run", "")) is not None
+                      and str(snapshot.get("id", "")).isdigit()
+                      and snapshot.get("name") == "pre-deploy-" + labels.get("cd_run", "")
+                      and labels.get("cd_purpose") == "pre-deploy"
+                      and labels.get("retention_days") == "14"
+                      and snapshot.get("sourceDisk", "").endswith(source)
+                      and snapshot.get("status") == "READY")
+
+          def created(snapshot):
+              value = datetime.datetime.fromisoformat(snapshot["creationTimestamp"].replace("Z", "+00:00"))
+              if value.tzinfo is None:
+                  raise RuntimeError("Snapshot timestamp has no timezone.")
+              return value
+
+          def deploy_records():
+              result = subprocess.run(
+                  [str(pathlib.Path(os.environ["RUNNER_TEMP"]) / "vm.sh"), "retention-records"],
+                  check=True, capture_output=True, text=True, timeout=45,
+              )
+              values = json.loads(result.stdout)
+              if not isinstance(values, list) or any(not isinstance(value, dict) for value in values):
+                  raise RuntimeError("Invalid VM record inventory; retain snapshots.")
+              records = {value["id"]: value for value in values}
+              if len(records) != len(values):
+                  raise RuntimeError("Duplicate VM records; retain snapshots.")
+              return records
+
+          def record_outcome(record, records, seen=None):
+              seen = set() if seen is None else seen
+              if record.get("id") in seen or type(record.get("changed")) is not bool:
+                  return "unresolved"
+              seen = seen | {record.get("id")}
+              if (record.get("opened") is True and record.get("pending_stops") == []
+                      and (not record.get("recovery_of") or record.get("recovery_verified") is True)):
+                  phase = record.get("phase")
+                  if phase in ("succeeded", "recovered") and record.get("changed") is True:
+                      return phase
+                  if phase == "aborted_untouched" and record.get("changed") is False:
+                      return phase
+              # A verified linked recovery can resolve the original failed run
+              # without rewriting its preserved record. Include recovery chains.
+              for recovery in records.values():
+                  if (recovery.get("recovery_of") == record.get("id") and recovery.get("owner_recovery") is True
+                          and recovery.get("recovery_verified") is True
+                          and all(recovery.get(key) == record.get(key) for key in ("project", "zone", "disk"))
+                          and recovery.get("recovery_changed") is record.get("changed")
+                          and recovery.get("changed") is record.get("changed")
+                          and recovery.get("recovery_image") == record.get("previous_image")
+                          and recovery.get("restore_folder") == record.get("backup_folder")):
+                      resolved = record_outcome(recovery, records, seen)
+                      if resolved in ("succeeded", "recovered", "aborted_untouched"):
+                          return "recovered" if record["changed"] else "aborted_untouched"
+              return "unresolved"
+
+          def outcome(snapshot, records):
+              record = records.get(snapshot["labels"]["cd_run"], {})
+              if (record.get("snapshot") != snapshot["name"] or record.get("project") != project
+                      or record.get("zone") != os.environ["GCP_ZONE"] or record.get("disk") != os.environ["VM_DISK"]):
+                  return "unresolved"
+              return record_outcome(record, records)
+
+          def inventory():
+              values = json.loads(cloud("list", "--filter=labels.cd_purpose=pre-deploy", "--format=json"))
+              records = deploy_records()
+              managed_values = [value for value in values if managed(value)]
+              for value in managed_values:
+                  value["durable_outcome"] = outcome(value, records)
+              return managed_values
+
+          def protected(values):
+              successful = [value for value in values if value.get("durable_outcome") == "succeeded"]
+              if not successful:
+                  raise RuntimeError("No successful snapshot is available to protect.")
+              unresolved = {value["name"] for value in values if value["durable_outcome"] == "unresolved"}
+              previous = [value for value in successful if value["name"] != current]
+              if not previous:
+                  return {current} | unresolved
+              newest = max(previous, key=lambda value: (created(value), value["name"]))
+              return {current, newest["name"]} | unresolved
+
+          metadata = json.loads(cloud("describe", current, "--format=json"))
+          if not managed(metadata) or metadata["labels"]["cd_run"] != run_id:
+              raise RuntimeError("Current snapshot labels, source disk, or state do not match.")
+          if outcome(metadata, deploy_records()) != "succeeded":
+              raise RuntimeError("Current durable VM outcome is not successful; retain snapshots.")
+          cloud("add-labels", current, "--labels=cd_result=succeeded", "--quiet")
+          cutoff = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=14)
+          values = inventory()
+          if not any(value["name"] == current and value["durable_outcome"] == "succeeded" for value in values):
+              raise RuntimeError("Current successful snapshot is absent from the inventory.")
+          keep = protected(values)
+          candidates = sorted((value for value in values if value["name"] not in keep and created(value) < cutoff),
+                              key=lambda value: (created(value), value["name"]))
+          for candidate in candidates:
+              # Reconcile all outcomes, including owner recovery, before each deletion.
+              if candidate["name"] in protected(inventory()):
+                  continue
+              fresh = json.loads(cloud("describe", candidate["name"], "--format=json"))
+              if (not managed(fresh) or outcome(fresh, deploy_records()) == "unresolved"
+                      or fresh.get("id") != candidate.get("id")
+                      or created(fresh) >= cutoff or fresh["name"] == current):
+                  continue
+              cloud("delete", fresh["name"], "--quiet")
+              print("Deleted expired pre-deploy snapshot: " + fresh["name"])
+          print("Snapshot retention complete; current and newest successful snapshots remain protected.")
+          PYTHON
+
+      - name: Report durable state and owner recovery command
+        if: always() && steps.launch.outcome != 'skipped' && steps.config.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          id="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          if "$RUNNER_TEMP/vm.sh" status "$id" > "$RUNNER_TEMP/final.json"; then
+            jq -r '"Phase: "+.phase, "Previous image: "+.previous_image,
+              "Backup folder: "+.backup_folder, "Snapshot: "+.snapshot,
+              "Owner-confirmed manual restore (may lose new writes):", .manual_restore_command' \
+              "$RUNNER_TEMP/final.json" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "VM record unavailable. Inspect /var/lib/brisk-deploy/$id/record.json and journal brisk-deploy-$id. No automatic restore after reopening." >> "$GITHUB_STEP_SUMMARY"
+          fi

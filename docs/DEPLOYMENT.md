@@ -55,23 +55,189 @@ Image: `erpnext-hrms-crm:v16-briskrew-20261004` (ERPNext v16, HRMS from this for
 
 Docker volumes: `brisk-hrms_sites`, `_mariadb-data`, `_logs`, `_redis-cache-data`, `_redis-queue-data`.
 
-## Build and deploy a new version
+## Build and deploy a version
 
-No CI/CD pipeline deploys to the VM. A person deploys by hand.
+A successful `briskrew` push check on `main` triggers the image build for that exact commit.
+Owner decision, 2026-10-13: one required reviewer, the owner, approves `production`. Self-review is permitted.
+The workflow has no pull-request trigger and rejects failed CI, foreign repositories, and non-main dispatches.
 
-Installed app versions after the 2026-10-04 deploy: Frappe 16.36.1, ERPNext 16.37.0, HRMS 16.20.1 (fork branch `version-16-briskrew`, upstream `version-16` plus the briskrew UI), CRM 1.86.0.
-Before that deploy: HRMS came from upstream `frappe/hrms` `version-16`. The fork's `develop` branch is HRMS 17.0.0-dev and must not go to production.
-`apps.json` for the current image: ERPNext `version-16`, HRMS `https://github.com/BriskflowAI/brisk-hrms` branch `main`, CRM `main`. The current image was built from `version-16-briskrew`. Since 2026-10-04 `main` is the default branch and starts at the same commit (`8be72fd86`). `develop` is the HRMS 17-dev line and must not go to production.
+### Build provenance
 
-Build files are on the VM in `<DEPLOY_DIR>`: `apps.json`, `cloudbuild.yaml`, `compose.yaml`, `nginx-brisk-hrms.conf`.
+The pinned `frappe_docker` layered build clones apps through `bench init` and `apps.json`.
+It has no direct hook for a checked-out HRMS directory. The pipeline uses build choice **(b)**.
+The workflow creates `build-<sha12>` and verifies its target against the full tested SHA, including annotated-tag targets.
+An existing mismatched tag fails the build. GitHub source tags must be protected against update and deletion.
+Before removing Git metadata, the build checks the cloned HRMS HEAD against that full SHA.
+The resulting image has the full SHA in `org.opencontainers.image.revision`.
+An existing registry image must have the same label. Artifact Registry tag immutability is mandatory.
+The reviewer approves the full image digest; the automatic deploy uses that digest without resolving its tag again.
+The build job needs `contents: write` for source-tag creation. Other jobs use read-only repository access.
+`deploy/build.env` pins the build inputs. Change app versions through a reviewed pull request.
+Cloud Build uses a custom account, `CLOUD_LOGGING_ONLY`, and an explicit `roles/logging.logWriter` grant.
+The build bucket holds source objects only; neither build account can delete them.
 
-1. Clone `https://github.com/frappe/frappe_docker`. Copy `apps.json` into its root.
-2. Build on Cloud Build, not on the VM. The VM is too small to build and serve at once:
-   `gcloud builds submit --config=cloudbuild.yaml . --project=<GCP_PROJECT_ID> --substitutions=_FRAPPE_BRANCH=version-16,_TAG="v16-$(date +%Y%m%d)"`
-3. Rehearse the migration on a throwaway VM with last night's backup. Pick the dated backup folder, not the old `stack-b-*` files. Take a backup and a disk snapshot.
-4. On the VM, change the `IMAGE=` line in `.env`. Run `sudo docker compose pull`, then `sudo docker compose up -d`.
-5. Run `bench --site <site> migrate` for both sites inside the `backend` container.
-6. Check the login. To roll back, set the old tag and run `up -d` again.
+### Supervised deployment and write boundary
+
+One detached systemd service runs the entire operation on the VM.
+One `flock` covers backup, snapshot, switch, migration, checks, and any recovery.
+The workflow polls the durable record and sends the result of its outside HTTPS checks.
+SSH loss does not stop the service because systemd, rather than SSH, owns it.
+TERM, INT, HUP, and ERR stop the named one-off command container before recovery.
+Recovery uses a fresh Bash process with the same locked descriptor. Failed restore commands leave writers stopped.
+A 90-minute runtime limit bounds the service. Its termination grace allows 15 minutes for recovery.
+A reboot, forced kill, or failed recovery leaves a durable record that blocks ordinary deployment.
+
+Each run has `/var/lib/brisk-deploy/<RUN_ID>-<ATTEMPT>/record.json` and a persistent copy of the script and request.
+The record includes phase, the previous full image digest, backup folder, snapshot name, and the reopening boundary.
+The service journal is `brisk-deploy-<RUN_ID>-<ATTEMPT>.service`.
+The operation reads the previous image from the application containers' image IDs and repository digests, never from `.env`.
+It requires all application services to agree and verifies that the previous digest remains available.
+
+```mermaid
+flowchart TD
+  A[Inspect running digest and pull images] --> B[Maintenance on; scheduler pause; suspend pickup and drain workers]
+  B -->|timeout before shutdown| X[Abort; reopen unchanged sites; no backup or switch]
+  B --> C[Full backups; local integrity; upload sizes and generations]
+  C --> D[Disk snapshot; final main-head check]
+  D --> E[Switch digest; migrate both sites]
+  E --> F[CLI ping and database checks while closed]
+  F --> G[Record reopening boundary; reopen sites]
+  G --> H[Runner HTTPS checks]
+  E -->|failure before reopening| R[Restore old digest plus matching database, configuration, and files]
+  F -->|failure before reopening| R
+  R --> J[Closed checks; reopen; fail deployment]
+  H -->|failure or absent verdict| K[Close sites; fail; owner decides whether to restore]
+  H -->|pass| L[Success]
+```
+
+The closed phase follows this order:
+
+1. Set maintenance mode on and pause the scheduler for both sites.
+2. Suspend RQ pickup. Wait at most ten minutes for every worker to acknowledge suspension with no active job.
+3. If draining fails before worker shutdown, abort and reopen unchanged sites. Take no backup, snapshot, or image switch. Never force-kill a job.
+4. After drain proof, record pending worker IDs, then stop workers with unlimited Docker grace. Verify zero exit status with no OOM. Stop the web writers.
+5. Take a full backup with files into a unique directory for each deployment and site.
+6. Check nonempty database, site configuration, public files, and private files. Check JSON, gzip, and tar integrity.
+7. Upload each component with a create-only generation precondition. Use exact-object resumable API insertion. Verify its size and MD5; record its generation and SHA256.
+8. Upload a manifest that binds both sites, their components, and the previous immutable image.
+9. Snapshot the deployment disk with a name that includes the run ID and run attempt.
+10. Reject an automatic request whose tested SHA no longer equals the public `main` head immediately before switching.
+11. Switch to the approved digest and migrate both sites while every application writer stays stopped.
+12. Run `bench --site <site> execute frappe.ping` and a database read for both closed sites.
+13. Record the reopening boundary before the first maintenance-off operation. Resume the scheduler and start workers and web services.
+14. Check both sites over HTTPS from the runner, including `/flow` and its linked script. Retry startup readiness within the record's ten-minute verdict lease, with time reserved for delivery.
+
+
+The closed check uses Frappe's documented `bench execute` CLI, not an HTTP maintenance bypass.
+The v16 command initializes the site and database without the HTTP maintenance gate.
+Python helpers use the bench virtual environment and explicitly select its sites directory, as the pinned image layout requires.
+Each site backup lives under `gs://<BACKUP_BUCKET>/production-stack/deploys/<TIMESTAMP>-<RUN_ID>-<ATTEMPT>/<SITE>/`.
+This differs from the nightly backup's dated folders and never selects backup files by creation time.
+Staging uses `sites/.brisk-deploy/<RUN_ID>-<ATTEMPT>/`, outside every site's managed backup directory.
+The manifest records exact object generations and each site's database scheduler setting. Recovery downloads those generations and checks hashes and integrity again.
+
+### Failure and restore policy
+
+Before reopening, failed migration or closed checks restore the old digest and the matching database, site configuration, and both file sets.
+Restore removes file contents absent from the saved backup, rather than overlaying only existing files.
+It explicitly restores and verifies each site's database scheduler setting. Clearing `pause_scheduler` alone does not enable scheduled jobs.
+It checks the restored sites while closed and then reopens them. The deployment still fails.
+No user writes occur between the pre-deploy backup and this automatic restore because all application writers stay stopped.
+If recovery fails, the operation leaves writers stopped and records `needs_owner`.
+A normal pre-switch failure reopens the unchanged stack without replacing `.env` or recreating worker containers.
+If worker shutdown started, recovery completes all recorded pending stops before restarting existing containers.
+It verifies running workers and RQ registration before recording a terminal state. Otherwise it records `needs_owner`.
+This access-recovery path never replaces the full restore required after mutation.
+
+**Owner decision, 2026-10-13:** after reopening, a failed or missing HTTPS verdict closes both sites and fails the run.
+It never restores automatically at this point. A restore could discard writes after reopening.
+The summary names the backup folder, snapshot, and this exact owner command with the actual run ID and attempt:
+
+```bash
+sudo /var/lib/brisk-deploy/<RUN_ID>-<ATTEMPT>/deploy-on-vm.sh recover <RUN_ID>-<ATTEMPT>
+```
+
+The owner confirms the potential data loss before running that command over IAP SSH.
+Before mutation, the command starts supervised access recovery without a backup or an image switch.
+It proves the original service and command container stopped and restores maintenance, scheduler pause, and queue pickup state.
+After mutation, the command requires full restoration using the previous digest and matching backup.
+After a full restore, the owner checks HTTPS from outside and sends `verdict <RECOVERY_ID> pass` to the script after those checks pass.
+A failed or absent verdict closes the sites again. The original snapshot remains named in the original record.
+Disk-level disaster recovery remains a separate owner operation; the deploy identities cannot restore snapshots. Only the deployer can delete prefix-limited snapshots through the retention step.
+
+### Retention
+
+Owner decision, 2026-10-13: use 14 days for pre-deploy backups and snapshots.
+Bucket lifecycle deletion covers only `production-stack/deploys/`. Nightly dated folders keep their separate policy.
+The build bucket uses the same 14-day rule for `source/` and `log-` objects.
+This pipeline uses Cloud Logging rather than GCS log objects. Cloud Logging retention remains separate.
+Lifecycle deletion is asynchronous; bucket holds, retention locks, and soft delete can extend physical retention.
+No deploy identity receives object deletion or bucket configuration permission.
+
+Snapshots carry purpose, run, retention, and pending-result labels at creation.
+After successful deployment, the job reconciles cloud snapshots against the durable VM records, including owner recovery.
+Verified linked recovery resolves its original failed outcome while preserving the original record.
+It prunes snapshots older than 14 days only when their durable outcomes are resolved.
+Missing records and unresolved outcomes retain snapshots. Pending or missing labels never establish eligibility.
+It protects this run's snapshot and the newest successful previous-run snapshot, including a protected snapshot older than 14 days.
+It checks the source disk, labels, age, and immutable ID before deletion, and refreshes the records and protected set.
+Delete, metadata read, and label update grants have an IAM condition limited to the `pre-deploy-` snapshot name prefix.
+Snapshot inventory and operation reads have separate minimal project grants. Snapshot restore permissions remain absent.
+Cleanup failure fails the workflow while the successful deployment stays open.
+
+### Manual deploy and queue policy
+
+Use `workflow_dispatch` from `main` for an existing image tag. The workflow resolves it to a digest.
+A different digest must prove forward commit ancestry. An older, unrelated, or unlabelled image needs `restore_folder`.
+The folder must be a pipeline deploy backup whose manifest matches that digest and both sites.
+The manual restore takes a fresh safety backup, then uses the same full restore path. It does not run older-code `migrate`.
+Nightly backups without a deployment manifest cannot authorize this automated path.
+A legacy running image without source metadata requires owner-established provenance before a forward image change.
+A same-digest no-change deployment can test the deployment path and create a matching recovery manifest.
+It does not establish missing source provenance.
+
+**Default queue policy:** one deployment runs and only the latest pending request remains.
+GitHub can replace a pending request even with `cancel-in-progress: false`; it does not guarantee order.
+A stale automatic request fails at the final main-head check. A running deployment is not cancelled by a newer request.
+The VM lock also prevents manual operations from interleaving with the workflow.
+An unfinished durable record blocks every ordinary deploy, including a restore dispatch.
+A linked owner recovery preserves the original record and its mutation state through preflight and restoration.
+Before mutation, only verified access recovery and worker readiness release that barrier.
+After mutation, only verified full restore and closed checks release it. Failed attempts cannot replace it with `preflight_failed`.
+
+### Access and variables
+
+Both WIF providers require the exact workflow reference, repository, repository ID, and `main` ref.
+The builder provider permits only `workflow_run`.
+The deploy provider permits `workflow_run` and `workflow_dispatch`, and requires `production`.
+Impersonation bindings use the repository ID attribute, not all identities in a pool.
+IAP access belongs on the VM's IAP tunnel resource, with a port-22 condition.
+OS Login administrator access belongs on the Compute Engine instance.
+Owner decision, 2026-10-13: enable OS Login in a quiet window after approved people receive their roles.
+The VM account uploads and reads only deploy backup objects and snapshots only the deployment source disk.
+The deployer has no bucket access. Its snapshot access is limited to inventory, operation reads, and conditioned retention actions.
+The build accounts have no source-object delete access.
+
+| Location | Required settings |
+| --- | --- |
+| Environment | `production`, one owner reviewer, self-review permitted, `main` deployment branch policy |
+| Repository variables | `GCP_PROJECT_ID`, `GCP_REGION`, `AR_REPOSITORY`, `IMAGE_NAME`, `BUILD_BUCKET`, `CLOUDBUILD_SERVICE_ACCOUNT`, `BUILDER_SERVICE_ACCOUNT`, `WIF_PROVIDER_BUILD`, `WIF_PROVIDER_DEPLOY` |
+| Production variables | `GCP_PROJECT_ID`, `GCP_REGION`, `GCP_ZONE`, `VM_NAME`, `VM_DISK`, `AR_REPOSITORY`, `IMAGE_NAME`, `DEPLOY_DIR`, `SITES`, `FLOW_SITE`, `BACKUP_BUCKET`, `DEPLOYER_SERVICE_ACCOUNT`, `WIF_PROVIDER_DEPLOY` |
+| GitHub secrets | none |
+
+The plan reports a notice and skips checkout, build, and deploy only when no required repository variables are set.
+A partial or malformed set fails loudly.
+The first production step validates all deployment variables before checkout, authentication, or VM launch.
+It requires two distinct site hostnames and checks that `FLOW_SITE` belongs to `SITES`.
+Publish the repository copy of `WIF_PROVIDER_DEPLOY` after setup and rehearsal. It does not prove production completeness.
+
+### Verification limits
+
+Rehearse the complete migration and restore on a throwaway stack before production use.
+Verify effective IAM, root registry authentication, VM scopes, installed tools, Compose layout, image builds, and all cancellation cases.
+Only a live rehearsal can prove restored database and file behavior, snapshot recovery, and the actual HTTPS checks.
+The HTTPS verifier does not test browser caches or session state. A user can still need a hard reload.
+The VM remains a single point of failure. Maintenance causes an outage during deployment.
 
 ## Access
 
