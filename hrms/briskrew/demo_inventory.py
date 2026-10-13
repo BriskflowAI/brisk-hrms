@@ -13,7 +13,7 @@ import frappe
 from frappe import _
 from frappe.utils import add_days, add_months, get_first_day, getdate, nowdate
 
-from hrms.briskrew.demo import _insert
+from hrms.briskrew.demo import _default_company, _insert
 
 SUPPLIER = "Brisk Office Supplies"
 CUSTOMER = "Northwind Studio"
@@ -33,7 +33,7 @@ def seed(company: str | None = None) -> dict:
 	if not frappe.conf.developer_mode and not frappe.flags.in_test:
 		frappe.throw(_("Demo data is for test sites only. Enable developer_mode on the site first."))
 
-	company = company or frappe.db.get_value("Company", {}, "name")
+	company = company or _default_company()
 	if not company:
 		frappe.throw(_("Create a company first (finish the setup wizard)."))
 
