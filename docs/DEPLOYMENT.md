@@ -70,7 +70,11 @@ An existing mismatched tag fails the build. GitHub source tags must be protected
 Before removing Git metadata, the build checks the cloned HRMS HEAD against that full SHA.
 The resulting image has the full SHA in `org.opencontainers.image.revision`.
 An existing registry image must have the same label. Artifact Registry tag immutability is mandatory.
-The reviewer approves the full image digest; the automatic deploy uses that digest without resolving its tag again.
+The reviewer approves the image digest; the automatic deploy uses that digest without resolving its tag again.
+Only the non-secret `sha256:` digest crosses from build to deploy; the plan passes only booleans, the source SHA, and the tag.
+The deploy job rebuilds the full reference from its own secrets and validates the digest form.
+VM preflight pulls that exact digest and requires its revision label to equal the tested SHA before the write freeze.
+Manual deploys retain their ancestry and matching-backup checks.
 The build job needs `contents: write` for source-tag creation. Other jobs use read-only repository access.
 `deploy/build.env` pins the build inputs. Change app versions through a reviewed pull request.
 GitHub Actions builds the image on its Ubuntu runner with the preinstalled Docker Buildx and BuildKit.
@@ -89,7 +93,7 @@ Runner speed and peak disk use still need a real build to confirm these limits.
 
 Use a separate Linux build machine with Docker Buildx, Git, Python, `jq`, `envsubst`, and the Cloud SDK.
 Do not build on the production VM while it serves traffic.
-Supply the repository variable values through your shell. Never save real infrastructure values in this public repository.
+Supply the repository secret values through your shell. Never save real infrastructure values in this public repository.
 Use the tested full `SHA` and repository name as `GITHUB_REPOSITORY`.
 Authenticate through WIF as `BUILDER_SERVICE_ACCOUNT`; the workflow uses `WIF_PROVIDER_BUILD`.
 
@@ -259,7 +263,7 @@ A linked owner recovery preserves the original record and its mutation state thr
 Before mutation, only verified access recovery and worker readiness release that barrier.
 After mutation, only verified full restore and closed checks release it. Failed attempts cannot replace it with `preflight_failed`.
 
-### Access and variables
+### Access and secrets
 
 Both WIF providers require the exact workflow reference, repository, repository ID, and `main` ref.
 The builder provider permits only `workflow_run`.
@@ -283,13 +287,37 @@ The runner build removes that path. The builder needs no source bucket or Cloud 
 | Location | Required settings |
 | --- | --- |
 | Environment | `production`, one owner reviewer, self-review permitted, `main` deployment branch policy |
-| Repository variables | `GCP_PROJECT_ID`, `GCP_REGION`, `AR_REPOSITORY`, `IMAGE_NAME`, `BUILDER_SERVICE_ACCOUNT`, `WIF_PROVIDER_BUILD`, `WIF_PROVIDER_DEPLOY` |
-| Production variables | `GCP_PROJECT_ID`, `GCP_REGION`, `GCP_ZONE`, `VM_NAME`, `VM_DISK`, `AR_REPOSITORY`, `IMAGE_NAME`, `DEPLOY_DIR`, `SITES`, `FLOW_SITE`, `BACKUP_BUCKET`, `DEPLOYER_SERVICE_ACCOUNT`, `WIF_PROVIDER_DEPLOY` |
-| GitHub secrets | none |
+| Repository secrets | `GCP_PROJECT_ID`, `GCP_REGION`, `AR_REPOSITORY`, `IMAGE_NAME`, `BUILDER_SERVICE_ACCOUNT`, `WIF_PROVIDER_BUILD`, `WIF_PROVIDER_DEPLOY` |
+| `production` environment secrets | `GCP_PROJECT_ID`, `GCP_REGION`, `GCP_ZONE`, `VM_NAME`, `VM_DISK`, `AR_REPOSITORY`, `IMAGE_NAME`, `DEPLOY_DIR`, `SITES`, `FLOW_SITE`, `BACKUP_BUCKET`, `DEPLOYER_SERVICE_ACCOUNT`, `WIF_PROVIDER_DEPLOY` |
 
-The plan reports a notice and skips checkout, build, and deploy only when no required repository variables are set.
+Owner decision, 2026-10-14: all infrastructure values use GitHub secrets because this repository and its Actions logs are public.
+GitHub variables print unmasked in step headers, command output, and summaries. Secrets receive automatic `***` masking in logs.
+The production guard also masks each hostname from `SITES` because HTTPS checks and VM logs print them separately.
+Use the same names shown above. Plan and build use repository secrets; deploy uses secrets from `production`.
+Environment secrets override repository secrets with the same names; keep both registry copies consistent.
+Both `workflow_run` and `workflow_dispatch` in the base repository receive secrets.
+The `production` approval gate controls access to environment secrets.
+See [GitHub's secrets guide](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/use-secrets),
+[secret scope precedence](https://docs.github.com/en/actions/reference/security/secrets), and
+[`workflow_run` access](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#workflow_run).
+
+Set each name in the table at its required scope. These examples contain placeholders only:
+
+```bash
+gh secret set GCP_PROJECT_ID -R '<repo>' --body '<GCP_PROJECT_ID>'
+gh secret set GCP_PROJECT_ID -R '<repo>' --env production --body '<GCP_PROJECT_ID>'
+```
+
+Repeat these commands for every required name at each scope. See [`gh secret set`](https://cli.github.com/manual/gh_secret_set).
+Never put real infrastructure values in this public repository.
+
+Unset secrets read as empty strings. Guards use environment values and boolean step outputs, without secrets in `if:` expressions.
+GitHub can drop secret-bearing job outputs, so the full registry reference stays within each job.
+See [GitHub's job output rules](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idoutputs).
+
+The plan reports a notice and skips checkout, build, and deploy only when no required repository secrets are set.
 A partial or malformed set fails loudly.
-The first production step validates all deployment variables before checkout, authentication, or VM launch.
+The first production step validates all deployment secrets before checkout, authentication, or VM launch.
 It requires two distinct site hostnames and checks that `FLOW_SITE` belongs to `SITES`.
 Publish the repository copy of `WIF_PROVIDER_DEPLOY` after setup and rehearsal. It does not prove production completeness.
 

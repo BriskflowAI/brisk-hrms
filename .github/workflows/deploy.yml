@@ -13,7 +13,7 @@ name: deploy
 #   - Cloud access uses Workload Identity Federation. There are no stored keys.
 #   - Two cloud identities: the builder (this workflow on main) and the deployer (only the
 #     `production` environment). See docs/DEPLOYMENT.md.
-#   - Values come from repository variables and environment variables, not from this file.
+#   - Values come from repository secrets and production environment secrets, not from this file.
 
 on:
   workflow_run:
@@ -56,13 +56,13 @@ jobs:
       RUN_SHA: ${{ github.event.workflow_run.head_sha }}
       INPUT_TAG: ${{ inputs.image_tag }}
       THIS_REPO: ${{ github.repository }}
-      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
-      GCP_REGION: ${{ vars.GCP_REGION }}
-      AR_REPOSITORY: ${{ vars.AR_REPOSITORY }}
-      IMAGE_NAME: ${{ vars.IMAGE_NAME }}
-      BUILDER_SERVICE_ACCOUNT: ${{ vars.BUILDER_SERVICE_ACCOUNT }}
-      WIF_PROVIDER_BUILD: ${{ vars.WIF_PROVIDER_BUILD }}
-      WIF_PROVIDER_DEPLOY: ${{ vars.WIF_PROVIDER_DEPLOY }}
+      GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ secrets.GCP_REGION }}
+      AR_REPOSITORY: ${{ secrets.AR_REPOSITORY }}
+      IMAGE_NAME: ${{ secrets.IMAGE_NAME }}
+      BUILDER_SERVICE_ACCOUNT: ${{ secrets.BUILDER_SERVICE_ACCOUNT }}
+      WIF_PROVIDER_BUILD: ${{ secrets.WIF_PROVIDER_BUILD }}
+      WIF_PROVIDER_DEPLOY: ${{ secrets.WIF_PROVIDER_DEPLOY }}
     steps:
       - name: Wait for repository setup
         id: setup
@@ -81,7 +81,7 @@ jobs:
           if not any(values.values()):
               with output.open("a") as stream:
                   stream.write("ready=false\n")
-              print("::notice::No repository variables are set. Deployment is idle.")
+              print("::notice::No repository secrets are set. Deployment is idle.")
               sys.exit(0)
           errors = [name for name, value in values.items() if not value]
           def matches(pattern, value):
@@ -167,14 +167,15 @@ jobs:
       contents: write   # choice (b): create and verify immutable build-<sha12> source tag
       id-token: write   # Workload Identity Federation
     outputs:
-      image: ${{ steps.digest.outputs.image }}
+      # Full registry references contain secrets and GitHub can drop them as job outputs.
+      digest: ${{ steps.digest.outputs.digest }}
     env:
       SHA: ${{ needs.plan.outputs.sha }}
       TAG: ${{ needs.plan.outputs.tag }}
-      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
-      GCP_REGION: ${{ vars.GCP_REGION }}
-      AR_REPOSITORY: ${{ vars.AR_REPOSITORY }}
-      IMAGE_NAME: ${{ vars.IMAGE_NAME }}
+      GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ secrets.GCP_REGION }}
+      AR_REPOSITORY: ${{ secrets.AR_REPOSITORY }}
+      IMAGE_NAME: ${{ secrets.IMAGE_NAME }}
       GH_TOKEN: ${{ github.token }}
     steps:
       - name: Check out this commit
@@ -205,11 +206,21 @@ jobs:
           path: frappe_docker
           persist-credentials: false
 
+      # Google errors can quote parts of the provider path, such as the project number.
+      - name: Mask workload identity provider parts
+        env:
+          PROVIDER: ${{ secrets.WIF_PROVIDER_BUILD }}
+        run: |
+          IFS=/ read -ra parts <<< "$PROVIDER"
+          for part in "${parts[@]}"; do
+            case "$part" in projects|locations|global|workloadIdentityPools|providers|github|'') ;; *) echo "::add-mask::$part" ;; esac
+          done
+
       - name: Authenticate to Google Cloud (builder)
         uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
         with:
-          workload_identity_provider: ${{ vars.WIF_PROVIDER_BUILD }}
-          service_account: ${{ vars.BUILDER_SERVICE_ACCOUNT }}
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER_BUILD }}
+          service_account: ${{ secrets.BUILDER_SERVICE_ACCOUNT }}
 
       - name: Set up the Cloud SDK
         uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3.0.1
@@ -311,8 +322,8 @@ jobs:
         id: registry_auth
         uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
         with:
-          workload_identity_provider: ${{ vars.WIF_PROVIDER_BUILD }}
-          service_account: ${{ vars.BUILDER_SERVICE_ACCOUNT }}
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER_BUILD }}
+          service_account: ${{ secrets.BUILDER_SERVICE_ACCOUNT }}
           token_format: access_token
 
       - name: Log in to Artifact Registry
@@ -341,7 +352,7 @@ jobs:
           docker pull "$immutable"
           revision="$(docker image inspect "$immutable" --format '{{index .Config.Labels "org.opencontainers.image.revision"}}')"
           [[ "$revision" == "$SHA" ]] || { echo "::error::Existing/built image has a different source SHA."; exit 1; }
-          echo "image=$immutable" >> "$GITHUB_OUTPUT"
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
           {
             echo "Tested commit: $SHA"
             echo "Approved image: $immutable"
@@ -365,23 +376,23 @@ jobs:
       id-token: write
     env:
       TAG: ${{ needs.plan.outputs.tag }}
-      APPROVED_IMAGE: ${{ needs.build.outputs.image }}
+      APPROVED_DIGEST: ${{ needs.build.outputs.digest }}
       SOURCE_SHA: ${{ needs.plan.outputs.sha }}
       RESTORE_FOLDER: ${{ inputs.restore_folder }}
       AUTOMATIC: ${{ github.event_name == 'workflow_run' }}
-      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
-      GCP_REGION: ${{ vars.GCP_REGION }}
-      GCP_ZONE: ${{ vars.GCP_ZONE }}
-      VM_NAME: ${{ vars.VM_NAME }}
-      VM_DISK: ${{ vars.VM_DISK }}
-      AR_REPOSITORY: ${{ vars.AR_REPOSITORY }}
-      IMAGE_NAME: ${{ vars.IMAGE_NAME }}
-      DEPLOY_DIR: ${{ vars.DEPLOY_DIR }}
-      SITES: ${{ vars.SITES }}
-      FLOW_SITE: ${{ vars.FLOW_SITE }}
-      BACKUP_BUCKET: ${{ vars.BACKUP_BUCKET }}
-      DEPLOYER_SERVICE_ACCOUNT: ${{ vars.DEPLOYER_SERVICE_ACCOUNT }}
-      WIF_PROVIDER_DEPLOY: ${{ vars.WIF_PROVIDER_DEPLOY }}
+      GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ secrets.GCP_REGION }}
+      GCP_ZONE: ${{ secrets.GCP_ZONE }}
+      VM_NAME: ${{ secrets.VM_NAME }}
+      VM_DISK: ${{ secrets.VM_DISK }}
+      AR_REPOSITORY: ${{ secrets.AR_REPOSITORY }}
+      IMAGE_NAME: ${{ secrets.IMAGE_NAME }}
+      DEPLOY_DIR: ${{ secrets.DEPLOY_DIR }}
+      SITES: ${{ secrets.SITES }}
+      FLOW_SITE: ${{ secrets.FLOW_SITE }}
+      BACKUP_BUCKET: ${{ secrets.BACKUP_BUCKET }}
+      DEPLOYER_SERVICE_ACCOUNT: ${{ secrets.DEPLOYER_SERVICE_ACCOUNT }}
+      WIF_PROVIDER_DEPLOY: ${{ secrets.WIF_PROVIDER_DEPLOY }}
     steps:
       - name: Validate production configuration
         id: config
@@ -400,7 +411,7 @@ jobs:
           if not any(values.values()):
               with output.open("a") as stream:
                   stream.write("ready=false\n")
-              print("::notice::No production variables are set. Deployment is idle.")
+              print("::notice::No production secrets are set. Deployment is idle.")
               sys.exit(0)
           errors = [name for name, value in values.items() if not value]
           def matches(pattern, value):
@@ -454,6 +465,9 @@ jobs:
           if errors:
               print("::error::Incomplete or invalid production configuration: " + ", ".join(sorted(set(errors))))
               sys.exit(1)
+          # SITES is one secret, but HTTPS checks and VM logs print each hostname separately.
+          for site in site_list:
+              print("::add-mask::" + site)
           with output.open("a") as stream:
               stream.write("ready=true\n")
           CONFIG
@@ -465,12 +479,23 @@ jobs:
           ref: main
           persist-credentials: false
 
+      # Google errors can quote parts of the provider path, such as the project number.
+      - name: Mask workload identity provider parts
+        if: steps.config.outputs.ready == 'true'
+        env:
+          PROVIDER: ${{ secrets.WIF_PROVIDER_DEPLOY }}
+        run: |
+          IFS=/ read -ra parts <<< "$PROVIDER"
+          for part in "${parts[@]}"; do
+            case "$part" in projects|locations|global|workloadIdentityPools|providers|github|'') ;; *) echo "::add-mask::$part" ;; esac
+          done
+
       - name: Authenticate to Google Cloud (deployer)
         if: steps.config.outputs.ready == 'true'
         uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
         with:
-          workload_identity_provider: ${{ vars.WIF_PROVIDER_DEPLOY }}
-          service_account: ${{ vars.DEPLOYER_SERVICE_ACCOUNT }}
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER_DEPLOY }}
+          service_account: ${{ secrets.DEPLOYER_SERVICE_ACCOUNT }}
 
       - name: Set up the Cloud SDK
         if: steps.config.outputs.ready == 'true'
@@ -480,13 +505,16 @@ jobs:
         if: steps.config.outputs.ready == 'true'
         run: |
           set -euo pipefail
-          image="$APPROVED_IMAGE"
+          # Only the digest crosses jobs. Rebuild the reference from this job's secrets.
+          image_base="${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${AR_REPOSITORY}/${IMAGE_NAME}"
+          digest="$APPROVED_DIGEST"
           if [[ "$AUTOMATIC" != true ]]; then
-            tag_ref="${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${AR_REPOSITORY}/${IMAGE_NAME}:${TAG}"
+            tag_ref="${image_base}:${TAG}"
             digest="$(gcloud artifacts docker images describe "$tag_ref" --project "$GCP_PROJECT_ID" --format='value(image_summary.digest)')"
-            [[ "$digest" =~ ^sha256:[0-9a-f]{64}$ ]]
-            image="${tag_ref%:*}@$digest"
           fi
+          [[ "$digest" =~ ^sha256:[0-9a-f]{64}$ ]] || { echo "::error::Missing or invalid approved image digest."; exit 1; }
+          image="${image_base}@$digest"
+          # VM preflight pulls this exact digest and checks the automatic source revision.
           [[ "$image" =~ ^[a-zA-Z0-9./:_-]+@sha256:[0-9a-f]{64}$ ]]
           [[ -z "$RESTORE_FOLDER" || "$RESTORE_FOLDER" =~ ^production-stack/deploys/[A-Za-z0-9_-]+$ ]]
           id="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
@@ -701,6 +729,12 @@ jobs:
           set -euo pipefail
           id="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           if "$RUNNER_TEMP/vm.sh" status "$id" > "$RUNNER_TEMP/final.json"; then
+            # The previous image can name an older registry or project that no secret masks.
+            previous="$(jq -r '.previous_image // ""' "$RUNNER_TEMP/final.json")"
+            IFS='/:@' read -ra parts <<< "$previous"
+            for part in "${parts[@]}"; do
+              [[ -z "$part" || "$part" == sha256 ]] || echo "::add-mask::$part"
+            done
             jq -r '"Phase: "+.phase, "Previous image: "+.previous_image,
               "Backup folder: "+.backup_folder, "Snapshot: "+.snapshot,
               "Owner-confirmed manual restore (may lose new writes):", .manual_restore_command' \
