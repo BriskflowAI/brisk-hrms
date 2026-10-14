@@ -363,7 +363,8 @@ frappe.destroy()' "$site" "$expected"
 reopen_untouched() {
   local site maintenance pause cid state ids
   resolve_worker_stops
-  compose start "${WRITERS[@]}"
+  # start would also rerun configurator, a dependency; this keeps the existing containers.
+  compose up -d --no-deps --no-recreate "${WRITERS[@]}"
   ids=$(worker_ids)
   while read -r cid; do
     [[ -n "$cid" ]] || continue
@@ -667,12 +668,15 @@ resume_failure() {
 
 preflight() {
   record preflight
-  local services service sha previous_sha restore_folder repo
+  local services running sha previous_sha restore_folder repo
   [[ -f "$DEPLOY_DIR/compose.yaml" && -f "$DEPLOY_DIR/.env" ]] || fail 'Missing Compose files.'
-  services=$(compose config --services)
-  for service in "${WRITERS[@]}" mariadb redis-cache redis-queue; do grep -qx "$service" <<< "$services"; done
-  # Unknown services could write during maintenance: require an audited compose layout.
-  [[ $(wc -l <<< "$services") == 9 ]] || fail 'Unexpected Compose services.'
+  services=$(compose config --services | sort)
+  # Unknown services could write during maintenance: require the audited compose layout.
+  # configurator is frappe_docker's one-shot config job; --no-deps starts never rerun it.
+  [[ "$services" == "$(printf '%s\n' "${WRITERS[@]}" mariadb redis-cache redis-queue configurator | sort)" ]] \
+    || fail 'Unexpected Compose services.'
+  running=$(compose ps -q --status running configurator)
+  [[ -z "$running" ]] || fail 'Configurator is still running.'
   docker pull "$IMAGE"
   restore_folder=$(jq -r '.restore_folder' "$RUN_DIR/request.json")
   if [[ $(jq -r '.owner_recovery // false' "$RUN_DIR/request.json") == true ]]; then
@@ -747,7 +751,8 @@ recover_untouched_operation() {
     # queued/preflight only read state. No closure can start without a saved state.
     [[ "$QUEUES_SUSPENDED" == false && "$PENDING_STOPS" == '[]' ]]
     [[ "$phase" == queued || "$phase" == preflight || "$phase" == preflight_failed || "$phase" == needs_owner ]]
-    compose start "${WRITERS[@]}"
+    # start would also rerun configurator, a dependency; this keeps the existing containers.
+    compose up -d --no-deps --no-recreate "${WRITERS[@]}"
     capture_site_states
     verify_workers_running
     RECOVERY_VERIFIED=true
