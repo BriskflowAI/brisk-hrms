@@ -60,8 +60,6 @@ jobs:
       GCP_REGION: ${{ vars.GCP_REGION }}
       AR_REPOSITORY: ${{ vars.AR_REPOSITORY }}
       IMAGE_NAME: ${{ vars.IMAGE_NAME }}
-      BUILD_BUCKET: ${{ vars.BUILD_BUCKET }}
-      CLOUDBUILD_SERVICE_ACCOUNT: ${{ vars.CLOUDBUILD_SERVICE_ACCOUNT }}
       BUILDER_SERVICE_ACCOUNT: ${{ vars.BUILDER_SERVICE_ACCOUNT }}
       WIF_PROVIDER_BUILD: ${{ vars.WIF_PROVIDER_BUILD }}
       WIF_PROVIDER_DEPLOY: ${{ vars.WIF_PROVIDER_DEPLOY }}
@@ -77,7 +75,7 @@ jobs:
           import re
           import sys
           
-          required = ['GCP_PROJECT_ID', 'GCP_REGION', 'AR_REPOSITORY', 'IMAGE_NAME', 'BUILD_BUCKET', 'CLOUDBUILD_SERVICE_ACCOUNT', 'BUILDER_SERVICE_ACCOUNT', 'WIF_PROVIDER_BUILD', 'WIF_PROVIDER_DEPLOY']
+          required = ['GCP_PROJECT_ID', 'GCP_REGION', 'AR_REPOSITORY', 'IMAGE_NAME', 'BUILDER_SERVICE_ACCOUNT', 'WIF_PROVIDER_BUILD', 'WIF_PROVIDER_DEPLOY']
           values = {name: os.environ.get(name, "") for name in required}
           output = pathlib.Path(os.environ["GITHUB_OUTPUT"])
           if not any(values.values()):
@@ -112,8 +110,8 @@ jobs:
               "GCP_REGION": lambda value: matches(r"[a-z]+-[a-z]+[0-9]+", value),
               "AR_REPOSITORY": lambda value: matches(r"[a-z][a-z0-9_-]{0,62}", value) and matches(component, value),
               "IMAGE_NAME": lambda value: matches(component + r"(?:/" + component + r")*", value) and len(os.environ.get("GCP_REGION", "") + "-docker.pkg.dev/" + project + "/" + os.environ.get("AR_REPOSITORY", "") + "/" + value)<=255,
-              "BUILD_BUCKET": bucket, "BACKUP_BUCKET": bucket,
-              "CLOUDBUILD_SERVICE_ACCOUNT": account, "BUILDER_SERVICE_ACCOUNT": account,
+              "BACKUP_BUCKET": bucket,
+              "BUILDER_SERVICE_ACCOUNT": account,
               "DEPLOYER_SERVICE_ACCOUNT": account,
               "WIF_PROVIDER_BUILD": provider, "WIF_PROVIDER_DEPLOY": provider,
           }
@@ -160,7 +158,7 @@ jobs:
     name: Build image
     needs: plan
     if: needs.plan.outputs.build == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 90
     concurrency:
       group: build-${{ needs.plan.outputs.sha }}
@@ -177,8 +175,6 @@ jobs:
       GCP_REGION: ${{ vars.GCP_REGION }}
       AR_REPOSITORY: ${{ vars.AR_REPOSITORY }}
       IMAGE_NAME: ${{ vars.IMAGE_NAME }}
-      BUILD_BUCKET: ${{ vars.BUILD_BUCKET }}
-      CLOUDBUILD_SERVICE_ACCOUNT: ${{ vars.CLOUDBUILD_SERVICE_ACCOUNT }}
       GH_TOKEN: ${{ github.token }}
     steps:
       - name: Check out this commit
@@ -245,6 +241,26 @@ jobs:
           found="$(jq --arg tag "$TAG" '[.[] | select(any(.tags[]?; . == $tag or endswith(":"+$tag)))] | length > 0' "$RUNNER_TEMP/images.json")"
           echo "found=$found" >> "$GITHUB_OUTPUT"
 
+      - name: Prepare runner disk for the build
+        if: steps.exists.outputs.found == 'false'
+        run: |
+          set -euo pipefail
+          # This job uses Git, Python, Cloud SDK and Docker. Frappe's toolchains
+          # run inside the image; the runner's .NET and Android SDKs are unused.
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android
+          docker buildx version
+          docker_root="$(docker info --format '{{.DockerRootDir}}')"
+          minimum_kib=$((24 * 1024 * 1024))
+          for path in "$GITHUB_WORKSPACE" "$docker_root"; do
+            available_kib="$(df -Pk "$path" | awk 'NR == 2 {print $4}')"
+            [[ "$available_kib" =~ ^[0-9]+$ ]] || { echo "::error::Cannot read free disk space for $path."; exit 1; }
+            echo "Free disk at $path: $((available_kib / 1024 / 1024)) GiB"
+            if (( available_kib < minimum_kib )); then
+              echo "::error::Image build requires at least 24 GiB free at $path after cleanup. Use a runner with more disk."
+              exit 1
+            fi
+          done
+
       - name: Render apps.json
         if: steps.exists.outputs.found == 'false'
         env:
@@ -268,22 +284,50 @@ jobs:
           text = text.replace(check, '  test "$(git -C apps/hrms rev-parse HEAD)" = "${HRMS_SOURCE_SHA}" && ' + chr(92) + chr(10) + check)
           path.write_text(text)
           PYTHON
-          printf '.git\n' > frappe_docker/.gcloudignore
 
-      - name: Build and push on Cloud Build
+      - name: Build on the runner
         if: steps.exists.outputs.found == 'false'
+        timeout-minutes: 60
         env:
           IMAGE: ${{ steps.exists.outputs.image }}
           FRAPPE_REF: ${{ steps.pins.outputs.frappe_ref }}
+          DOCKER_BUILDKIT: '1'
         run: |
           set -euo pipefail
-          gcloud builds submit frappe_docker \
-            --config deploy/cloudbuild.yaml \
-            --project "$GCP_PROJECT_ID" \
-            --service-account "projects/${GCP_PROJECT_ID}/serviceAccounts/${CLOUDBUILD_SERVICE_ACCOUNT}" \
-            --gcs-source-staging-dir "gs://${BUILD_BUCKET}/source" \
-            --suppress-logs \
-            --substitutions "_FRAPPE_REF=${FRAPPE_REF},_IMAGE=${IMAGE},_SOURCE_SHA=${SHA}"
+          docker buildx build --load \
+            --secret id=apps_json,src=frappe_docker/apps.json \
+            --build-arg "FRAPPE_BRANCH=$FRAPPE_REF" \
+            --build-arg FRAPPE_PATH=https://github.com/frappe/frappe \
+            --build-arg "CACHE_BUST=$SHA" \
+            --build-arg "HRMS_SOURCE_SHA=$SHA" \
+            --label "org.opencontainers.image.revision=$SHA" \
+            --tag "$IMAGE" \
+            --file frappe_docker/images/layered/Containerfile \
+            frappe_docker
+
+      # gcloud refreshes a cached token only near expiry, so a long build can leave it
+      # too short-lived for the push. Mint a new one-hour token after the build.
+      - name: Get a fresh registry token (builder)
+        id: registry_auth
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          workload_identity_provider: ${{ vars.WIF_PROVIDER_BUILD }}
+          service_account: ${{ vars.BUILDER_SERVICE_ACCOUNT }}
+          token_format: access_token
+
+      - name: Log in to Artifact Registry
+        env:
+          REGISTRY_TOKEN: ${{ steps.registry_auth.outputs.access_token }}
+        run: |
+          set -euo pipefail
+          docker login "${GCP_REGION}-docker.pkg.dev" --username oauth2accesstoken --password-stdin <<< "$REGISTRY_TOKEN"
+
+      - name: Push to Artifact Registry
+        if: steps.exists.outputs.found == 'false'
+        timeout-minutes: 30
+        env:
+          IMAGE: ${{ steps.exists.outputs.image }}
+        run: docker push "$IMAGE"
 
       - name: Bind the built image to the full SHA and digest
         id: digest
@@ -291,7 +335,6 @@ jobs:
           IMAGE: ${{ steps.exists.outputs.image }}
         run: |
           set -euo pipefail
-          gcloud auth configure-docker "${GCP_REGION}-docker.pkg.dev" --quiet
           digest="$(gcloud artifacts docker images describe "$IMAGE" --project "$GCP_PROJECT_ID" --format='value(image_summary.digest)')"
           [[ "$digest" =~ ^sha256:[0-9a-f]{64}$ ]]
           immutable="${IMAGE%:*}@$digest"
@@ -386,8 +429,8 @@ jobs:
               "GCP_REGION": lambda value: matches(r"[a-z]+-[a-z]+[0-9]+", value),
               "AR_REPOSITORY": lambda value: matches(r"[a-z][a-z0-9_-]{0,62}", value) and matches(component, value),
               "IMAGE_NAME": lambda value: matches(component + r"(?:/" + component + r")*", value) and len(os.environ.get("GCP_REGION", "") + "-docker.pkg.dev/" + project + "/" + os.environ.get("AR_REPOSITORY", "") + "/" + value)<=255,
-              "BUILD_BUCKET": bucket, "BACKUP_BUCKET": bucket,
-              "CLOUDBUILD_SERVICE_ACCOUNT": account, "BUILDER_SERVICE_ACCOUNT": account,
+              "BACKUP_BUCKET": bucket,
+              "BUILDER_SERVICE_ACCOUNT": account,
               "DEPLOYER_SERVICE_ACCOUNT": account,
               "WIF_PROVIDER_BUILD": provider, "WIF_PROVIDER_DEPLOY": provider,
           }

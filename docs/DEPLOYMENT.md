@@ -73,8 +73,63 @@ An existing registry image must have the same label. Artifact Registry tag immut
 The reviewer approves the full image digest; the automatic deploy uses that digest without resolving its tag again.
 The build job needs `contents: write` for source-tag creation. Other jobs use read-only repository access.
 `deploy/build.env` pins the build inputs. Change app versions through a reviewed pull request.
-Cloud Build uses a custom account, `CLOUD_LOGGING_ONLY`, and an explicit `roles/logging.logWriter` grant.
-The build bucket holds source objects only; neither build account can delete them.
+GitHub Actions builds the image on its Ubuntu runner with the preinstalled Docker Buildx and BuildKit.
+The rendered `apps.json` is a BuildKit secret named `apps_json`, never a build argument.
+The build uses the pinned layered Containerfile, all four build arguments, and the full source revision label.
+Docker loads the image locally, then pushes it with a fresh builder WIF access token. No service account key is used.
+After push, the workflow reads the registry digest, pulls that digest, and verifies its source revision label.
+
+The runner removes unused .NET and Android SDKs before a new build.
+The workspace and Docker storage must each have at least 24 GiB free after cleanup, or the job fails clearly.
+An existing image skips cleanup, rendering, and building, but still passes the digest and source revision checks.
+The build-and-push step has a 60-minute limit. The whole build job has a 90-minute limit, including setup and verification.
+Runner speed and peak disk use still need a real build to confirm these limits.
+
+### Manual image build
+
+Use a separate Linux build machine with Docker Buildx, Git, Python, `jq`, `envsubst`, and the Cloud SDK.
+Do not build on the production VM while it serves traffic.
+Supply the repository variable values through your shell. Never save real infrastructure values in this public repository.
+Use the tested full `SHA` and repository name as `GITHUB_REPOSITORY`.
+Authenticate through WIF as `BUILDER_SERVICE_ACCOUNT`; the workflow uses `WIF_PROVIDER_BUILD`.
+
+From the repository root, repeat these workflow steps before the command below:
+
+1. Read `deploy/build.env` and check out `frappe_docker` at `FRAPPE_DOCKER_SHA` into `frappe_docker/`.
+2. Run **Verify or create the exact HRMS source tag**. Export its verified `HRMS_REF` for the rendering step.
+3. Run **Require immutable tags and resolve existing image** with `TAG=${IMAGE_TAG_PREFIX}-${SHA:0:12}`.
+4. If the tag exists, skip the build and run **Bind the built image to the full SHA and digest**.
+5. For a new tag, check at least 24 GiB free in the workspace and Docker storage.
+6. Run **Render apps.json**, including its Containerfile patch that checks the cloned HRMS HEAD.
+
+Use Bash. The following command assumes these preparation steps passed and the image tag does not exist:
+
+```bash
+set -euo pipefail
+# shellcheck disable=SC1091
+source deploy/build.env
+IMAGE="${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${AR_REPOSITORY}/${IMAGE_NAME}:${IMAGE_TAG_PREFIX}-${SHA:0:12}"
+DOCKER_BUILDKIT=1 docker buildx build --load \
+  --secret id=apps_json,src=frappe_docker/apps.json \
+  --build-arg "FRAPPE_BRANCH=$FRAPPE_REF" \
+  --build-arg FRAPPE_PATH=https://github.com/frappe/frappe \
+  --build-arg "CACHE_BUST=$SHA" \
+  --build-arg "HRMS_SOURCE_SHA=$SHA" \
+  --label "org.opencontainers.image.revision=$SHA" \
+  --tag "$IMAGE" \
+  --file frappe_docker/images/layered/Containerfile \
+  frappe_docker
+gcloud auth print-access-token | docker login "${GCP_REGION}-docker.pkg.dev" \
+  --username oauth2accesstoken --password-stdin
+docker push "$IMAGE"
+digest="$(gcloud artifacts docker images describe "$IMAGE" --project "$GCP_PROJECT_ID" --format='value(image_summary.digest)')"
+[[ "$digest" =~ ^sha256:[0-9a-f]{64}$ ]]
+immutable="${IMAGE%:*}@$digest"
+docker pull "$immutable"
+revision="$(docker image inspect "$immutable" --format '{{index .Config.Labels "org.opencontainers.image.revision"}}')"
+[[ "$revision" == "$SHA" ]] || { echo 'Image source revision does not match the tested SHA.'; exit 1; }
+printf 'Verified image: %s\n' "$immutable"
+```
 
 ### Supervised deployment and write boundary
 
@@ -169,8 +224,7 @@ Disk-level disaster recovery remains a separate owner operation; the deploy iden
 
 Owner decision, 2026-10-13: use 14 days for pre-deploy backups and snapshots.
 Bucket lifecycle deletion covers only `production-stack/deploys/`. Nightly dated folders keep their separate policy.
-The build bucket uses the same 14-day rule for `source/` and `log-` objects.
-This pipeline uses Cloud Logging rather than GCS log objects. Cloud Logging retention remains separate.
+Image build logs stay in GitHub Actions. The build uploads no source or log objects to GCS.
 Lifecycle deletion is asynchronous; bucket holds, retention locks, and soft delete can extend physical retention.
 No deploy identity receives object deletion or bucket configuration permission.
 
@@ -216,12 +270,20 @@ OS Login administrator access belongs on the Compute Engine instance.
 Owner decision, 2026-10-13: enable OS Login in a quiet window after approved people receive their roles.
 The VM account uploads and reads only deploy backup objects and snapshots only the deployment source disk.
 The deployer has no bucket access. Its snapshot access is limited to inventory, operation reads, and conditioned retention actions.
-The build accounts have no source-object delete access.
+The builder needs only `roles/artifactregistry.writer` on `projects/${GCP_PROJECT_ID}/locations/${GCP_REGION}/repositories/${AR_REPOSITORY}`.
+This role covers image push, repository metadata, tag and image listing, digest reads, and image pull for revision verification.
+Its read permissions include `artifactregistry.repositories.get`, `artifactregistry.dockerimages.get`, `artifactregistry.dockerimages.list`, and `artifactregistry.repositories.downloadArtifacts`.
+No additional reader role is needed. See the [official role definition](https://docs.cloud.google.com/iam/docs/roles-permissions/artifactregistry#artifactregistry.writer).
+The restricted WIF principal keeps `roles/iam.workloadIdentityUser` on `BUILDER_SERVICE_ACCOUNT` for impersonation.
+
+Owner decision, 2026-10-14: the builder must hold no Cloud Build permission, including through inherited roles.
+Permission to submit builds could run code as the legacy build account, which has broad Compute Engine and Storage access.
+The runner build removes that path. The builder needs no source bucket or Cloud Logging grant.
 
 | Location | Required settings |
 | --- | --- |
 | Environment | `production`, one owner reviewer, self-review permitted, `main` deployment branch policy |
-| Repository variables | `GCP_PROJECT_ID`, `GCP_REGION`, `AR_REPOSITORY`, `IMAGE_NAME`, `BUILD_BUCKET`, `CLOUDBUILD_SERVICE_ACCOUNT`, `BUILDER_SERVICE_ACCOUNT`, `WIF_PROVIDER_BUILD`, `WIF_PROVIDER_DEPLOY` |
+| Repository variables | `GCP_PROJECT_ID`, `GCP_REGION`, `AR_REPOSITORY`, `IMAGE_NAME`, `BUILDER_SERVICE_ACCOUNT`, `WIF_PROVIDER_BUILD`, `WIF_PROVIDER_DEPLOY` |
 | Production variables | `GCP_PROJECT_ID`, `GCP_REGION`, `GCP_ZONE`, `VM_NAME`, `VM_DISK`, `AR_REPOSITORY`, `IMAGE_NAME`, `DEPLOY_DIR`, `SITES`, `FLOW_SITE`, `BACKUP_BUCKET`, `DEPLOYER_SERVICE_ACCOUNT`, `WIF_PROVIDER_DEPLOY` |
 | GitHub secrets | none |
 
