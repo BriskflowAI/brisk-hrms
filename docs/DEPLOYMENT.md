@@ -247,6 +247,8 @@ Cleanup failure fails the workflow while the successful deployment stays open.
 
 Use `workflow_dispatch` from `main` for an existing image tag. The workflow resolves it to a digest.
 A different digest must prove forward commit ancestry. An older, unrelated, or unlabelled image needs `restore_folder`.
+If the running image has no revision label (an image built before this pipeline), a manual run can pass `previous_sha`: the full commit that image was built from.
+The owner asserts that commit. The VM still proves it is an ancestor of the new image's commit, and it refuses `previous_sha` when the running image has a label.
 The folder must be a pipeline deploy backup whose manifest matches that digest and both sites.
 The manual restore takes a fresh safety backup, then uses the same full restore path. It does not run older-code `migrate`.
 Nightly backups without a deployment manifest cannot authorize this automated path.
