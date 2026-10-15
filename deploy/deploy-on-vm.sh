@@ -693,6 +693,10 @@ preflight() {
   # Verify the old digest remains retrievable before any write freeze or switch.
   docker pull "$PREVIOUS_IMAGE"
   sha=$(docker image inspect "$IMAGE" --format '{{index .Config.Labels "org.opencontainers.image.revision"}}')
+  if [[ $(jq -r '.automatic' "$RUN_DIR/request.json") == true ]]; then
+    [[ "$sha" =~ ^[0-9a-f]{40}$ && "$sha" == "$(jq -r '.sha' "$RUN_DIR/request.json")" ]] \
+      || fail 'Image source revision does not match the tested SHA.'
+  fi
   previous_sha=$(docker image inspect "$PREVIOUS_IMAGE" --format '{{index .Config.Labels "org.opencontainers.image.revision"}}')
   repo=$(jq -er '.repository' "$RUN_DIR/request.json")
   [[ "$repo" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] || fail 'Invalid repository.'
