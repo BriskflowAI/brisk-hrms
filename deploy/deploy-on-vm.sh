@@ -668,7 +668,7 @@ resume_failure() {
 
 preflight() {
   record preflight
-  local services running sha previous_sha restore_folder repo
+  local services running sha previous_sha asserted_sha restore_folder repo
   [[ -f "$DEPLOY_DIR/compose.yaml" && -f "$DEPLOY_DIR/.env" ]] || fail 'Missing Compose files.'
   services=$(compose config --services | sort)
   # Unknown services could write during maintenance: require the audited compose layout.
@@ -698,6 +698,13 @@ preflight() {
       || fail 'Image source revision does not match the tested SHA.'
   fi
   previous_sha=$(docker image inspect "$PREVIOUS_IMAGE" --format '{{index .Config.Labels "org.opencontainers.image.revision"}}')
+  asserted_sha=$(jq -r '.previous_sha // ""' "$RUN_DIR/request.json")
+  if [[ -n "$asserted_sha" ]]; then
+    # Images built before the pipeline carry no revision label; the owner names their commit.
+    [[ -z "$previous_sha" ]] || fail 'previous_sha applies only when the running image has no revision label.'
+    echo "Running image has no revision label; using owner-asserted commit $asserted_sha."
+    previous_sha=$asserted_sha
+  fi
   repo=$(jq -er '.repository' "$RUN_DIR/request.json")
   [[ "$repo" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] || fail 'Invalid repository.'
   if [[ -n "$restore_folder" ]]; then

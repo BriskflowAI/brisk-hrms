@@ -7,6 +7,7 @@ name: deploy
 #   3. Close writes, verify backups, snapshot, migrate, check closed sites, reopen, check HTTPS.
 #
 # workflow_dispatch deploys an existing image; older images require a matching restore folder.
+# previous_sha names the source commit of a running image that has no revision label.
 #
 # Security rules for this file:
 #   - No pull_request or pull_request_target trigger. workflow_run runs only for pushes to main.
@@ -29,6 +30,11 @@ on:
 
       restore_folder:
         description: Matching production-stack/deploys folder. OWNER accepts restoration and possible data loss.
+        required: false
+        type: string
+
+      previous_sha:
+        description: Full source commit of the RUNNING image, only when that image has no revision label. OWNER asserts it.
         required: false
         type: string
 
@@ -379,6 +385,7 @@ jobs:
       APPROVED_DIGEST: ${{ needs.build.outputs.digest }}
       SOURCE_SHA: ${{ needs.plan.outputs.sha }}
       RESTORE_FOLDER: ${{ inputs.restore_folder }}
+      PREVIOUS_SHA: ${{ inputs.previous_sha }}
       AUTOMATIC: ${{ github.event_name == 'workflow_run' }}
       GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
       GCP_REGION: ${{ secrets.GCP_REGION }}
@@ -517,15 +524,16 @@ jobs:
           # VM preflight pulls this exact digest and checks the automatic source revision.
           [[ "$image" =~ ^[a-zA-Z0-9./:_-]+@sha256:[0-9a-f]{64}$ ]]
           [[ -z "$RESTORE_FOLDER" || "$RESTORE_FOLDER" =~ ^production-stack/deploys/[A-Za-z0-9_-]+$ ]]
+          [[ -z "$PREVIOUS_SHA" || "$PREVIOUS_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::previous_sha must be a full 40-character commit SHA."; exit 1; }
           id="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           jq -n --arg id "$id" --arg image "$image" --arg sha "$SOURCE_SHA" \
             --arg deploy_dir "$DEPLOY_DIR" --arg sites "$SITES" --arg backup_bucket "$BACKUP_BUCKET" \
             --arg project "$GCP_PROJECT_ID" --arg zone "$GCP_ZONE" --arg region "$GCP_REGION" \
             --arg disk "$VM_DISK" --arg repository "$GITHUB_REPOSITORY" \
-            --arg restore_folder "$RESTORE_FOLDER" --argjson automatic "$AUTOMATIC" \
+            --arg restore_folder "$RESTORE_FOLDER" --arg previous_sha "$PREVIOUS_SHA" --argjson automatic "$AUTOMATIC" \
             '{id:$id,image:$image,sha:$sha,deploy_dir:$deploy_dir,sites:$sites,backup_bucket:$backup_bucket,
               project:$project,zone:$zone,region:$region,disk:$disk,repository:$repository,
-              restore_folder:$restore_folder,automatic:$automatic}' > "$RUNNER_TEMP/request.json"
+              restore_folder:$restore_folder,previous_sha:$previous_sha,automatic:$automatic}' > "$RUNNER_TEMP/request.json"
           # All remote arguments are quoted; JSON is parsed as data on the VM.
           cat > "$RUNNER_TEMP/vm.sh" <<'HELPER'
           #!/usr/bin/env bash
