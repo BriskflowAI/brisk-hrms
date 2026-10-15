@@ -178,7 +178,11 @@ frappe.init(site=sys.argv[1],sites_path="/home/frappe/frappe-bench/sites")
 print(json.dumps([{"host":w.hostname,"state":w.get_state(),"job":w.get_current_job_id()} for w in Worker.all(connection=get_redis_conn())]))' "${SITES[0]}"
 }
 # RQ suspension prevents new dequeue without stopping active jobs. Require every
-# running container to acknowledge suspended state after its job/callbacks finish.
+# running container's worker to hold no job, in suspended or idle state. RQ 2.x
+# checks suspension only between jobs: an idle worker blocks in dequeue and stays
+# "idle". It can still take a job after this check. The warm stop below then
+# either finishes that job or exits before it starts (the job stays unrun); the
+# backup waits for every exit either way. Only the controlled workers may exist.
 # The common deadline is ten minutes, below Frappe long-job's 1500s timeout.
 drain_workers() {
   local deadline=$((SECONDS + 600)) cid state host statuses ready remaining pid
@@ -213,9 +217,12 @@ drain_workers() {
     # Missing worker registration is not proof of completion; neither is a busy
     # worker's stale/idle sibling. Unknown busy workers also prevent backup.
     jq -e 'all(.[]; .state != "busy" and .job == null)' <<< "$statuses" >/dev/null || ready=false
+    # An unknown idle worker would never receive the stop and could dequeue during backup.
+    jq -e --argjson hosts "$(printf '%s\n' "${hosts[@]}" | jq -R . | jq -s .)" \
+      'all(.[]; .host as $h | $hosts | index($h) != null)' <<< "$statuses" >/dev/null || ready=false
     if (( ${#hosts[@]} > 0 )); then
       for host in "${hosts[@]}"; do
-        jq -e --arg host "$host" '[.[]|select(.host==$host)] | length>0 and all(.[]; .state=="suspended" and .job==null)'           <<< "$statuses" >/dev/null || ready=false
+        jq -e --arg host "$host" '[.[]|select(.host==$host)] | length>0 and all(.[]; (.state=="suspended" or .state=="idle") and .job==null)'           <<< "$statuses" >/dev/null || ready=false
       done
     fi
     [[ "$ready" == true ]] && break
@@ -223,7 +230,7 @@ drain_workers() {
     remaining=$((deadline - SECONDS))
     (( remaining <= 0 )) || sleep "$((remaining < 2 ? remaining : 2))"
   done
-  # No busy worker receives TERM. -1 expressly disables Docker's forced kill.
+  # A worker that took a job after the check gets a warm stop. -1 expressly disables Docker's forced kill.
   (( SECONDS < deadline )) || return 2
   # Persist every possible stop before issuing it. Client cancellation cannot
   # cancel Docker daemon shutdown; recovery must see and resolve these IDs.
