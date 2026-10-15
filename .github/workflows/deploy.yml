@@ -516,8 +516,9 @@ jobs:
           image_base="${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${AR_REPOSITORY}/${IMAGE_NAME}"
           digest="$APPROVED_DIGEST"
           if [[ "$AUTOMATIC" != true ]]; then
-            tag_ref="${image_base}:${TAG}"
-            digest="$(gcloud artifacts docker images describe "$tag_ref" --project "$GCP_PROJECT_ID" --format='value(image_summary.digest)')"
+            # `images describe` also reads Container Analysis, which the deployer cannot. List tags instead.
+            digest="$(gcloud artifacts docker tags list "$image_base" --project "$GCP_PROJECT_ID" --format=json \
+              | jq -r --arg tag "$TAG" '[.[] | select(.tag | endswith("/tags/" + $tag)) | .version | sub(".*/versions/"; "")] | if length == 1 then .[0] else "" end')"
           fi
           [[ "$digest" =~ ^sha256:[0-9a-f]{64}$ ]] || { echo "::error::Missing or invalid approved image digest."; exit 1; }
           image="${image_base}@$digest"
