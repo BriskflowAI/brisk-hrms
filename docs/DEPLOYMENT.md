@@ -172,9 +172,9 @@ flowchart TD
 The closed phase follows this order:
 
 1. Set maintenance mode on and pause the scheduler for both sites.
-2. Suspend RQ pickup. Wait at most ten minutes for every worker to acknowledge suspension with no active job.
+2. Suspend RQ pickup. Wait at most ten minutes until every controlled worker is idle or suspended with no active job. RQ 2.x idle workers never report suspension. Refuse any unknown registered worker.
 3. If draining fails before worker shutdown, abort and reopen unchanged sites. Take no backup, snapshot, or image switch. Never force-kill a job.
-4. After drain proof, record pending worker IDs, then stop workers with unlimited Docker grace. Verify zero exit status with no OOM. Stop the web writers.
+4. After drain proof, record pending worker IDs, then stop workers with unlimited Docker grace. Verify zero exit status with no OOM. Stop the web writers: frontend, websocket and scheduler ignore SIGTERM and hold no data, so they get 10 seconds; backend gets 300 seconds.
 5. Take a full backup with files into a unique directory for each deployment and site.
 6. Check nonempty database, site configuration, public files, and private files. Check JSON, gzip, and tar integrity.
 7. Upload each component with a create-only generation precondition. Use exact-object resumable API insertion. Verify its size and MD5; record its generation and SHA256.
