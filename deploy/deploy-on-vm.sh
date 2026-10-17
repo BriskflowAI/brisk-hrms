@@ -14,7 +14,7 @@ RECOVERY_OF='' RECOVERY_VERIFIED=false WORKERS_DRAINED=false QUEUES_SUSPENDED=fa
 SITE_STATES='{}' VERDICT_DEADLINE=0 STOP_CLIENTS=() PENDING_STOPS='[]' CLOSURE_STARTED=false
 BENCH_PYTHON=/home/frappe/frappe-bench/env/bin/python
 SITES_DIR=/home/frappe/frappe-bench/sites
-SITES=() WORKERS=(queue-short queue-long) WEB_WRITERS=(frontend backend websocket scheduler) WRITERS=(frontend backend websocket scheduler queue-short queue-long)
+SITES=() WORKERS=(queue-short queue-long) WRITERS=(frontend backend websocket scheduler queue-short queue-long)
 
 fail() { echo "ERROR: $*" >&2; return 1; }
 valid_id() { [[ "$1" =~ ^[0-9]+-[0-9]+(-recover-[0-9]+)?$ ]]; }
@@ -151,7 +151,12 @@ bounded_compose() {
 # Emergency closure never kills a running job. Pause workers; an owner recovery
 # suspends queue pickup, then unpauses them to finish before any data restoration.
 stop_writers() {
-  compose stop --timeout 300 "${WEB_WRITERS[@]}" || return 1
+  # frontend (nginx-entrypoint.sh starts nginx without exec), websocket (node as
+  # PID 1) and the scheduler do not exit on SIGTERM; each held the stop for the
+  # full timeout (300 s each on 2026-10-15). They hold no data and the scheduler
+  # is already paused, so they get a short timeout. backend finishes requests.
+  compose stop --timeout 10 frontend websocket scheduler || return 1
+  compose stop --timeout 300 backend || return 1
   local cid state ids
   ids=$(worker_ids) || return 1
   while read -r cid; do
