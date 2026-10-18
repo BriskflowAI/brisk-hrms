@@ -14,14 +14,15 @@ app's briskrew look in `frontend/`, and small additions to `hrms/hooks.py`, `pac
 `.gitignore` and `.github/`. It never merges `develop`. (`main` was created from
 `version-16-briskrew`, which is kept but no longer moves.)
 
-- **Weekly sync:** `.github/workflows/upstream-sync-v16.yml` merges upstream `version-16` into
+- **Monthly sync:** `.github/workflows/upstream-sync-v16.yml` merges upstream `version-16` into
   `sync/v16-upstream-<date>`, a branch off `main`, and opens a pull request into `main`. It runs on
   a schedule because `main` is the default branch.
 - **Checks:** `.github/workflows/briskrew.yml` runs on pull requests into `main` and on pushes to
   `main`: it builds the front ends and runs briskrew's server and browser tests against Frappe and
   ERPNext `version-16`. Upstream's own CI also runs on pull requests;
   `.github/helper/install.sh` and `.github/workflows/patch.yml` map `main` to Frappe and ERPNext
-  `version-16`, since neither has a `main` branch.
+  `version-16`, since neither has a `main` branch. Upstream's nightly CI schedule is removed here:
+  on unchanged code it only re-ran upstream tests that fail on Sundays (the test holiday).
 - **Moving briskrew changes across:** develop briskrew work on `develop`, then bring it over with
   `git checkout origin/develop -- flow hrms/briskrew` (and any hooks it needs) on a branch off
   `main`. Don't merge `develop` into `main`: that would bring Frappe HR v17.
