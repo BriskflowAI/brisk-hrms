@@ -61,6 +61,12 @@ A successful `briskrew` push check on `main` triggers the image build for that e
 Owner decision, 2026-10-13: one required reviewer, the owner, approves `production`. Self-review is permitted.
 The workflow has no pull-request trigger and rejects failed CI, foreign repositories, and non-main dispatches.
 
+An automatic run skips the build and the deploy when no runtime file changed since the last deployed commit.
+Non-runtime files are `.github/` except `deploy.yml` (it holds part of the image recipe), `docs/`, top-level `*.md`, `flow/*.md`, `flow/inventory/`, `flow/e2e/`, `deploy/deploy-on-vm.sh` and `deploy/verify-sites.sh`.
+The plan finds the newest `Deploy to production` job that ran, in any run or rerun, and reads the commit from its run title (`deploy <commit>` or `deploy <image tag>`).
+It skips only when that job succeeded, no other deploy run is unfinished, and the commit is an ancestor of the new commit.
+Any other case, or any API error, deploys as before. So a docs-only merge after a rejected, failed or rolled-back deploy still asks for approval.
+
 ### Build provenance
 
 The pinned `frappe_docker` layered build clones apps through `bench init` and `apps.json`.
