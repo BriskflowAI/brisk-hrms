@@ -8,6 +8,7 @@ name: deploy
 #
 # workflow_dispatch deploys an existing image; older images require a matching restore folder.
 # previous_sha names the source commit of a running image that has no revision label.
+# An automatic run skips when no runtime file changed since the last deployed commit.
 #
 # Security rules for this file:
 #   - No pull_request or pull_request_target trigger. workflow_run runs only for pushes to main.
@@ -38,6 +39,9 @@ on:
         required: false
         type: string
 
+# Later plans read the deployed commit or image tag from this title.
+run-name: deploy ${{ github.event_name == 'workflow_dispatch' && inputs.image_tag || github.event.workflow_run.head_sha }}
+
 permissions: {}
 
 jobs:
@@ -47,6 +51,7 @@ jobs:
     timeout-minutes: 5
     permissions:
       contents: read
+      actions: read   # find the last run that deployed
     outputs:
       go: ${{ steps.plan.outputs.go }}
       build: ${{ steps.plan.outputs.build }}
@@ -62,6 +67,7 @@ jobs:
       RUN_SHA: ${{ github.event.workflow_run.head_sha }}
       INPUT_TAG: ${{ inputs.image_tag }}
       THIS_REPO: ${{ github.repository }}
+      GH_TOKEN: ${{ github.token }}
       GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
       GCP_REGION: ${{ secrets.GCP_REGION }}
       AR_REPOSITORY: ${{ secrets.AR_REPOSITORY }}
@@ -135,6 +141,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
           persist-credentials: false
 
       - name: Decide what to run
@@ -143,6 +150,55 @@ jobs:
         run: |
           set -euo pipefail
           go=false; build=false; sha=""; tag=""
+          # Commit that production runs: the newest deploy job that ran, in any run or attempt,
+          # if it succeeded. Its run title names the commit or image tag.
+          # Any doubt prints nothing and fails, so the run deploys as before.
+          deployed_commit() {
+            local runs id updated title job best_time="" best="" ref commit
+            runs="$(gh api --paginate "repos/$THIS_REPO/actions/workflows/deploy.yml/runs?per_page=100" \
+                      --jq '.workflow_runs[]' | jq -s '{workflow_runs: .}')" || return 1
+            # Another deploy run can still change production.
+            if jq -e --argjson me "$GITHUB_RUN_ID" \
+                 'any(.workflow_runs[]; .id != $me and .status != "completed")' <<< "$runs" >/dev/null; then
+              return 1
+            fi
+            # A run's updated_at is never before its jobs finish, so stop at older runs.
+            while read -r id updated title; do
+              [[ -n "$best_time" && "$updated" < "$best_time" ]] && break
+              job="$(gh api "repos/$THIS_REPO/actions/runs/$id/jobs?filter=all&per_page=100" \
+                --jq '[.jobs[] | select(.name == "Deploy to production" and .conclusion != "skipped")]
+                      | max_by(.completed_at) // empty | "\(.completed_at) \(.conclusion)"')" || return 1
+              [[ -n "$job" ]] || continue
+              if [[ -z "$best_time" || "${job%% *}" > "$best_time" ]]; then
+                best_time="${job%% *}"; best="${job#* } $title"
+              fi
+            done < <(jq -r '.workflow_runs[] | select(.status == "completed")
+                            | "\(.id) \(.updated_at) \(.display_title)"' <<< "$runs" | sort -k2,2r)
+            [[ "$best" == "success deploy "* ]] || return 1
+            ref="${best#success deploy }"
+            if [[ "$ref" =~ ^[0-9a-f]{40}$ ]]; then commit="$ref"
+            elif [[ "$ref" =~ ^${IMAGE_TAG_PREFIX}-([0-9a-f]{12})$ ]]; then commit="${BASH_REMATCH[1]}"
+            else return 1; fi
+            commit="$(git rev-parse --verify --quiet "${commit}^{commit}")" || return 1
+            git merge-base --is-ancestor "$commit" "$RUN_SHA" || return 1
+            echo "$commit"
+          }
+          # True when every changed file stays out of the image and off the VM: CI, docs,
+          # notes, and the deploy scripts (the deploy job reads those from main).
+          only_non_runtime() {
+            local files file
+            files="$(git diff --no-renames --name-only "$1" "$2")" || return 1
+            while IFS= read -r file; do
+              case "$file" in
+                .github/workflows/deploy.yml) return 1 ;;   # holds part of the image recipe
+                .github/*|docs/*|flow/inventory/*|flow/e2e/*|flow/*.md) ;;
+                deploy/deploy-on-vm.sh|deploy/verify-sites.sh) ;;
+                */*) return 1 ;;
+                *.md) ;;
+                *) return 1 ;;
+              esac
+            done <<< "$files"
+          }
           if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
             [[ "$REF" == "refs/heads/main" ]] || { echo "::error::Run this workflow from main."; exit 1; }
             [[ "$INPUT_TAG" =~ ^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$ ]] || { echo "::error::Invalid image tag."; exit 1; }
@@ -153,6 +209,10 @@ jobs:
             # shellcheck disable=SC1091
             . deploy/build.env
             go=true; build=true; sha="$RUN_SHA"; tag="${IMAGE_TAG_PREFIX}-${sha:0:12}"
+            if base="$(deployed_commit)" && only_non_runtime "$base" "$sha"; then
+              echo "::notice::No runtime file changed since deployed commit $base. Nothing to deploy."
+              go=false; build=false
+            fi
           else
             echo "briskrew did not pass for a push to main. Nothing to deploy."
           fi
