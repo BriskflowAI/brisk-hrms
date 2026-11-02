@@ -494,3 +494,50 @@ test("gets items from a material request into a purchase order", async ({
     .toEqual(["BR-INK", "BR-PAPER"]);
   expect(problems).toEqual([]);
 });
+
+// Checking in and out from Home, with the browser's location (hrms.briskrew.attendance).
+test("checks in and out from Home with the location", async ({ browser }) => {
+  const context = await browser.newContext({
+    permissions: ["geolocation"],
+    geolocation: { latitude: 12.9716, longitude: 77.5946 },
+  });
+  const page = await context.newPage();
+  const problems = watch(page);
+  await signIn(page, LEAD);
+  const before = await api(page, "hrms.briskrew.attendance.my_checkin");
+  test.skip(
+    !before.employee,
+    "the demo lead has no employee record on this site",
+  );
+
+  await page.goto("/flow/");
+  const card = page.getByRole("region", { name: "Check in" });
+  const first = before.next === "IN" ? "Check in" : "Check out";
+  const then = before.next === "IN" ? "Check out" : "Check in";
+  await card.getByRole("button", { name: first }).click();
+  await expect(card.getByRole("button", { name: then })).toBeVisible();
+
+  const after = await api(page, "hrms.briskrew.attendance.my_checkin");
+  expect(after.logs.length).toBe(before.logs.length + 1);
+  const last = after.logs[after.logs.length - 1];
+  expect(last.log_type).toBe(before.next);
+  expect(Number(last.latitude)).toBeCloseTo(12.9716, 3);
+  expect(problems).toEqual([]);
+  await context.close();
+});
+
+test("who's in shows the team's day and month", async ({ page }) => {
+  const problems = watch(page);
+  await signIn(page, ADMIN);
+  await page.goto("/flow/attendance");
+  await expect(page.getByRole("heading", { name: "Who's in" })).toBeVisible();
+  const priya = page.locator("tbody tr", { hasText: "Priya Nair" });
+  await expect(priya).toBeVisible();
+  await expect(priya.getByText("In", { exact: true })).toBeVisible();
+
+  await page.getByRole("tab", { name: "Month" }).click();
+  await expect(
+    page.getByRole("rowheader", { name: /Priya Nair/ }),
+  ).toBeVisible();
+  expect(problems).toEqual([]);
+});

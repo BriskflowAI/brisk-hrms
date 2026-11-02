@@ -53,6 +53,30 @@ value graph. Designed screens on top (server side: `hrms/briskrew/inventory.py`)
 reaches it. `hrms.briskrew.demo.seed` also seeds stock and assets demo data
 (`hrms/briskrew/demo_inventory.py`).
 
+## Check-ins and attendance
+
+Server side: `hrms/briskrew/attendance.py`. Everything is built on Frappe HR's own Employee
+Checkin and Auto Attendance, so the employee app (`/hrms`), biometric devices and briskrew all feed
+the same check-in log.
+
+- **Check in / Check out** card on Home for anyone whose user is linked to an employee. Each
+  check-in records the browser's location (HR Settings, Allow Geolocation Tracking); a person who
+  blocks location is told to allow it. A shift's Shift Location radius, if set, still applies.
+- **`/flow/attendance`** (Time, Who's in): a day view (who's in, late, checked out, not in, on
+  leave, off, with times, hours and where they checked in) and a month grid of everyone's
+  attendance. HR roles see everyone; anyone else sees themselves and the people who report to them.
+- **Setting it up for everyone**: HR managers get a one-click setup on that screen
+  (`apply_attendance_setup`, safe to run again). It turns on check-ins from the app with location,
+  creates the standard shift (10:00 to 19:00, Monday to Saturday; under 8 hours worked is a half
+  day, under 4 is absent; 30 minutes' grace for late entry and early exit) with Auto Attendance
+  from that day on, and gives it to active employees who have no shift of their own. Existing
+  default shifts and shift assignments are left alone, and nothing before the setup day is marked.
+  The shift's holiday list (Sundays off, plus the default company's own holidays, this year and
+  next) applies to attendance only; leave and payroll keep each company's holiday lists.
+- Frappe HR's hourly job then marks Present, Half Day or Absent, with late entry and early exit,
+  once each shift has ended. Change the times or thresholds on the Shift Type
+  "Standard 10:00-19:00".
+
 ## Default approvers
 
 `hrms/briskrew/approvers.py`. Any empty leave, expense or shift approver on an employee
