@@ -90,6 +90,7 @@ export const areas = [
 			{
 				label: "Attendance",
 				items: [
+					{ label: "Who's in", route: "/attendance" },
 					r("Attendance", "Attendance"),
 					r("Check-ins", "Employee Checkin"),
 					r("Shift types", "Shift Type"),

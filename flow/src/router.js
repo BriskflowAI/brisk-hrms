@@ -42,6 +42,11 @@ const routes = [
 		component: () => import("@/views/AssetProfile.vue"),
 		props: true,
 	},
+	{
+		path: "/attendance",
+		name: "Attendance",
+		component: () => import("@/views/AttendanceView.vue"),
+	},
 	{ path: "/org-chart", name: "OrgChart", component: () => import("@/views/OrgChart.vue") },
 	{
 		path: "/team-updates",
