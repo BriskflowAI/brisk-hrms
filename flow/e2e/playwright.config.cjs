@@ -17,6 +17,8 @@ module.exports = defineConfig({
     viewport: { width: 1440, height: 900 },
     screenshot: "only-on-failure",
     trace: "retain-on-failure",
+    // Full Chromium in its new headless mode: the headless shell ignores the flag below.
+    channel: process.env.E2E_CHROMIUM ? undefined : "chromium",
     launchOptions: {
       ...(process.env.E2E_CHROMIUM
         ? { executablePath: process.env.E2E_CHROMIUM }
