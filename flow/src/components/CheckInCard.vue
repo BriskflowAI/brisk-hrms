@@ -106,6 +106,16 @@ const duration = (h) => {
 // The browser's position, when check-ins record where people are.
 function position() {
 	return new Promise((resolve, reject) => {
+		if (!window.isSecureContext) {
+			reject(
+				new Error(
+					__(
+						"Browsers only share your location with sites served over HTTPS. Ask your administrator to serve this site over HTTPS.",
+					),
+				),
+			);
+			return;
+		}
 		if (!navigator.geolocation) {
 			reject(
 				new Error(
