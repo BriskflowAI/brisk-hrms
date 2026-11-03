@@ -169,7 +169,7 @@
 								<th :class="th">{{ __("In") }}</th>
 								<th :class="th">{{ __("Out") }}</th>
 								<th :class="[th, 'text-right']">{{ __("Hours") }}</th>
-								<th :class="th">{{ __("Shift") }}</th>
+								<th :class="th">{{ __("Working on") }}</th>
 								<th :class="th">
 									<span class="sr-only">{{ __("Where") }}</span>
 								</th>
@@ -214,9 +214,9 @@
 										labels[r.status]
 									}}</span>
 									<span
-										v-if="r.late"
+										v-if="r.short"
 										class="chip ml-1.5 bg-warn-tint text-warn"
-										>{{ __("Late") }}</span
+										>{{ __("Short") }}</span
 									>
 									<span v-if="r.leave_type" class="block text-[12px] text-mut">{{
 										r.leave_type
@@ -231,7 +231,11 @@
 								<td :class="[td, 'text-right tabular-nums']">
 									{{ r.hours ? duration(r.hours) : "—" }}
 								</td>
-								<td :class="[td, 'text-ink-2']">{{ r.shift || "—" }}</td>
+								<td :class="[td, 'max-w-[280px] text-ink-2']">
+									<span class="line-clamp-2" :title="r.working_on || ''">{{
+										r.working_on || "—"
+									}}</span>
+								</td>
 								<td :class="td">
 									<a
 										v-if="r.location"
@@ -317,7 +321,7 @@
 										:class="cellTone[c.code] || ''"
 										>{{ cellText(c)
 										}}<span
-											v-if="c.late"
+											v-if="c.short"
 											class="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-warn"
 											aria-hidden="true"
 									/></span>
@@ -343,7 +347,7 @@
 					</span>
 					<span class="flex items-center gap-1.5">
 						<span class="h-2 w-2 rounded-full bg-warn" aria-hidden="true" />{{
-							__("Late")
+							__("Short day (under 9 hours)")
 						}}
 					</span>
 				</p>
@@ -419,7 +423,7 @@ const summaryCards = computed(() => {
 	const s = day.value?.summary || {};
 	return [
 		{ key: "in", label: __("In now"), count: s.in || 0, tone: "text-pos" },
-		{ key: "late", label: __("Late"), count: s.late || 0, tone: s.late ? "text-warn" : "" },
+		{ key: "short", label: __("Short day"), count: s.short || 0, tone: s.short ? "text-warn" : "" },
 		{ key: "out", label: __("Checked out"), count: s.out || 0 },
 		{
 			key: "not_in",
@@ -434,7 +438,7 @@ const summaryCards = computed(() => {
 const shownRows = computed(() => {
 	const rows = day.value?.rows || [];
 	if (!only.value) return rows;
-	if (only.value === "late") return rows.filter((r) => r.late);
+	if (only.value === "short") return rows.filter((r) => r.short);
 	if (only.value === "not_in")
 		return rows.filter((r) => ["not_in", "absent"].includes(r.status));
 	if (only.value === "off") return rows.filter((r) => ["off", "not_yet"].includes(r.status));
@@ -464,7 +468,7 @@ const totalCols = [
 	{ key: "H", field: "H", title: __("Half days") },
 	{ key: "A", field: "A", title: __("Absent") },
 	{ key: "L", field: "L", title: __("On leave") },
-	{ key: "Late", field: "late", title: __("Late entries") },
+	{ key: "short", field: "short", title: __("Short days") },
 ];
 const cellText = (c) => (c.code === "off" ? "·" : c.code === "?" || c.code === "-" ? "" : c.code);
 function cellTitle(c, d) {
@@ -479,9 +483,8 @@ function cellTitle(c, d) {
 			"?": __("Not marked"),
 			"-": __("Not joined yet"),
 		}[c.code] || "";
-	return `${d.date}${what ? ` · ${what}` : ""}${c.late ? ` · ${__("Late")}` : ""}${
-		c.early ? ` · ${__("Left early")}` : ""
-	}`;
+	const hours = c.hours ? ` · ${duration(c.hours)}` : "";
+	return `${d.date}${what ? ` · ${what}` : ""}${hours}${c.short ? ` · ${__("Short day")}` : ""}`;
 }
 
 const time = (t) =>
@@ -514,12 +517,10 @@ const setupSteps = computed(() => {
 		{
 			key: "shift",
 			done: s.steps.shift && s.steps.holidays,
-			label: `${__("A standard shift")} ${t.start}–${t.end}, ${__(
-				"Monday to Saturday",
-			)}: ${__("under")} ${t.half_day_below}h ${__("is a half day, under")} ${
-				t.absent_below
-			}h ${__("is absent")}, ${t.grace} ${__(
-				"minutes' grace for late entry and early exit",
+			label: `${__("Flexible hours, Monday to Saturday: check in at any time")}. ${__(
+				"Every hour clocked is recorded; under",
+			)} ${t.absent_below}h ${__("is absent and under")} ${t.target_hours}h ${__(
+				"is flagged as a short day",
 			)}`,
 		},
 		{
@@ -570,7 +571,7 @@ async function applySetup() {
 		const res = await call(`${M}.apply_attendance_setup`);
 		setup.value = res;
 		setupDone.value = `${__("Attendance is set up.")} ${
-			res.given_shift ? `${res.given_shift} ${__("people got the standard shift.")} ` : ""
+			res.given_shift ? `${res.given_shift} ${__("people got the flexible shift.")} ` : ""
 		}${__(
 			"Check-ins from today turn into attendance automatically, every hour after the shift ends.",
 		)}`;

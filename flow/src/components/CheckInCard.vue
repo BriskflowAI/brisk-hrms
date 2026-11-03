@@ -7,7 +7,9 @@
 		<div class="min-w-0 flex-grow">
 			<div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
 				<h2 class="text-[22px]">{{ headline }}</h2>
-				<span v-if="state.late" class="chip bg-warn-tint text-warn">{{ __("Late") }}</span>
+				<span v-if="state.short" class="chip bg-warn-tint text-warn">{{
+					__("Short day")
+				}}</span>
 				<span
 					v-if="state.attendance"
 					class="chip"
@@ -21,9 +23,8 @@
 			</div>
 			<p class="mt-1 text-[13.5px] text-ink-2">
 				<template v-if="state.shift">
-					{{ __("Your shift") }} {{ time(state.shift.start) }}–{{
-						time(state.shift.end)
-					}}
+					{{ __("Check in any time. A full day is") }} {{ state.target_hours }}
+					{{ __("hours") }}
 				</template>
 				<template v-else>{{ __("No shift set for you today") }}</template>
 				<template v-if="state.hours">
@@ -46,6 +47,24 @@
 					{{ log.log_type === "IN" ? __("In") : __("Out") }} {{ time(log.time) }}
 				</li>
 			</ol>
+			<p v-if="state.working_on && state.next === 'OUT'" class="mt-2 text-[13.5px] text-ink-2">
+				<span class="font-medium text-ink">{{ __("Working on") }}:</span>
+				{{ state.working_on }}
+			</p>
+			<div v-if="state.next === 'IN'" class="mt-3">
+				<label for="checkin-note" class="text-[12.5px] font-medium text-ink-2">{{
+					__("What are you working on? (optional)")
+				}}</label>
+				<textarea
+					id="checkin-note"
+					v-model="note"
+					rows="2"
+					:maxlength="NOTE_MAX_LENGTH"
+					:disabled="busy"
+					class="mt-1 block w-full resize-none rounded-lg border border-line bg-surf px-3 py-2 text-[14px] text-ink placeholder:text-mut focus:border-ink focus:outline-none"
+					:placeholder="__('For example: reviewing the Q3 filing')"
+				/>
+			</div>
 			<p v-if="error" role="alert" class="mt-2 text-[13px] text-neg">{{ error }}</p>
 		</div>
 		<button
@@ -76,8 +95,10 @@ import { messageOf } from "@/engine/form";
 import { __ } from "@/composables/i18n";
 
 const M = "hrms.briskrew.attendance";
+const NOTE_MAX_LENGTH = 500;
 
 const state = ref(null);
+const note = ref("");
 const busy = ref(false);
 const locating = ref(false);
 const error = ref("");
@@ -151,7 +172,13 @@ async function checkInOrOut() {
 			where = await position();
 			locating.value = false;
 		}
-		state.value = await call(`${M}.check`, { log_type: state.value.next, ...where });
+		const checkingIn = state.value.next === "IN";
+		state.value = await call(`${M}.check`, {
+			log_type: state.value.next,
+			...where,
+			...(checkingIn && note.value.trim() ? { note: note.value.trim() } : {}),
+		});
+		note.value = "";
 	} catch (e) {
 		error.value = messageOf(e);
 	} finally {
