@@ -39,6 +39,9 @@
 			</p>
 		</header>
 
+		<!-- Checking in and out (people with an employee record) -->
+		<CheckInCard />
+
 		<!-- The week -->
 		<section
 			v-if="data"
@@ -308,6 +311,7 @@
 </template>
 
 <script setup>
+import CheckInCard from "@/components/CheckInCard.vue";
 import { dept } from "@/composables/format";
 import { computed, onMounted, ref } from "vue";
 import { call } from "frappe-ui";

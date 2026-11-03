@@ -30,6 +30,7 @@ const ROUTE_NEEDS = {
 	"/overview/hiring": "Job Opening",
 	"/overview/growth": "Appraisal",
 	"/leave-policies": "Leave Policy",
+	"/attendance": "Attendance",
 	"/overview/stock": "Bin",
 	"/stock-levels": "Bin",
 	"/overview/assets": "Asset",

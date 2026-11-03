@@ -11,7 +11,7 @@ lead@briskrew.demo / the password printed at the end.
 
 import frappe
 from frappe import _
-from frappe.utils import add_days, add_months, getdate, nowdate
+from frappe.utils import add_days, add_months, getdate, now_datetime, nowdate
 
 DEMO_PASSWORD = "briskrew-demo-1"
 LEAD = ("lead@briskrew.demo", "Maya", "Rodrigues", "Design Lead")
@@ -118,6 +118,7 @@ def seed(company: str | None = None) -> dict:
 
 	_performance(company, lead, team, today)
 	_hiring(company, lead_user, today)
+	_checkins(team)
 
 	# Stock and assets, for the briskrew Stock and Assets areas.
 	from hrms.briskrew.demo_inventory import seed as seed_inventory
@@ -625,6 +626,42 @@ def _hiring(company, lead_user, today):
 				"status": "Awaiting Response",
 			}
 		)
+
+
+def _checkins(team):
+	"""Attendance on for everyone, and some of today's check-ins: one person on time, one late,
+	one already gone. The lead has none, so they can check in themselves."""
+	from datetime import datetime, time, timedelta
+
+	from hrms.briskrew.attendance import apply_attendance_setup
+
+	apply_attendance_setup()
+	now = now_datetime()
+	today = now.date()
+	office = {"latitude": 12.9716, "longitude": 77.5946}
+
+	def at(hour, minute, before_now):
+		# Today's time, or a little before now early in the day so nothing is in the future.
+		return min(datetime.combine(today, time(hour, minute)), now - timedelta(minutes=before_now))
+
+	plan = [
+		(team[0], [("IN", at(9, 56, 50))]),
+		(team[1], [("IN", at(10, 47, 30))]),
+		(team[2], [("IN", at(10, 2, 45)), ("OUT", at(13, 10, 5))]),
+	]
+	for employee, logs in plan:
+		if frappe.db.exists("Employee Checkin", {"employee": employee, "time": [">=", today]}):
+			continue
+		for log_type, when in logs:
+			frappe.get_doc(
+				{
+					"doctype": "Employee Checkin",
+					"employee": employee,
+					"log_type": log_type,
+					"time": when,
+					**office,
+				}
+			).insert(ignore_permissions=True)
 
 
 def _shifts(company, team, today):

@@ -17,7 +17,7 @@ concurrency:
 jobs:
   build:
     name: Front ends build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v6
@@ -38,7 +38,7 @@ jobs:
 
   server:
     name: briskrew server tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 90
     services:
       mysql:
