@@ -77,12 +77,15 @@ def my_checkin() -> dict:
 		as_dict=True,
 	)
 	hours = _hours_worked(logs, now)
+	open_in = logs[-1] if logs and logs[-1].log_type == "IN" else None
 	return {
 		"employee": employee.name,
 		"employee_name": employee.employee_name,
 		"next": "OUT" if logs and logs[-1].log_type == "IN" else "IN",
 		"logs": logs,
 		"hours": hours,
+		# Counted on the server, so the screen's timer doesn't depend on the phone's clock or zone.
+		"since_seconds": int((now - get_datetime(open_in.time)).total_seconds()) if open_in else None,
 		"target_hours": TARGET_HOURS,
 		"short": _is_short(hours, logs, now.date(), now),
 		"working_on": _working_on(logs),

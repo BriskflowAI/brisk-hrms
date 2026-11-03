@@ -72,6 +72,7 @@ class TestBriskrewAttendance(HRMSTestSuite):
 		note = "Reviewing the Q3 <b>filing</b> & tests"
 		state = check("IN", note=f"  {note}  ")
 
+		self.assertLess(state["since_seconds"], 5)
 		self.assertEqual(state["logs"][0]["note"], note)
 		self.assertEqual(state["working_on"], note)
 		stored = frappe.db.get_value(
@@ -82,6 +83,7 @@ class TestBriskrewAttendance(HRMSTestSuite):
 		self.assertNotIn("<b>", stored)  # kept as text, so the desk timeline can't render markup
 
 		state = check("OUT")
+		self.assertIsNone(state["since_seconds"])  # checked out: nothing is running
 		self.assertIsNone(state["logs"][1]["note"])
 		self.assertEqual(state["working_on"], note)
 
@@ -122,6 +124,8 @@ class TestBriskrewAttendance(HRMSTestSuite):
 		state = my_checkin()
 		self.assertEqual(state["next"], "OUT")
 		self.assertAlmostEqual(state["hours"], 1.5, delta=0.05)
+		# The timer counts from the check-in that is still open, not from the first of the day
+		self.assertAlmostEqual(state["since_seconds"], 30 * 60, delta=5)
 
 	def test_setup_gives_the_standard_shift_only_to_people_without_one(self):
 		frappe.get_doc(

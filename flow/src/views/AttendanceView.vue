@@ -89,7 +89,7 @@
 			<!-- Filters -->
 			<section
 				:aria-label="__('Filters')"
-				class="mt-5 flex flex-wrap items-end gap-3 text-[13px]"
+				class="mt-5 grid grid-cols-2 items-end gap-3 text-[13px] sm:flex sm:flex-wrap"
 			>
 				<label v-if="tab === 'today'" class="flex flex-col gap-1">
 					<span class="font-semibold text-ink-2">{{ __("Day") }}</span>
@@ -101,7 +101,7 @@
 				</label>
 				<label
 					v-if="(data?.companies || []).length > 1"
-					class="flex min-w-[180px] flex-col gap-1"
+					class="col-span-2 flex min-w-0 flex-col gap-1 sm:col-span-1 sm:min-w-[180px]"
 				>
 					<span class="font-semibold text-ink-2">{{ __("Company") }}</span>
 					<select v-model="company" :class="inputCls">
@@ -109,7 +109,7 @@
 						<option v-for="c in data.companies" :key="c" :value="c">{{ c }}</option>
 					</select>
 				</label>
-				<label class="flex min-w-[180px] flex-col gap-1">
+				<label class="flex min-w-0 flex-col gap-1 sm:min-w-[180px]">
 					<span class="font-semibold text-ink-2">{{ __("Department") }}</span>
 					<select v-model="department" :class="inputCls">
 						<option value="">{{ __("All departments") }}</option>
@@ -132,13 +132,13 @@
 			<template v-else-if="tab === 'today' && day">
 				<section
 					:aria-label="__('Summary')"
-					class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6"
+					class="mt-4 grid grid-cols-3 gap-2 sm:gap-3 lg:grid-cols-6"
 				>
 					<button
 						v-for="c in summaryCards"
 						:key="c.key"
 						type="button"
-						class="rounded-xl border bg-surf px-4 py-3 text-left"
+						class="rounded-xl border bg-surf px-3 py-2 text-left sm:px-4 sm:py-3"
 						:class="
 							only === c.key
 								? 'border-acc shadow-[inset_0_0_0_1px] shadow-acc'
@@ -147,9 +147,9 @@
 						:aria-pressed="only === c.key"
 						@click="only = only === c.key ? '' : c.key"
 					>
-						<div class="text-[12.5px] font-semibold text-ink-2">{{ c.label }}</div>
+						<div class="text-[12px] font-semibold leading-tight text-ink-2 sm:text-[12.5px]">{{ c.label }}</div>
 						<div
-							class="mt-0.5 font-display text-[26px] font-bold leading-tight"
+							class="mt-0.5 font-display text-[22px] font-bold leading-tight sm:text-[26px]"
 							:class="c.tone"
 						>
 							{{ c.count }}
@@ -157,8 +157,76 @@
 					</button>
 				</section>
 
+				<ul
+					:aria-label="__('People')"
+					class="mt-4 space-y-2 md:hidden"
+					:class="loading && 'opacity-60'"
+				>
+					<li
+						v-if="!shownRows.length"
+						class="rounded-xl border border-line bg-surf px-4 py-8 text-center text-[13.5px] text-mut"
+					>
+						{{ __("Nobody to show.") }}
+					</li>
+					<li
+						v-for="r in shownRows"
+						:key="r.employee"
+						class="rounded-xl border border-line bg-surf px-4 py-3"
+					>
+						<div class="flex items-start justify-between gap-3">
+							<router-link
+								:to="{ name: 'Form', params: { doctype: 'Employee', name: r.employee } }"
+								class="flex min-w-0 items-center gap-2.5"
+							>
+								<Avatar :label="r.employee_name" :image="r.image || ''" :size="32" />
+								<span class="min-w-0">
+									<span class="block truncate font-semibold">{{ r.employee_name }}</span>
+									<span class="block truncate text-[12px] text-mut">{{
+										dept(r.department) || r.designation || ""
+									}}</span>
+								</span>
+							</router-link>
+							<span class="flex shrink-0 flex-wrap justify-end gap-1">
+								<span class="chip" :class="tones[r.status]">{{ labels[r.status] }}</span>
+								<span v-if="r.short" class="chip bg-warn-tint text-warn">{{
+									__("Short")
+								}}</span>
+							</span>
+						</div>
+						<p v-if="r.leave_type" class="mt-1 text-[12px] text-mut">{{ r.leave_type }}</p>
+						<dl class="mt-2.5 grid grid-cols-3 gap-2 text-[13px] tabular-nums">
+							<div>
+								<dt class="text-[11.5px] font-semibold uppercase text-mut">{{ __("In") }}</dt>
+								<dd>{{ time(r.first_in) || "—" }}</dd>
+							</div>
+							<div>
+								<dt class="text-[11.5px] font-semibold uppercase text-mut">{{ __("Out") }}</dt>
+								<dd>{{ time(r.last_out) || "—" }}</dd>
+							</div>
+							<div>
+								<dt class="text-[11.5px] font-semibold uppercase text-mut">
+									{{ __("Hours") }}
+								</dt>
+								<dd>{{ r.hours ? duration(r.hours) : "—" }}</dd>
+							</div>
+						</dl>
+						<p v-if="r.working_on" class="mt-2 text-[13px] text-ink-2">
+							<span class="font-semibold text-ink">{{ __("Working on") }}:</span>
+							{{ r.working_on }}
+						</p>
+						<a
+							v-if="r.location"
+							:href="`https://www.openstreetmap.org/?mlat=${r.location.latitude}&mlon=${r.location.longitude}#map=17/${r.location.latitude}/${r.location.longitude}`"
+							target="_blank"
+							rel="noopener"
+							class="mt-2 inline-block text-[12.5px] font-semibold text-acc hover:underline"
+							>{{ __("Map") }}</a
+						>
+					</li>
+				</ul>
+
 				<div
-					class="mt-4 overflow-x-auto rounded-xl border border-line bg-surf"
+					class="mt-4 hidden overflow-x-auto rounded-xl border border-line bg-surf md:block"
 					:class="loading && 'opacity-60'"
 				>
 					<table class="w-full text-[13.5px]">

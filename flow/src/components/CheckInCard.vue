@@ -21,6 +21,15 @@
 					>{{ __(state.attendance.status) }}</span
 				>
 			</div>
+			<p v-if="clock" class="mt-1.5 flex flex-wrap items-baseline gap-x-2">
+				<span
+					role="timer"
+					:aria-label="__('Time since you checked in')"
+					class="text-[30px] font-semibold leading-none tabular-nums text-ink"
+					>{{ clock }}</span
+				>
+				<span class="text-[13px] text-ink-2">{{ __("since you checked in") }}</span>
+			</p>
 			<p class="mt-1 text-[13.5px] text-ink-2">
 				<template v-if="state.shift">
 					{{ __("Check in any time. A full day is") }} {{ state.target_hours }}
@@ -88,7 +97,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { call } from "frappe-ui";
 import Icon from "@/components/Icon.vue";
 import { messageOf } from "@/engine/form";
@@ -99,6 +108,21 @@ const NOTE_MAX_LENGTH = 500;
 
 const state = ref(null);
 const note = ref("");
+
+// The server says how long the open check-in has been running; the timer then counts on from the
+// moment that answer arrived, so it doesn't depend on this device's clock or time zone.
+const now = ref(Date.now());
+let receivedAt = Date.now();
+let ticker = null;
+watch(state, () => (receivedAt = Date.now()), { flush: "sync" });
+
+const clock = computed(() => {
+	const since = state.value?.since_seconds;
+	if (since == null) return "";
+	const total = Math.max(0, since + Math.floor((now.value - receivedAt) / 1000));
+	const pad = (n) => String(n).padStart(2, "0");
+	return `${pad(Math.floor(total / 3600))}:${pad(Math.floor((total % 3600) / 60))}:${pad(total % 60)}`;
+});
 const busy = ref(false);
 const locating = ref(false);
 const error = ref("");
@@ -188,10 +212,13 @@ async function checkInOrOut() {
 }
 
 onMounted(async () => {
+	ticker = setInterval(() => (now.value = Date.now()), 1000);
 	try {
 		state.value = await call(`${M}.my_checkin`);
 	} catch {
 		state.value = null; // the card simply doesn't show
 	}
 });
+
+onBeforeUnmount(() => clearInterval(ticker));
 </script>
