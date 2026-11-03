@@ -6,6 +6,7 @@ from frappe.utils import add_days, getdate, now_datetime
 from erpnext.setup.doctype.employee.test_employee import make_employee
 
 from hrms.briskrew.attendance import (
+	LEGACY_SHIFT,
 	SHIFT,
 	apply_attendance_setup,
 	attendance_setup_status,
@@ -65,6 +66,40 @@ class TestBriskrewAttendance(HRMSTestSuite):
 		self.assertEqual(state["next"], "IN")
 		self.assertEqual([log.log_type for log in state["logs"]], ["IN", "OUT"])
 
+	def test_a_check_in_can_say_what_the_person_is_working_on(self):
+		frappe.db.set_single_value("HR Settings", "allow_geolocation_tracking", 0)
+		frappe.set_user(self.user)
+		note = "Reviewing the Q3 <b>filing</b> & tests"
+		state = check("IN", note=f"  {note}  ")
+
+		self.assertLess(state["since_seconds"], 5)
+		self.assertEqual(state["logs"][0]["note"], note)
+		self.assertEqual(state["working_on"], note)
+		stored = frappe.db.get_value(
+			"Comment",
+			{"reference_doctype": "Employee Checkin", "reference_name": state["logs"][0].name},
+			"content",
+		)
+		self.assertNotIn("<b>", stored)  # kept as text, so the desk timeline can't render markup
+
+		state = check("OUT")
+		self.assertIsNone(state["since_seconds"])  # checked out: nothing is running
+		self.assertIsNone(state["logs"][1]["note"])
+		self.assertEqual(state["working_on"], note)
+
+		frappe.set_user("Administrator")
+		row = next(r for r in team_day(company=COMPANY)["rows"] if r["employee"] == self.employee)
+		self.assertEqual(row["working_on"], note)
+
+	def test_a_blank_or_oversized_note(self):
+		frappe.db.set_single_value("HR Settings", "allow_geolocation_tracking", 0)
+		frappe.set_user(self.user)
+		state = check("IN", note="   ")
+		self.assertIsNone(state["logs"][0]["note"])
+		self.assertIsNone(state["working_on"])
+		check("OUT")
+		self.assertRaises(frappe.ValidationError, check, "IN", note="x" * 501)
+
 	def test_location_is_required_when_tracked(self):
 		frappe.db.set_single_value("HR Settings", "allow_geolocation_tracking", 1)
 		frappe.set_user(self.user)
@@ -89,6 +124,8 @@ class TestBriskrewAttendance(HRMSTestSuite):
 		state = my_checkin()
 		self.assertEqual(state["next"], "OUT")
 		self.assertAlmostEqual(state["hours"], 1.5, delta=0.05)
+		# The timer counts from the check-in that is still open, not from the first of the day
+		self.assertAlmostEqual(state["since_seconds"], 30 * 60, delta=5)
 
 	def test_setup_gives_the_standard_shift_only_to_people_without_one(self):
 		frappe.get_doc(
@@ -107,12 +144,13 @@ class TestBriskrewAttendance(HRMSTestSuite):
 		self.assertTrue(hr.allow_geolocation_tracking)
 
 		shift = frappe.get_doc("Shift Type", SHIFT)
-		self.assertEqual(str(shift.start_time), "10:00:00")
-		self.assertEqual(str(shift.end_time), "19:00:00")
+		self.assertEqual(str(shift.start_time), "0:00:00")
+		self.assertEqual(str(shift.end_time), "23:59:00")
 		self.assertTrue(shift.enable_auto_attendance)
-		self.assertEqual(shift.working_hours_threshold_for_half_day, 8)
-		self.assertEqual(shift.working_hours_threshold_for_absent, 4)
-		self.assertEqual(shift.late_entry_grace_period, 30)
+		self.assertEqual(shift.working_hours_threshold_for_half_day, 0)
+		self.assertEqual(shift.working_hours_threshold_for_absent, 3)
+		self.assertFalse(shift.enable_late_entry_marking)
+		self.assertFalse(shift.enable_early_exit_marking)
 		self.assertEqual(getdate(shift.process_attendance_after), getdate(now_datetime().date()))
 
 		# Sundays off, Saturdays worked
@@ -136,10 +174,11 @@ class TestBriskrewAttendance(HRMSTestSuite):
 		apply_attendance_setup()
 		day = _last_working_day()
 		people = {
-			"present": self.employee,
+			"full": self.employee,
+			"early": make_employee("checkin_early@example.com", COMPANY),
 			"late": make_employee("checkin_late@example.com", COMPANY),
-			"half": make_employee("checkin_half@example.com", COMPANY),
-			"absent": make_employee("checkin_short@example.com", COMPANY),
+			"short": make_employee("checkin_short@example.com", COMPANY),
+			"absent": make_employee("checkin_absent@example.com", COMPANY),
 		}
 		for name in people.values():
 			frappe.db.set_value(
@@ -149,14 +188,16 @@ class TestBriskrewAttendance(HRMSTestSuite):
 		def at(h, m):
 			return datetime.combine(day, time(h, m))
 
-		self._log(people["present"], "IN", at(9, 58))
-		self._log(people["present"], "OUT", at(19, 5))
-		self._log(people["late"], "IN", at(10, 45))
-		self._log(people["late"], "OUT", at(19, 0))
-		self._log(people["half"], "IN", at(10, 0))
-		self._log(people["half"], "OUT", at(16, 0))  # 6 hours: under 8
+		self._log(people["full"], "IN", at(10, 0))
+		self._log(people["full"], "OUT", at(19, 0))  # 9 hours
+		self._log(people["early"], "IN", at(5, 30))
+		self._log(people["early"], "OUT", at(14, 30))  # 9 hours, long before 10:00
+		self._log(people["late"], "IN", at(14, 0))
+		self._log(people["late"], "OUT", at(23, 30))  # 9.5 hours, long after 19:00
+		self._log(people["short"], "IN", at(10, 0))
+		self._log(people["short"], "OUT", at(16, 0))  # 6 hours: recorded, flagged short
 		self._log(people["absent"], "IN", at(10, 0))
-		self._log(people["absent"], "OUT", at(12, 30))  # 2.5 hours: under 4
+		self._log(people["absent"], "OUT", at(12, 30))  # 2.5 hours: under 3 is absent
 
 		shift = frappe.get_doc("Shift Type", SHIFT)
 		shift.process_attendance_after = day
@@ -168,38 +209,71 @@ class TestBriskrewAttendance(HRMSTestSuite):
 			return frappe.db.get_value(
 				"Attendance",
 				{"employee": name, "attendance_date": day, "docstatus": 1},
-				["status", "late_entry"],
+				["status", "late_entry", "early_exit", "working_hours"],
 				as_dict=True,
 			)
 
-		self.assertEqual(marked(people["present"]).status, "Present")
-		self.assertFalse(marked(people["present"]).late_entry)
-		self.assertEqual(marked(people["late"]).status, "Present")
-		self.assertTrue(marked(people["late"]).late_entry)
-		self.assertEqual(marked(people["half"]).status, "Half Day")
+		# Whatever the hour, a day of 3 hours or more is present and nobody is late or early
+		for who in ("full", "early", "late", "short"):
+			self.assertEqual(marked(people[who]).status, "Present", who)
+			self.assertFalse(marked(people[who]).late_entry, who)
+			self.assertFalse(marked(people[who]).early_exit, who)
+		self.assertAlmostEqual(marked(people["short"]).working_hours, 6, delta=0.05)
 		self.assertEqual(marked(people["absent"]).status, "Absent")
 
-		# The month view shows the same
+		# The month view shows the same, and flags the short day
 		month = team_month(day.strftime("%Y-%m"), company=COMPANY)
 		cells = {r["employee"]: r["cells"][day.day - 1] for r in month["rows"]}
-		self.assertEqual(cells[people["present"]]["code"], "P")
-		self.assertTrue(cells[people["late"]]["late"])
-		self.assertEqual(cells[people["half"]]["code"], "H")
+		for who in ("full", "early", "late"):
+			self.assertEqual(cells[people[who]]["code"], "P", who)
+			self.assertFalse(cells[people[who]]["short"], who)
+		self.assertEqual(cells[people["short"]]["code"], "P")
+		self.assertTrue(cells[people["short"]]["short"])
 		self.assertEqual(cells[people["absent"]]["code"], "A")
 
 	def test_team_day(self):
-		late = make_employee("checkin_team_late@example.com", COMPANY)
-		apply_attendance_setup()  # both get the standard shift
+		out = make_employee("checkin_team_out@example.com", COMPANY)
+		apply_attendance_setup()  # both get the flexible shift
 		now = now_datetime()
 		self._log(self.employee, "IN", now - timedelta(minutes=20))
-		if now.time() > time(10, 40):
-			self._log(late, "IN", datetime.combine(now.date(), time(10, 35)))
+		self._log(out, "IN", now - timedelta(minutes=50))
+		self._log(out, "OUT", now - timedelta(minutes=30))
 
-		rows = {r["employee"]: r for r in team_day(company=COMPANY)["rows"]}
+		day = team_day(company=COMPANY)
+		rows = {r["employee"]: r for r in day["rows"]}
 		self.assertEqual(rows[self.employee]["status"], "in")
-		if now.time() > time(10, 40):
-			self.assertTrue(rows[late]["late"])
-			self.assertEqual(rows[late]["status"], "in")
+		self.assertFalse(rows[self.employee]["short"])  # still checked in: the day isn't over
+		self.assertEqual(rows[out]["status"], "out")
+		self.assertTrue(rows[out]["short"])  # out after 20 minutes: recorded, under 9 hours
+		self.assertNotIn("late", rows[out])
+		self.assertEqual(day["summary"]["short"], 1)
+
+	def test_the_check_in_card_flags_a_short_day_once_out(self):
+		now = now_datetime()
+		self._log(self.employee, "IN", now - timedelta(hours=5))
+		frappe.set_user(self.user)
+		self.assertFalse(my_checkin()["short"])  # still in
+		self.assertEqual(my_checkin()["target_hours"], 9)
+
+		frappe.set_user("Administrator")
+		self._log(self.employee, "OUT", now - timedelta(hours=1))
+		frappe.set_user(self.user)
+		state = my_checkin()
+		self.assertTrue(state["short"])
+		self.assertAlmostEqual(state["hours"], 4, delta=0.05)
+
+	def test_setup_moves_the_earlier_fixed_shift_to_the_flexible_one(self):
+		frappe.get_doc(
+			{
+				"doctype": "Shift Type",
+				"name": LEGACY_SHIFT,
+				"start_time": "10:00:00",
+				"end_time": "19:00:00",
+			}
+		).insert()
+		frappe.db.set_value("Employee", self.employee, "default_shift", LEGACY_SHIFT)
+		apply_attendance_setup()
+		self.assertEqual(frappe.db.get_value("Employee", self.employee, "default_shift"), SHIFT)
 
 	def test_people_see_themselves_and_their_team_only(self):
 		manager_user = "checkin_manager@example.com"

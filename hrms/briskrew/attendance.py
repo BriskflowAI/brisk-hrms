@@ -7,6 +7,7 @@ default shift. Each endpoint reads only what the user may read.
 """
 
 import calendar
+import html
 from datetime import datetime, time, timedelta
 
 import frappe
@@ -15,6 +16,7 @@ from frappe.utils import (
 	add_days,
 	add_years,
 	cint,
+	escape_html,
 	flt,
 	get_datetime,
 	get_time,
@@ -23,26 +25,29 @@ from frappe.utils import (
 	nowdate,
 )
 
-# The standard shift everyone without a shift of their own works (set up with HR, Oct 2026):
-# 10:00 to 19:00, Monday to Saturday; under 8 hours worked is a half day, under 4 is absent;
-# arriving or leaving more than 30 minutes off the shift is a late entry or early exit.
-SHIFT = "Standard 10:00-19:00"
+# The flexible shift everyone without a shift of their own works (set up with HR, Nov 2026):
+# check in at any time of the day, Monday to Saturday. Every hour clocked is recorded; a day
+# under 3 hours is absent, and a day under 9 hours is flagged short. Nobody is late or early.
+SHIFT = "Flexible hours"
+LEGACY_SHIFT = "Standard 10:00-19:00"
+TARGET_HOURS = 9
+NOTE_MAX_LENGTH = 500
 SHIFT_SETTINGS = {
-	"start_time": "10:00:00",
-	"end_time": "19:00:00",
+	"start_time": "00:00:00",
+	"end_time": "23:59:00",
 	"enable_auto_attendance": 1,
 	"auto_update_last_sync": 1,
 	"determine_check_in_and_check_out": "Strictly based on Log Type in Employee Checkin",
 	"working_hours_calculation_based_on": "First Check-in and Last Check-out",
-	"working_hours_threshold_for_half_day": 8,
-	"working_hours_threshold_for_absent": 4,
-	"enable_late_entry_marking": 1,
-	"late_entry_grace_period": 30,
-	"enable_early_exit_marking": 1,
-	"early_exit_grace_period": 30,
-	# Check-ins count from 08:00 and check-outs until midnight.
-	"begin_check_in_before_shift_start_time": 120,
-	"allow_check_out_after_shift_end_time": 300,
+	# 0 turns the half day off: a day is either present (3 hours or more) or absent.
+	"working_hours_threshold_for_half_day": 0,
+	"working_hours_threshold_for_absent": 3,
+	"enable_late_entry_marking": 0,
+	"enable_early_exit_marking": 0,
+	# The shift is the whole day, and Frappe refuses a window that overlaps the next day's, so
+	# logs count on the day they are made.
+	"begin_check_in_before_shift_start_time": 0,
+	"allow_check_out_after_shift_end_time": 0,
 	"mark_auto_attendance_on_holidays": 0,
 }
 WEEKLY_OFF = "Sunday"
@@ -68,28 +73,42 @@ def my_checkin() -> dict:
 	attendance = frappe.db.get_value(
 		"Attendance",
 		{"employee": employee.name, "attendance_date": now.date(), "docstatus": 1},
-		["status", "late_entry", "early_exit"],
+		["status"],
 		as_dict=True,
 	)
-	first_in = next((log.time for log in logs if log.log_type == "IN"), None)
+	hours = _hours_worked(logs, now)
+	open_in = logs[-1] if logs and logs[-1].log_type == "IN" else None
 	return {
 		"employee": employee.name,
 		"employee_name": employee.employee_name,
 		"next": "OUT" if logs and logs[-1].log_type == "IN" else "IN",
 		"logs": logs,
-		"hours": _hours_worked(logs, now),
+		"hours": hours,
+		# Counted on the server, so the screen's timer doesn't depend on the phone's clock or zone.
+		"since_seconds": int((now - get_datetime(open_in.time)).total_seconds()) if open_in else None,
+		"target_hours": TARGET_HOURS,
+		"short": _is_short(hours, logs, now.date(), now),
+		"working_on": _working_on(logs),
 		"shift": shift,
-		"late": bool(shift and first_in and _is_late(first_in, shift)),
 		"attendance": attendance,
 		"needs_location": bool(frappe.db.get_single_value("HR Settings", "allow_geolocation_tracking")),
 	}
 
 
 @frappe.whitelist(methods=["POST"])
-def check(log_type: str, latitude: float | None = None, longitude: float | None = None) -> dict:
-	"""Check the current user in or out now, with where they are when location is recorded."""
+def check(
+	log_type: str,
+	latitude: float | None = None,
+	longitude: float | None = None,
+	note: str | None = None,
+) -> dict:
+	"""Check the current user in or out now, with where they are when location is recorded and,
+	optionally, what they are working on."""
 	if log_type not in ("IN", "OUT"):
 		frappe.throw(_("Choose to check in or check out."))
+	note = (note or "").strip()
+	if len(note) > NOTE_MAX_LENGTH:
+		frappe.throw(_("Keep what you're working on under {0} characters.").format(NOTE_MAX_LENGTH))
 	employee = _my_employee()
 	if not employee:
 		frappe.throw(_("Your user isn't linked to an employee record, so you can't check in."))
@@ -109,6 +128,18 @@ def check(log_type: str, latitude: float | None = None, longitude: float | None 
 	# Frappe HR's own rules apply: location when it's required, the shift's check-in radius,
 	# no two logs at the same time.
 	doc.insert()
+	if note:
+		# A standard comment on the check-in: no schema change, and it shows in the desk timeline too.
+		# Stored as escaped text, since comments render as HTML there.
+		frappe.get_doc(
+			{
+				"doctype": "Comment",
+				"comment_type": "Comment",
+				"reference_doctype": "Employee Checkin",
+				"reference_name": doc.name,
+				"content": escape_html(note),
+			}
+		).insert(ignore_permissions=True)
 	return my_checkin()
 
 
@@ -138,6 +169,7 @@ def team_day(date: str | None = None, company: str | None = None, department: st
 		marked = attendance.get((e.name, day))
 		first_in = next((log.time for log in elogs if log.log_type == "IN"), None)
 		last_out = next((log.time for log in reversed(elogs) if log.log_type == "OUT"), None)
+		hours = _hours_worked(elogs, end)
 		status = _day_status(
 			day, now, elogs, shift, leave.get(e.name), marked, day in holidays.get(e.name, set())
 		)
@@ -152,22 +184,21 @@ def team_day(date: str | None = None, company: str | None = None, department: st
 				"status": status,
 				"first_in": first_in,
 				"last_out": last_out,
-				"hours": _hours_worked(elogs, end),
-				"late": bool(
-					(marked and marked.late_entry) or (shift and first_in and _is_late(first_in, shift))
-				),
+				"hours": hours,
+				"short": _is_short(hours, elogs, day, now),
+				"working_on": _working_on(elogs),
 				"shift": shift and shift.name,
 				"leave_type": (leave.get(e.name) or {}).get("leave_type") or (marked and marked.leave_type),
 				"location": location and {"latitude": location.latitude, "longitude": location.longitude},
 			}
 		)
 
-	order = {"in": 0, "late": 1, "out": 2, "not_in": 3, "absent": 4, "leave": 5, "off": 6, "not_yet": 7}
+	order = {"in": 0, "out": 1, "not_in": 2, "absent": 3, "leave": 4, "off": 5, "not_yet": 6}
 	rows.sort(key=lambda r: (order.get(r["status"], 9), r["employee_name"] or ""))
 	summary = {}
 	for r in rows:
 		summary[r["status"]] = summary.get(r["status"], 0) + 1
-	summary["late"] = sum(1 for r in rows if r["late"])
+	summary["short"] = sum(1 for r in rows if r["short"])
 	return {"date": str(day), "rows": rows, "summary": summary, **_filters_payload()}
 
 
@@ -196,17 +227,16 @@ def team_month(month: str | None = None, company: str | None = None, department:
 	}
 	rows = []
 	for e in employees:
-		cells, totals = [], {"P": 0, "A": 0, "H": 0, "L": 0, "W": 0, "late": 0}
+		cells, totals = [], {"P": 0, "A": 0, "H": 0, "L": 0, "W": 0, "short": 0}
 		for d in range(last.day):
 			day = add_days(first, d)
 			marked = attendance.get((e.name, day))
 			if marked:
 				code = codes.get(marked.status, "")
 				totals[code] = totals.get(code, 0) + 1
-				totals["late"] += 1 if marked.late_entry else 0
-				cells.append(
-					{"code": code, "late": bool(marked.late_entry), "early": bool(marked.early_exit)}
-				)
+				short = marked.status == "Present" and 0 < flt(marked.working_hours) < TARGET_HOURS
+				totals["short"] += 1 if short else 0
+				cells.append({"code": code, "short": short, "hours": flt(marked.working_hours)})
 			elif day in holidays.get(e.name, set()):
 				cells.append({"code": "off"})
 			elif e.date_of_joining and day < getdate(e.date_of_joining):
@@ -255,7 +285,11 @@ def attendance_setup_status() -> dict:
 		"Employee", filters={"status": "Active"}, fields=["name", "default_shift", "user_id"]
 	)
 	assigned = set(_assigned_today([e.name for e in active]))
-	without_shift = [e.name for e in active if not e.default_shift and e.name not in assigned]
+	without_shift = [
+		e.name
+		for e in active
+		if (not e.default_shift or e.default_shift == LEGACY_SHIFT) and e.name not in assigned
+	]
 	without_user = [e.name for e in active if not e.user_id]
 	steps = {
 		"app_checkin": bool(hr.allow_employee_checkin_from_mobile_app),
@@ -273,9 +307,8 @@ def attendance_setup_status() -> dict:
 			"start": SHIFT_SETTINGS["start_time"][:5],
 			"end": SHIFT_SETTINGS["end_time"][:5],
 			"weekly_off": WEEKLY_OFF,
-			"half_day_below": SHIFT_SETTINGS["working_hours_threshold_for_half_day"],
+			"target_hours": TARGET_HOURS,
 			"absent_below": SHIFT_SETTINGS["working_hours_threshold_for_absent"],
-			"grace": SHIFT_SETTINGS["late_entry_grace_period"],
 		},
 		"process_attendance_after": shift and shift.process_attendance_after,
 		"employees": len(active),
@@ -321,7 +354,8 @@ def apply_attendance_setup() -> dict:
 	assigned = set(_assigned_today([e.name for e in active]))
 	given = 0
 	for e in active:
-		if not e.default_shift and e.name not in assigned:
+		# The earlier fixed 10-19 shift was this setup's own default, so those people move over.
+		if (not e.default_shift or e.default_shift == LEGACY_SHIFT) and e.name not in assigned:
 			frappe.db.set_value("Employee", e.name, "default_shift", SHIFT)
 			given += 1
 
@@ -437,7 +471,35 @@ def _logs_between(employees, start, end) -> dict:
 		order_by="time asc",
 	):
 		out.setdefault(log.employee, []).append(log)
+	notes = _notes_for([log.name for logs in out.values() for log in logs])
+	for logs in out.values():
+		for log in logs:
+			log["note"] = notes.get(log.name)
 	return out
+
+
+def _notes_for(check_ins) -> dict:
+	"""What people said they were working on, by check-in (the latest comment wins)."""
+	if not check_ins:
+		return {}
+	return {
+		c.reference_name: html.unescape(c.content)
+		for c in frappe.get_all(
+			"Comment",
+			filters={
+				"reference_doctype": "Employee Checkin",
+				"reference_name": ["in", check_ins],
+				"comment_type": "Comment",
+			},
+			fields=["reference_name", "content"],
+			order_by="creation asc",
+		)
+	}
+
+
+def _working_on(logs) -> str | None:
+	"""The note from the most recent check-in that has one."""
+	return next((log.note for log in reversed(logs) if log.log_type == "IN" and log.note), None)
 
 
 def _hours_worked(logs, until) -> float:
@@ -548,8 +610,12 @@ def _assigned_today(employees) -> list:
 	]
 
 
-def _is_late(first_in, shift) -> bool:
-	return get_datetime(first_in) > get_datetime(shift.start) + timedelta(minutes=shift.grace or 0)
+def _is_short(hours, logs, day, now) -> bool:
+	"""Hours were clocked but fewer than the target. Today is only short once the person is out:
+	someone still checked in has not finished the day."""
+	if not logs or hours >= TARGET_HOURS:
+		return False
+	return day < now.date() or logs[-1].log_type == "OUT"
 
 
 def _leave_on(employees, day) -> dict:
@@ -583,7 +649,7 @@ def _attendance_between(employees, start, end) -> dict:
 				"docstatus": 1,
 				"attendance_date": ["between", [start, end]],
 			},
-			fields=["employee", "attendance_date", "status", "late_entry", "early_exit", "leave_type"],
+			fields=["employee", "attendance_date", "status", "working_hours", "leave_type"],
 		)
 	}
 

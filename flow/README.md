@@ -62,20 +62,21 @@ the same check-in log.
 - **Check in / Check out** card on Home for anyone whose user is linked to an employee. Each
   check-in records the browser's location (HR Settings, Allow Geolocation Tracking); a person who
   blocks location is told to allow it. A shift's Shift Location radius, if set, still applies.
-- **`/flow/attendance`** (Time, Who's in): a day view (who's in, late, checked out, not in, on
+- **`/flow/attendance`** (Time, Who's in): a day view (who's in, short days, checked out, not in, on
   leave, off, with times, hours and where they checked in) and a month grid of everyone's
   attendance. HR roles see everyone; anyone else sees themselves and the people who report to them.
 - **Setting it up for everyone**: HR managers get a one-click setup on that screen
   (`apply_attendance_setup`, safe to run again). It turns on check-ins from the app with location,
-  creates the standard shift (10:00 to 19:00, Monday to Saturday; under 8 hours worked is a half
-  day, under 4 is absent; 30 minutes' grace for late entry and early exit) with Auto Attendance
-  from that day on, and gives it to active employees who have no shift of their own. Existing
+  creates the flexible shift ("Flexible hours": check in at any time of the day, Monday to
+  Saturday) with Auto Attendance from that day on, and gives it to active employees who have no
+  shift of their own, and to anyone still on the earlier fixed "Standard 10:00-19:00" shift. Other
   default shifts and shift assignments are left alone, and nothing before the setup day is marked.
   The shift's holiday list (Sundays off, plus the default company's own holidays, this year and
   next) applies to attendance only; leave and payroll keep each company's holiday lists.
-- Frappe HR's hourly job then marks Present, Half Day or Absent, with late entry and early exit,
-  once each shift has ended. Change the times or thresholds on the Shift Type
-  "Standard 10:00-19:00".
+- Every hour clocked is recorded. Frappe HR's hourly job marks a day Present from 3 hours and
+  Absent under 3 (there is no half day, and no late entry or early exit). A day under 9 hours is
+  flagged **short** on Home, Who's in and the month grid, and stays Present. The targets live in
+  `attendance.py` (`TARGET_HOURS`, `SHIFT_SETTINGS`) and on the Shift Type "Flexible hours".
 
 ## Default approvers
 
