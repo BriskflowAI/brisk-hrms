@@ -34,6 +34,10 @@
 	.kbd {
 		@apply ml-1.5 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded border border-current px-1 font-body text-[10.5px] font-semibold leading-none opacity-60;
 	}
+	/* Frosted pill on the check-in card's sky wash */
+	.frost {
+		@apply rounded-full border border-white/70 bg-white/55 px-3 py-1.5 text-[12.5px] font-semibold backdrop-blur;
+	}
 	.chip {
 		@apply inline-flex items-center whitespace-nowrap rounded-[5px] px-2 py-0.5 text-xs font-semibold;
 	}

@@ -87,6 +87,7 @@ def my_checkin() -> dict:
 		# Counted on the server, so the screen's timer doesn't depend on the phone's clock or zone.
 		"since_seconds": int((now - get_datetime(open_in.time)).total_seconds()) if open_in else None,
 		"target_hours": TARGET_HOURS,
+		"absent_below": SHIFT_SETTINGS["working_hours_threshold_for_absent"],
 		"short": _is_short(hours, logs, now.date(), now),
 		"working_on": _working_on(logs),
 		"shift": shift,
