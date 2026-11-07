@@ -254,6 +254,7 @@ class TestBriskrewAttendance(HRMSTestSuite):
 		frappe.set_user(self.user)
 		self.assertFalse(my_checkin()["short"])  # still in
 		self.assertEqual(my_checkin()["target_hours"], 9)
+		self.assertEqual(my_checkin()["absent_below"], 3)
 
 		frappe.set_user("Administrator")
 		self._log(self.employee, "OUT", now - timedelta(hours=1))

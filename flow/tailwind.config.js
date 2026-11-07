@@ -19,9 +19,11 @@ export default {
 				line: { DEFAULT: "#D5DBE8", 2: "#E5E9F2" },
 				acc: { DEFAULT: "#2B3FE0", tint: "#E2E6FF", hover: "#1C2BA8" },
 				lime: "#C9F24B",
+				// The check-in card's sky wash.
+				sky: { top: "#BFDDF5", mid: "#D3DDF4", end: "#B9C6E8" },
 				pos: { DEFAULT: "#16794A", tint: "#DAF3E5" },
 				neg: { DEFAULT: "#C0262D", tint: "#FCE0E1" },
-				warn: { DEFAULT: "#8A5700", tint: "#FFEFC4" },
+				warn: { DEFAULT: "#8A5700", tint: "#FFEFC4", bar: "#E9A23B" },
 			},
 			fontFamily: {
 				// Geist, bundled with the app (no Google Fonts request).
