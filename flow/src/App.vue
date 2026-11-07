@@ -22,6 +22,7 @@
 		<PhoneNav v-model:open="phoneMenu" :active="area?.key" />
 		<CommandPalette v-model="paletteOpen" />
 		<ShortcutsHelp />
+		<RouteProgress />
 	</div>
 </template>
 
@@ -34,6 +35,7 @@ import TopBar from "@/components/TopBar.vue";
 import CommandPalette from "@/components/CommandPalette.vue";
 import PhoneNav from "@/components/PhoneNav.vue";
 import ShortcutsHelp from "@/components/ShortcutsHelp.vue";
+import RouteProgress from "@/components/RouteProgress.vue";
 import { areaForDoctype } from "@/nav";
 import { loadAccess, visibleAreas } from "@/composables/access";
 import { brand } from "@/brand";

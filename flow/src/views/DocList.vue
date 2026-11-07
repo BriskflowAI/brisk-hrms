@@ -548,11 +548,23 @@
 					{{
 						list.search || list.filters.length
 							? "Try removing a filter or searching by ID."
-							: "Records you create here or in the classic desk show up in this list."
+							: "Records you create show up in this list."
 					}}
 				</p>
 			</div>
-			<div v-if="list.loading" class="px-6 py-6 text-center text-[13px] text-mut">
+			<div
+				v-if="list.loading && !list.rows.length"
+				role="status"
+				:aria-label="__('Loading')"
+				class="space-y-2.5 px-4 py-4"
+			>
+				<div v-for="n in 6" :key="n" class="h-9 animate-pulse rounded-md bg-line-2" />
+			</div>
+			<div
+				v-else-if="list.loading"
+				role="status"
+				class="px-6 py-4 text-center text-[13px] text-mut"
+			>
 				{{ __("Loading…") }}
 			</div>
 		</div>

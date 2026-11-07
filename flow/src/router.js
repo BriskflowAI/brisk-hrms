@@ -1,3 +1,4 @@
+import { ref } from "vue";
 import { createRouter, createWebHistory } from "vue-router";
 
 const routes = [
@@ -58,6 +59,8 @@ const routes = [
 	},
 ];
 
+export const navigating = ref(false);
+
 const router = createRouter({
 	history: createWebHistory("/flow"),
 	routes,
@@ -72,6 +75,11 @@ router.beforeEach((to) => {
 		window.location.href = `/login?redirect-to=${encodeURIComponent("/flow" + to.fullPath)}`;
 		return false;
 	}
+	navigating.value = true;
 });
+
+// Also cleared on a cancelled or failed navigation, both of which still reach afterEach/onError.
+router.afterEach(() => (navigating.value = false));
+router.onError(() => (navigating.value = false));
 
 export default router;

@@ -79,6 +79,12 @@
 		<ContextSidebar v-if="shown?.sections.length" :area="shown" embedded />
 		<div class="mt-auto flex flex-col border-t border-line py-2 text-[14px]">
 			<router-link
+				v-if="canReadDoctype('HR Settings')"
+				:to="{ name: 'Form', params: { doctype: 'HR Settings', name: 'HR Settings' } }"
+				class="px-4 py-2.5"
+				>{{ __("Setup") }}</router-link
+			>
+			<router-link
 				:to="{ name: 'Form', params: { doctype: 'User', name: user } }"
 				class="px-4 py-2.5"
 				>{{ __("My settings") }}</router-link
@@ -103,7 +109,8 @@ import { useRoute, useRouter } from "vue-router";
 import Icon from "./Icon.vue";
 import Avatar from "./Avatar.vue";
 import ContextSidebar from "./ContextSidebar.vue";
-import { visibleAreas } from "@/composables/access";
+import { canReadDoctype, visibleAreas } from "@/composables/access";
+import { navigating } from "@/router";
 import { inboxCount } from "@/composables/inbox";
 import { logout, useSession } from "@/composables/session";
 
@@ -140,6 +147,9 @@ function pick(a) {
 	browsing.value = a;
 }
 
+watch(navigating, (busy) => {
+	if (busy) open.value = false;
+});
 watch(
 	() => route.fullPath,
 	() => {
