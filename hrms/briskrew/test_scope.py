@@ -1,6 +1,7 @@
 import json
 import os
 import re
+from unittest.mock import patch
 
 import frappe
 
@@ -68,6 +69,50 @@ class TestBriskrewScope(HRMSTestSuite):
 		set_hrms_as_default_app()
 
 		self.assertEqual(frappe.db.get_single_value("System Settings", "default_app"), "erpnext")
+
+	def test_ships_no_desk_onboarding_checklists(self):
+		hrms_dir = os.path.join(os.path.dirname(__file__), "..")
+		shipped = [
+			os.path.relpath(root, hrms_dir)
+			for root, _dirs, _files in os.walk(hrms_dir)
+			if os.path.basename(root) in ("module_onboarding", "onboarding_step")
+		]
+
+		self.assertEqual(shipped, [])
+
+	def test_patch_removes_desk_onboarding_from_a_site(self):
+		from hrms.patches.v16_0.delete_desk_onboarding import execute
+
+		# Developer mode writes these records into the app as files.
+		with patch.dict(frappe.conf, {"developer_mode": 0}):
+			step = frappe.get_doc(
+				{
+					"doctype": "Onboarding Step",
+					"name": "briskrew scope test step",
+					"title": "briskrew scope test step",
+					"action": "Create Entry",
+					"reference_document": "Employee",
+				}
+			).insert(ignore_permissions=True)
+			frappe.get_doc(
+				{
+					"doctype": "Module Onboarding",
+					"name": "briskrew scope test",
+					"title": "briskrew scope test",
+					"module": "Leaves",
+					"subtitle": "test",
+					"success_message": "test",
+					"documentation_url": "https://example.com",
+					"allow_roles": [{"role": "HR Manager"}],
+					"steps": [{"step": step.name}],
+				}
+			).insert(ignore_permissions=True)
+
+		execute()
+
+		hr_modules = frappe.get_all("Module Def", filters={"app_name": "hrms"}, pluck="name")
+		self.assertFalse(frappe.db.exists("Module Onboarding", {"module": ["in", hr_modules]}))
+		self.assertFalse(frappe.db.exists("Onboarding Step", step.name))
 
 	def test_overviews_cover_hr_areas_only(self):
 		from hrms.briskrew.dashboards import AREAS
