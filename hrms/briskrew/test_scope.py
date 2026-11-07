@@ -49,6 +49,26 @@ class TestBriskrewScope(HRMSTestSuite):
 			visible_heirs = [h for h in code_only_modules[module] if h not in code_only_modules]
 			self.assertEqual(visible_heirs, ["HR Setup"], module)
 
+	def test_sign_in_lands_on_briskrew(self):
+		from frappe.apps import get_default_path
+
+		from hrms.subscription_utils import set_hrms_as_default_app
+
+		frappe.set_user("Administrator")
+		frappe.db.set_single_value("System Settings", "default_app", "")
+		set_hrms_as_default_app()
+		frappe.clear_cache()
+
+		self.assertEqual(get_default_path(), "/flow")
+
+	def test_keeps_a_default_app_an_admin_chose(self):
+		from hrms.subscription_utils import set_hrms_as_default_app
+
+		frappe.db.set_single_value("System Settings", "default_app", "erpnext")
+		set_hrms_as_default_app()
+
+		self.assertEqual(frappe.db.get_single_value("System Settings", "default_app"), "erpnext")
+
 	def test_overviews_cover_hr_areas_only(self):
 		from hrms.briskrew.dashboards import AREAS
 

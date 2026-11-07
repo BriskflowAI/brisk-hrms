@@ -13,18 +13,11 @@ add_to_apps_screen = [
 	{
 		"name": "hrms",
 		"logo": "/assets/hrms/briskrew/mark.svg",
-		"title": "briskrew Setup",
-		"route": app_home,
+		"title": "briskrew",
+		"route": "/flow",
 		"setup_wizard_text": "Let's build a workplace your team will love.",
 		"has_permission": "hrms.hr.utils.check_app_permission",
 		"sequence_id": 2,
-	},
-	{
-		"name": "briskrew",
-		"logo": "/assets/hrms/briskrew/mark.svg",
-		"title": "briskrew",
-		"route": "/flow",
-		"has_permission": "hrms.hr.utils.check_app_permission",
 	},
 ]
 
