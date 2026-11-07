@@ -120,6 +120,11 @@ def unread_notifications() -> int:
 	return frappe.db.count("Notification Log", {"for_user": frappe.session.user, "read": 0})
 
 
+# briskrew is HR: ERPNext's business apps stay installed (HR depends on them) but are not offered.
+SHOWN_APPS = ("hrms",)
+GROUP_TITLES = {}
+
+
 @frappe.whitelist()
 def apps() -> dict:
 	"""The other apps and workspaces this user can open, grouped by app, for briskrew's app
@@ -141,8 +146,8 @@ def apps() -> dict:
 		def is_module_visible(module):
 			return True
 
-	installed = frappe.get_installed_apps()
-	app_entries = get_apps()
+	installed = [a for a in frappe.get_installed_apps() if a in SHOWN_APPS]
+	app_entries = [a for a in get_apps() if a.get("name") in SHOWN_APPS or a.get("name") == "briskrew"]
 	# Newer desks live at /desk, older ones at /app; the apps' own routes say which this site uses.
 	desk = "/desk" if any(str(a.get("route") or "").startswith("/desk") for a in app_entries) else "/app"
 	roles = set(frappe.get_roles())
@@ -199,7 +204,7 @@ def apps() -> dict:
 		"groups": [
 			{
 				"app": app,
-				"title": (frappe.get_hooks("app_title", app_name=app) or [app])[0],
+				"title": GROUP_TITLES.get(app) or (frappe.get_hooks("app_title", app_name=app) or [app])[0],
 				"items": groups[app],
 			}
 			for app in order

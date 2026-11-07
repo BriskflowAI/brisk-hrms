@@ -1,4 +1,4 @@
-"""Area overviews: Frappe HR's own number cards and dashboard charts, computed server-side so
+"""Area overviews: the HR app's own number cards and dashboard charts, computed server-side so
 briskrew can draw them. Values come from Frappe's card and chart logic, so they match the
 classic desk dashboards."""
 
@@ -6,7 +6,7 @@ import frappe
 from frappe import _, scrub
 from frappe.utils import flt, getdate, nowdate
 
-# Which of Frappe HR's dashboards (and extra cards/charts) make up each briskrew area.
+# Which of the HR dashboards (and extra cards/charts) make up each briskrew area.
 AREAS = {
 	"people": {
 		"title": "People",
@@ -24,9 +24,6 @@ AREAS = {
 	"pay": {"title": "Pay", "dashboards": ["Payroll"]},
 	"expenses": {"title": "Expenses", "dashboards": ["Expense Claims"]},
 	"hiring": {"title": "Hiring", "dashboards": ["Recruitment"]},
-	# ERPNext's own Stock and Asset dashboards, card for card.
-	"stock": {"title": "Stock", "dashboards": ["Stock"]},
-	"assets": {"title": "Assets", "dashboards": ["Asset"]},
 	"growth": {
 		"title": "Growth",
 		"cards": ["Trainings (This Month)", "Promotions (This Month)"],

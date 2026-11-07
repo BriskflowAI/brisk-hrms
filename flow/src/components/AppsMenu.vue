@@ -1,6 +1,5 @@
 <template>
-	<!-- The other apps on this site (ERPNext, the classic Frappe HR desk, Framework tools), like
-	     the desk's app screen. briskrew covers HR; the rest open in the classic desk. -->
+	<!-- The classic HR desk's workspaces, for what briskrew's own screens don't cover yet. -->
 	<div class="relative" @keydown.esc="open = false">
 		<button
 			type="button"

@@ -1,19 +1,19 @@
 app_name = "hrms"
-app_title = "Frappe HR"
-app_publisher = "Frappe Technologies Pvt. Ltd."
+app_title = "briskrew"
+app_publisher = "briskrew"
 app_description = "Modern HR and Payroll Software"
-app_email = "contact@frappe.io"
+app_email = ""
 app_license = "GNU General Public License (v3)"
 required_apps = ["frappe/erpnext"]
-source_link = "http://github.com/frappe/hrms"
-app_logo_url = "/assets/hrms/images/frappe-hr-logo.svg"
+source_link = "https://github.com/BriskflowAI/brisk-hrms"
+app_logo_url = "/assets/hrms/briskrew/mark.svg"
 app_home = "/desk/hr-setup"
 
 add_to_apps_screen = [
 	{
 		"name": "hrms",
-		"logo": "/assets/hrms/images/frappe-hr-logo.svg",
-		"title": "Frappe HR",
+		"logo": "/assets/hrms/briskrew/mark.svg",
+		"title": "briskrew Setup",
 		"route": app_home,
 		"setup_wizard_text": "Let's build a workplace your team will love.",
 		"has_permission": "hrms.hr.utils.check_app_permission",
@@ -37,7 +37,35 @@ app_include_js = [
 	"hrms.bundle.js",
 ]
 app_include_css = "hrms.bundle.css"
-code_only_modules = {"HR": ["HR Setup"]}
+code_only_modules = {
+	"HR": ["HR Setup"],
+	**{
+		module: ["HR Setup"]
+		for module in (
+			"Accounts",
+			"Assets",
+			"Bulk Transaction",
+			"Buying",
+			"Communication",
+			"CRM",
+			"EDI",
+			"ERPNext Integrations",
+			"Maintenance",
+			"Manufacturing",
+			"Portal",
+			"Projects",
+			"Quality Management",
+			"Regional",
+			"Selling",
+			"Setup",
+			"Stock",
+			"Subcontracting",
+			"Support",
+			"Telephony",
+			"Utilities",
+		)
+	},
+}
 app_include_icons = ["/assets/hrms/icons/module-icons.svg"]
 
 # website
