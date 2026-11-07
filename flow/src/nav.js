@@ -235,7 +235,6 @@ export const areas = [
 					report("Employee Advance Summary"),
 				],
 			},
-			{ label: "More", items: [{ label: "All reports", href: "/app/report" }] },
 		],
 	},
 ];
@@ -251,8 +250,3 @@ export function allNavItems() {
 		a.sections.flatMap((s) => s.items.map((i) => ({ ...i, area: a.label, section: s.label }))),
 	);
 }
-
-export const classicUrl = (doctype, name) => {
-	const slug = doctype.toLowerCase().replace(/ /g, "-");
-	return name ? `/app/${slug}/${encodeURIComponent(name)}` : `/app/${slug}`;
-};

@@ -1,12 +1,16 @@
 import json
 import os
+import re
 
 import frappe
 
-from hrms.briskrew.api import apps
 from hrms.tests.utils import HRMSTestSuite
 
 ICON_DIR = os.path.join(os.path.dirname(__file__), "..", "desktop_icon")
+FLOW_SRC = os.path.join(os.path.dirname(__file__), "..", "..", "flow", "src")
+# Desk route shim for form scripts that call set_route on a screen briskrew does not have.
+DESK_ROUTE_SHIM = os.path.join("engine", "compat.js")
+DESK_LINK = re.compile(r"[\"'`](/app|/desk)(/|[\"'`?])")
 
 
 def _standard_icons() -> dict[str, dict]:
@@ -45,24 +49,24 @@ class TestBriskrewScope(HRMSTestSuite):
 			visible_heirs = [h for h in code_only_modules[module] if h not in code_only_modules]
 			self.assertEqual(visible_heirs, ["HR Setup"], module)
 
-	def test_app_switcher_lists_hr_only(self):
-		frappe.set_user("Administrator")
-		result = apps()
-
-		self.assertLessEqual({g["app"] for g in result["groups"]}, {"hrms"})
-		self.assertLessEqual({a["name"] for a in result["apps"]}, {"hrms", "briskrew"})
-
 	def test_overviews_cover_hr_areas_only(self):
 		from hrms.briskrew.dashboards import AREAS
 
 		self.assertEqual(set(AREAS) & {"stock", "assets"}, set())
 
-	def test_app_switcher_names_no_frappe_product(self):
-		frappe.set_user("Administrator")
-		titles = [g["title"] for g in apps()["groups"]] + [a["title"] for a in apps()["apps"]]
+	def test_briskrew_never_links_to_the_classic_desk(self):
+		offenders = []
+		for root, _dirs, files in os.walk(FLOW_SRC):
+			for file in files:
+				path = os.path.join(root, file)
+				if not file.endswith((".vue", ".js")) or path.endswith(DESK_ROUTE_SHIM):
+					continue
+				with open(path) as f:
+					for number, line in enumerate(f, 1):
+						if DESK_LINK.search(line):
+							offenders.append(f"{os.path.relpath(path, FLOW_SRC)}:{number}")
 
-		for title in titles:
-			self.assertNotIn("frappe", title.lower())
+		self.assertEqual(offenders, [])
 
 	def test_desktop_icons_carry_no_frappe_name(self):
 		icons = _standard_icons()

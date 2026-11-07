@@ -43,14 +43,14 @@
 		</div>
 
 		<div class="mt-2 flex shrink-0 flex-col items-center gap-2.5">
-			<a
+			<router-link
 				v-if="canReadDoctype('HR Settings')"
-				href="/app/hr-settings"
+				:to="{ name: 'Form', params: { doctype: 'HR Settings', name: 'HR Settings' } }"
 				class="flex w-14 flex-col items-center gap-[3px] rounded-[10px] pb-1.5 pt-[7px] text-[10.5px] font-medium text-ink-navtext hover:bg-ink-nav/60"
 			>
 				<Icon name="gear" :size="20" />
 				{{ __("Setup") }}{{ " " }}
-			</a>
+			</router-link>
 			<div class="relative" @keydown.esc="menuOpen = false">
 				<button
 					ref="avatarBtn"
@@ -104,9 +104,6 @@
 						@click="menuOpen = false"
 						>{{ __("About and licences") }}</router-link
 					>
-					<a href="/app" role="menuitem" class="block px-3.5 py-2 hover:bg-side">{{
-						__("Classic desk")
-					}}</a>
 					<button
 						type="button"
 						role="menuitem"

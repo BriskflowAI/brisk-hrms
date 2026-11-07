@@ -86,7 +86,6 @@
 			<router-link to="/about" class="px-4 py-2.5">{{
 				__("About and licences")
 			}}</router-link>
-			<a href="/app" class="px-4 py-2.5">{{ __("Classic desk") }}</a>
 			<button
 				type="button"
 				class="px-4 py-2.5 text-left font-semibold text-neg"

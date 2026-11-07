@@ -91,21 +91,6 @@ test("saves a record from the form", async ({ page }) => {
   expect(problems).toEqual([]);
 });
 
-test("app switcher lists only HR workspaces", async ({
-  page,
-}) => {
-  const problems = watch(page);
-  await signIn(page, ADMIN);
-  await page.goto("/flow/");
-  await page.locator('button[aria-label="Apps"]').first().click();
-  await expect(page.locator("text=Open the app screen")).toBeVisible();
-  const links = page.locator('a[href^="/desk/"], a[href^="/app/"]');
-  await expect.poll(() => links.count()).toBeGreaterThan(3);
-  await expect(page.locator("text=briskrew").first()).toBeVisible();
-  await expect(page.locator("text=ERPNext")).toHaveCount(0);
-  expect(problems).toEqual([]);
-});
-
 test("Report view groups with totals", async ({ page }) => {
   const problems = watch(page);
   await signIn(page, LEAD);
