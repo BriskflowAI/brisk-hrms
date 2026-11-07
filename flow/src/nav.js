@@ -27,7 +27,7 @@ export const areas = [
 	{ key: "inbox", label: "Inbox", icon: "inbox", to: "/inbox", sections: [] },
 	{
 		key: "people",
-		label: "People",
+		label: "HR Setup",
 		icon: "users",
 		to: "/people",
 		sections: [
@@ -69,7 +69,7 @@ export const areas = [
 	},
 	{
 		key: "time",
-		label: "Time",
+		label: "Leaves",
 		icon: "cal",
 		sections: [
 			{
@@ -90,9 +90,17 @@ export const areas = [
 					r("Encashment", "Leave Encashment"),
 				],
 			},
+		],
+	},
+	{
+		key: "attendance",
+		label: "Shift & Attendance",
+		icon: "clock",
+		sections: [
 			{
 				label: "Attendance",
 				items: [
+					{ label: "Overview", route: "/overview/attendance" },
 					{ label: "Who's in", route: "/attendance" },
 					r("Attendance", "Attendance"),
 					r("Mark attendance", "Employee Attendance Tool"),
@@ -113,7 +121,7 @@ export const areas = [
 	},
 	{
 		key: "pay",
-		label: "Pay",
+		label: "Payroll",
 		icon: "coins",
 		sections: [
 			{
@@ -171,7 +179,7 @@ export const areas = [
 	},
 	{
 		key: "hiring",
-		label: "Hiring",
+		label: "Recruitment",
 		icon: "door",
 		sections: [
 			{
@@ -204,7 +212,7 @@ export const areas = [
 	},
 	{
 		key: "growth",
-		label: "Growth",
+		label: "Performance",
 		icon: "spark",
 		sections: [
 			{

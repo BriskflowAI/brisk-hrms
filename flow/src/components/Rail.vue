@@ -20,7 +20,7 @@
 				:key="area.key"
 				:to="entryFor(area)"
 				:aria-current="area.key === active ? 'page' : undefined"
-				class="relative flex w-14 flex-col items-center gap-[3px] rounded-[10px] pb-1.5 pt-[7px] text-[10.5px] transition-colors"
+				class="relative flex w-14 flex-col items-center gap-[3px] rounded-[10px] pb-1.5 pt-[7px] text-center text-[10.5px] leading-tight transition-colors"
 				:class="
 					area.key === active
 						? 'bg-ink-nav font-bold text-surf'

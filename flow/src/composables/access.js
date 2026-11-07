@@ -25,6 +25,7 @@ const ROUTE_NEEDS = {
 	"/team-updates": "Employee",
 	"/overview/people": "Employee",
 	"/overview/time": "Leave Application",
+	"/overview/attendance": "Attendance",
 	"/overview/pay": "Salary Slip",
 	"/overview/expenses": "Expense Claim",
 	"/overview/hiring": "Job Opening",

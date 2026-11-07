@@ -9,23 +9,23 @@ from frappe.utils import flt, getdate, nowdate
 # Which of the HR dashboards (and extra cards/charts) make up each briskrew area.
 AREAS = {
 	"people": {
-		"title": "People",
+		"title": "HR Setup",
 		"dashboards": ["Human Resource", "Employee Lifecycle"],
 	},
 	"time": {
-		"title": "Time",
+		"title": "Leaves",
 		"cards": [
 			"Number of Employees on Leave (Today)",
 			"Number of Employees on Leave (This Month)",
 			"Holidays in this month",
 		],
-		"dashboards": ["Attendance"],
 	},
-	"pay": {"title": "Pay", "dashboards": ["Payroll"]},
+	"attendance": {"title": "Shift & Attendance", "dashboards": ["Attendance"]},
+	"pay": {"title": "Payroll", "dashboards": ["Payroll"]},
 	"expenses": {"title": "Expenses", "dashboards": ["Expense Claims"]},
-	"hiring": {"title": "Hiring", "dashboards": ["Recruitment"]},
+	"hiring": {"title": "Recruitment", "dashboards": ["Recruitment"]},
 	"growth": {
-		"title": "Growth",
+		"title": "Performance",
 		"cards": ["Trainings (This Month)", "Promotions (This Month)"],
 		"charts": ["Appraisal Overview", "Training Type", "Y-O-Y Promotions"],
 	},

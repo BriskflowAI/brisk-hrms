@@ -61,8 +61,8 @@ const area = computed(() => {
 	if (route.name === "PayrollReview") return areas.find((a) => a.key === "pay");
 	if (["People", "OrgChart", "TeamUpdates"].includes(route.name))
 		return areas.find((a) => a.key === "people");
-	if (["LeavePolicies", "Attendance"].includes(route.name))
-		return areas.find((a) => a.key === "time");
+	if (route.name === "LeavePolicies") return areas.find((a) => a.key === "time");
+	if (route.name === "Attendance") return areas.find((a) => a.key === "attendance");
 	if (route.name === "Overview") return areas.find((a) => a.key === route.params.area);
 	if (route.name === "Inbox") return areas.find((a) => a.key === "inbox");
 	if (route.params.doctype) {
