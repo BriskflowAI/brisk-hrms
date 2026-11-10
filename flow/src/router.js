@@ -1,4 +1,6 @@
+import { ref } from "vue";
 import { createRouter, createWebHistory } from "vue-router";
+import { canVisit } from "@/composables/access";
 
 const routes = [
 	{ path: "/", name: "Home", component: () => import("@/views/Home.vue") },
@@ -19,6 +21,12 @@ const routes = [
 		path: "/leave-policies",
 		name: "LeavePolicies",
 		component: () => import("@/views/LeavePolicies.vue"),
+	},
+	{ path: "/leave", name: "MyLeave", component: () => import("@/views/MyLeave.vue") },
+	{
+		path: "/leave/apply",
+		name: "ApplyLeave",
+		component: () => import("@/views/ApplyLeave.vue"),
 	},
 	{
 		path: "/stock-levels",
@@ -80,12 +88,14 @@ const routes = [
 	},
 ];
 
+export const navigating = ref(false);
+
 const router = createRouter({
 	history: createWebHistory("/flow"),
 	routes,
 });
 
-router.beforeEach((to) => {
+router.beforeEach(async (to) => {
 	// Guests go to Frappe's login page and come back here afterwards.
 	const loggedIn = document.cookie
 		.split("; ")
@@ -94,6 +104,21 @@ router.beforeEach((to) => {
 		window.location.href = `/login?redirect-to=${encodeURIComponent("/flow" + to.fullPath)}`;
 		return false;
 	}
+	// Shown as "doesn't exist", never as "not allowed", so a URL doesn't confirm a screen is there.
+	if (to.name !== "NotFound" && !(await canVisit(to))) {
+		return {
+			name: "NotFound",
+			params: { pathMatch: to.path.split("/").slice(1).map(decodeURIComponent) },
+			query: to.query,
+			hash: to.hash,
+			replace: true,
+		};
+	}
+	navigating.value = true;
 });
+
+// Also cleared on a cancelled or failed navigation, both of which still reach afterEach/onError.
+router.afterEach(() => (navigating.value = false));
+router.onError(() => (navigating.value = false));
 
 export default router;

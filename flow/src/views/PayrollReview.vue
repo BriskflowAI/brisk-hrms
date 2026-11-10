@@ -316,7 +316,7 @@
 					<section class="mt-auto text-[12.5px] leading-relaxed text-mut">
 						{{
 							__(
-								"Creating, submitting and paying slips happens on the payroll run, with Frappe HR's own rules.",
+								"Creating, submitting and paying slips happens on the payroll run, with briskrew's own rules.",
 							)
 						}}
 					</section>

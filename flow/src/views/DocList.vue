@@ -61,7 +61,7 @@
 				</button>
 			</div>
 
-			<div class="relative">
+			<div v-if="list.perms.export" class="relative">
 				<button
 					type="button"
 					class="btn-ghost px-2.5"
@@ -79,19 +79,7 @@
 						<button type="button" class="menu-item" @click="exportRows('CSV')">
 							{{ __("Export to CSV") }}
 						</button>
-						<div class="my-1 border-t border-line-2" />
 					</template>
-					<a
-						v-if="list.perms.import"
-						:href="`/app/data-import/new?reference_doctype=${encodeURIComponent(
-							doctype,
-						)}`"
-						class="menu-item block"
-						>{{ __("Import") }}</a
-					>
-					<a :href="classicUrl(doctype)" class="menu-item block">{{
-						__("Open in classic desk")
-					}}</a>
 				</div>
 			</div>
 
@@ -117,11 +105,7 @@
 			class="rounded-lg bg-line-2 px-4 py-2 text-[12.5px] text-ink-2"
 		>
 			{{ " " }}{{ __("Some of this list's extras (")
-			}}{{ list.unsupported.slice(0, 2).join(", ") }}{{ __(") run only in the") }}
-			<a :href="classicUrl(doctype)" class="font-semibold text-acc">{{
-				__("classic desk")
-			}}</a
-			>.
+			}}{{ list.unsupported.slice(0, 2).join(", ") }}{{ __(") aren't supported here yet.") }}
 		</p>
 
 		<!-- Filters -->
@@ -564,11 +548,23 @@
 					{{
 						list.search || list.filters.length
 							? "Try removing a filter or searching by ID."
-							: "Records you create here or in the classic desk show up in this list."
+							: "Records you create show up in this list."
 					}}
 				</p>
 			</div>
-			<div v-if="list.loading" class="px-6 py-6 text-center text-[13px] text-mut">
+			<div
+				v-if="list.loading && !list.rows.length"
+				role="status"
+				:aria-label="__('Loading')"
+				class="space-y-2.5 px-4 py-4"
+			>
+				<div v-for="n in 6" :key="n" class="h-9 animate-pulse rounded-md bg-line-2" />
+			</div>
+			<div
+				v-else-if="list.loading"
+				role="status"
+				class="px-6 py-4 text-center text-[13px] text-mut"
+			>
 				{{ __("Loading…") }}
 			</div>
 		</div>
@@ -722,7 +718,7 @@ import {
 	loadPerms,
 } from "@/engine/compat";
 import { messageOf } from "@/engine/form";
-import { allNavItems, areaForDoctype, classicUrl } from "@/nav";
+import { allNavItems, areaForDoctype } from "@/nav";
 
 const props = defineProps({ doctype: { type: String, required: true } });
 const route = useRoute();

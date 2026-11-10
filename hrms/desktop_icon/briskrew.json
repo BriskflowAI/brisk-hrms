@@ -1,0 +1,19 @@
+{
+ "app": "hrms",
+ "creation": "2025-11-17 20:33:43.167514",
+ "docstatus": 0,
+ "doctype": "Desktop Icon",
+ "hidden": 0,
+ "icon_type": "App",
+ "idx": 14,
+ "label": "briskrew",
+ "link": "/flow",
+ "link_type": "External",
+ "logo_url": "/assets/hrms/briskrew/mark.svg",
+ "modified": "2026-11-07 16:00:00.000000",
+ "modified_by": "Administrator",
+ "name": "briskrew",
+ "owner": "Administrator",
+ "roles": [],
+ "standard": 1
+}

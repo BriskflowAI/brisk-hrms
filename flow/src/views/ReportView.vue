@@ -89,9 +89,6 @@
 						class="menu-item"
 						>{{ __("Email this regularly") }}</router-link
 					>
-					<a :href="`/app/query-report/${encodeURIComponent(name)}`" class="menu-item">{{
-						__("Open in classic desk")
-					}}</a>
 				</div>
 			</div>
 			<button type="button" class="btn-ink" :disabled="report.loading" @click="report.run()">

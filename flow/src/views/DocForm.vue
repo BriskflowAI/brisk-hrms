@@ -110,7 +110,7 @@
 					</div>
 
 					<!-- More -->
-					<div class="relative">
+					<div v-if="!form.isNew" class="relative">
 						<button
 							type="button"
 							class="btn-ghost px-2.5"
@@ -124,147 +124,126 @@
 							v-if="menu === 'more'"
 							class="absolute right-0 top-full z-30 mt-1 w-[230px] rounded-lg border border-line bg-surf py-1 shadow-xl"
 						>
-							<template v-if="!form.isNew">
-								<div
-									class="px-3 pb-1 pt-1.5 text-[11px] font-semibold uppercase tracking-wide text-mut"
-								>
-									{{ __("Print") }}
-								</div>
-								<a
-									v-for="p in form.printFormats"
-									:key="p"
-									:href="form.printUrl(p)"
-									target="_blank"
-									rel="noopener"
-									class="block px-3 py-1.5 text-[13.5px] hover:bg-acc-tint"
-								>
-									{{ p }}
-								</a>
-								<a
-									:href="form.pdfUrl()"
-									class="block px-3 py-1.5 text-[13.5px] hover:bg-acc-tint"
-									>{{ __("Download PDF") }}</a
-								>
-								<div class="my-1 border-t border-line-2" />
-								<button type="button" class="menu-item" @click="duplicate">
-									{{ __("Duplicate") }}
-								</button>
-								<button
-									v-if="form.meta.allow_rename && form.perms?.write"
-									type="button"
-									class="menu-item"
-									@click="askRename"
-								>
-									{{ __("Rename") }}
-								</button>
-								<button type="button" class="menu-item" @click="copyLink">
-									{{ __("Copy link") }}
-								</button>
-								<button
-									type="button"
-									class="menu-item"
-									@click="form.follow(!form.docinfo?.is_document_followed)"
-								>
-									{{
-										form.docinfo?.is_document_followed ? "Unfollow" : "Follow"
-									}}
-								</button>
-								<button type="button" class="menu-item" @click="reload">
-									{{ __("Reload") }}
-								</button>
-								<button
-									v-if="form.undoStack.length"
-									type="button"
-									class="menu-item"
-									@click="(menu = null), form.undo()"
-								>
-									{{ __("Undo last change") }}
-								</button>
-								<button
-									v-if="form.redoStack.length"
-									type="button"
-									class="menu-item"
-									@click="(menu = null), form.redo()"
-								>
-									{{ __("Redo") }}
-								</button>
-								<button
-									type="button"
-									class="menu-item"
-									@click="(menu = null), (jumpOpen = true)"
-								>
-									{{ __("Jump to field") }}
-								</button>
-								<button
-									type="button"
-									class="menu-item"
-									@click="(remindOpen = true), (menu = null)"
-								>
-									{{ __("Remind me") }}
-								</button>
-								<router-link
-									v-if="form.meta.allow_auto_repeat"
-									:to="
-										form.doc.auto_repeat
-											? {
-													name: 'Form',
-													params: {
-														doctype: 'Auto Repeat',
-														name: form.doc.auto_repeat,
-													},
-											  }
-											: {
-													name: 'Form',
-													params: {
-														doctype: 'Auto Repeat',
-														name: 'new',
-													},
-													query: {
-														reference_doctype: doctype,
-														reference_document: form.doc.name,
-													},
-											  }
-									"
-									class="menu-item"
-									>{{
-										form.doc.auto_repeat ? "Repeat settings" : "Repeat"
-									}}</router-link
-								>
-								<button type="button" class="menu-item" @click="copyJson">
-									{{ __("Copy to clipboard") }}
-								</button>
-								<router-link
-									v-if="form.perms?.create"
-									:to="{ name: 'Form', params: { doctype, name: 'new' } }"
-									class="menu-item"
-									>{{ __("New {0}", [__(doctype)]) }}</router-link
-								>
-								<a
-									v-if="isSystemManager"
-									:href="`/app/customize-form?doc_type=${encodeURIComponent(
-										doctype,
-									)}`"
-									class="menu-item"
-									>{{ __("Customize") }}</a
-								>
-								<button
-									v-if="form.perms?.delete && form.docstatus !== 1"
-									type="button"
-									class="menu-item text-neg"
-									@click="confirmAction('delete')"
-								>
-									{{ __("Delete") }}
-								</button>
-								<div class="my-1 border-t border-line-2" />
-							</template>
-							<a
-								:href="
-									classicUrl(doctype, form.isNew ? null : form.doc.name) +
-									(form.isNew ? '/new' : '')
-								"
-								class="block px-3 py-1.5 text-[13.5px] hover:bg-acc-tint"
-								>{{ __("Open in classic desk") }}</a
+							<div
+								class="px-3 pb-1 pt-1.5 text-[11px] font-semibold uppercase tracking-wide text-mut"
 							>
+								{{ __("Print") }}
+							</div>
+							<a
+								v-for="p in form.printFormats"
+								:key="p"
+								:href="form.printUrl(p)"
+								target="_blank"
+								rel="noopener"
+								class="block px-3 py-1.5 text-[13.5px] hover:bg-acc-tint"
+							>
+								{{ p }}
+							</a>
+							<a
+								:href="form.pdfUrl()"
+								class="block px-3 py-1.5 text-[13.5px] hover:bg-acc-tint"
+								>{{ __("Download PDF") }}</a
+							>
+							<div class="my-1 border-t border-line-2" />
+							<button type="button" class="menu-item" @click="duplicate">
+								{{ __("Duplicate") }}
+							</button>
+							<button
+								v-if="form.meta.allow_rename && form.perms?.write"
+								type="button"
+								class="menu-item"
+								@click="askRename"
+							>
+								{{ __("Rename") }}
+							</button>
+							<button type="button" class="menu-item" @click="copyLink">
+								{{ __("Copy link") }}
+							</button>
+							<button
+								type="button"
+								class="menu-item"
+								@click="form.follow(!form.docinfo?.is_document_followed)"
+							>
+								{{ form.docinfo?.is_document_followed ? "Unfollow" : "Follow" }}
+							</button>
+							<button type="button" class="menu-item" @click="reload">
+								{{ __("Reload") }}
+							</button>
+							<button
+								v-if="form.undoStack.length"
+								type="button"
+								class="menu-item"
+								@click="(menu = null), form.undo()"
+							>
+								{{ __("Undo last change") }}
+							</button>
+							<button
+								v-if="form.redoStack.length"
+								type="button"
+								class="menu-item"
+								@click="(menu = null), form.redo()"
+							>
+								{{ __("Redo") }}
+							</button>
+							<button
+								type="button"
+								class="menu-item"
+								@click="(menu = null), (jumpOpen = true)"
+							>
+								{{ __("Jump to field") }}
+							</button>
+							<button
+								type="button"
+								class="menu-item"
+								@click="(remindOpen = true), (menu = null)"
+							>
+								{{ __("Remind me") }}
+							</button>
+							<router-link
+								v-if="form.meta.allow_auto_repeat"
+								:to="
+									form.doc.auto_repeat
+										? {
+												name: 'Form',
+												params: {
+													doctype: 'Auto Repeat',
+													name: form.doc.auto_repeat,
+												},
+										  }
+										: {
+												name: 'Form',
+												params: {
+													doctype: 'Auto Repeat',
+													name: 'new',
+												},
+												query: {
+													reference_doctype: doctype,
+													reference_document: form.doc.name,
+												},
+										  }
+								"
+								class="menu-item"
+								>{{
+									form.doc.auto_repeat ? "Repeat settings" : "Repeat"
+								}}</router-link
+							>
+							<button type="button" class="menu-item" @click="copyJson">
+								{{ __("Copy to clipboard") }}
+							</button>
+							<router-link
+								v-if="form.perms?.create"
+								:to="{ name: 'Form', params: { doctype, name: 'new' } }"
+								class="menu-item"
+								>{{ __("New {0}", [__(doctype)]) }}</router-link
+							>
+							<button
+								v-if="form.perms?.delete && form.docstatus !== 1"
+								type="button"
+								class="menu-item text-neg"
+								@click="confirmAction('delete')"
+							>
+								{{ __("Delete") }}
+							</button>
 						</div>
 					</div>
 
@@ -362,13 +341,7 @@
 				>
 					{{ " " }}{{ __("A few parts of this form's script (")
 					}}{{ form.unsupported.slice(0, 3).join(", ")
-					}}{{ __(") run only in the classic desk.") }}
-					<a
-						:href="classicUrl(doctype, form.isNew ? null : form.doc.name)"
-						class="font-semibold text-acc"
-						>{{ __("Open there") }}</a
-					>
-					{{ __("if something seems missing.") }}{{ " " }}
+					}}{{ __(") aren't supported here yet.") }}{{ " " }}
 				</p>
 				<details
 					v-for="sec in form.sections"
@@ -521,7 +494,6 @@ import DocSidebar from "@/components/DocSidebar.vue";
 import CompatDialogs from "@/components/CompatDialogs.vue";
 import { createForm, messageOf } from "@/engine/form";
 import { attachFormScript, detachFormScript } from "@/engine/compat";
-import { classicUrl } from "@/nav";
 
 const props = defineProps({
 	doctype: { type: String, required: true },
@@ -747,11 +719,6 @@ const tone = (c) =>
 // ---- likes, reminders, copy ----
 const remindOpen = ref(false);
 const { user: me } = useSession();
-const isSystemManager = computed(() =>
-	(window.frappe?.user_roles || window.frappe?.boot?.user?.roles || []).includes(
-		"System Manager",
-	),
-);
 const likedBy = computed(() => {
 	try {
 		return JSON.parse(form.doc?._liked_by || "[]") || [];

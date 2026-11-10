@@ -82,7 +82,7 @@ and Expense Approver roles.
 | Stock Summary | ✅ Stock levels (same data; reorder levels flagged, Move and Request actions) |
 | Item dashboard (stock by warehouse) | ✅ Item page: stock by warehouse, reorder levels, recent movements, prices |
 | Asset dashboard and value graph | ✅ Asset register and asset page (value now, depreciation schedule, movements, maintenance, repairs); the Asset form also draws its value graph |
-| Warehouse Capacity Summary, Point of Sale | ❌ Classic desk only (see `stock-assets-api.md`) |
+| Warehouse Capacity Summary, Point of Sale | ❌ Classic desk only |
 
 ## Left in the classic desk
 

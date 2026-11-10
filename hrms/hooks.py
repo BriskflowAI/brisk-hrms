@@ -1,30 +1,23 @@
 app_name = "hrms"
-app_title = "Frappe HR"
-app_publisher = "Frappe Technologies Pvt. Ltd."
+app_title = "briskrew"
+app_publisher = "briskrew"
 app_description = "Modern HR and Payroll Software"
-app_email = "contact@frappe.io"
+app_email = ""
 app_license = "GNU General Public License (v3)"
 required_apps = ["frappe/erpnext"]
-source_link = "http://github.com/frappe/hrms"
-app_logo_url = "/assets/hrms/images/frappe-hr-logo.svg"
+source_link = "https://github.com/BriskflowAI/brisk-hrms"
+app_logo_url = "/assets/hrms/briskrew/mark.svg"
 app_home = "/desk/hr-setup"
 
 add_to_apps_screen = [
 	{
 		"name": "hrms",
-		"logo": "/assets/hrms/images/frappe-hr-logo.svg",
-		"title": "Frappe HR",
-		"route": app_home,
-		"setup_wizard_text": "Let's build a workplace your team will love.",
-		"has_permission": "hrms.hr.utils.check_app_permission",
-		"sequence_id": 2,
-	},
-	{
-		"name": "briskrew",
 		"logo": "/assets/hrms/briskrew/mark.svg",
 		"title": "briskrew",
 		"route": "/flow",
+		"setup_wizard_text": "Let's build a workplace your team will love.",
 		"has_permission": "hrms.hr.utils.check_app_permission",
+		"sequence_id": 2,
 	},
 ]
 

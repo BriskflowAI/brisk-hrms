@@ -352,12 +352,6 @@
 						<Icon name="file" :size="15" /> {{ __("Comment") }}
 						<kbd class="kbd hidden md:inline-flex">C</kbd>
 					</button>
-					<a
-						:href="classicUrl(current.doctype, current.name)"
-						class="btn hidden border-transparent text-ink-2 hover:bg-side md:inline-flex"
-					>
-						<Icon name="ext" :size="15" /> {{ __("Classic desk") }}{{ " " }}
-					</a>
 					<div class="flex-grow" />
 					<template v-if="ctx">
 						<button
@@ -503,7 +497,6 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import dayjs from "dayjs";
 import Icon from "@/components/Icon.vue";
 import Avatar from "@/components/Avatar.vue";
-import { classicUrl } from "@/nav";
 import {
 	addComment,
 	approveClear,

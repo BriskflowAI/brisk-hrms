@@ -51,6 +51,36 @@ policy checks). Server side: `hrms/briskrew/inbox.py`.
 - Approvals wait 5 seconds before being sent, so they can be undone.
 - Keyboard: `J`/`K` move, `A` approve, `R` reject (asks for a reason), `C` comment.
 
+## My leave
+
+`/flow/leave` and `/flow/leave/apply`: the signed-in employee's own leave, laid out after Zoho
+People's Leave › My data. Server side: `hrms/briskrew/my_leave.py`, which only ever reads and
+writes the caller's own Employee record.
+
+- **Leave summary**: a card per leave type with Available and Booked (hover for Used, Planned
+  and Pending approval), days marked absent with no leave behind them, and upcoming and past
+  leave and holidays. A calendar view shows the same for one month. The period arrows step a
+  whole leave period (the company's Leave Period, else the calendar year).
+- Available counts requests still waiting on the approver, so people don't ask for the same
+  days twice; Frappe HR's own balance only counts approved leave.
+- **Apply leave**: a page with a row per day (weekly offs and holidays greyed out), the total,
+  and the balance before and after. Frappe HR allows one half day per request. Validation,
+  balance checks and the approver are Frappe HR's own.
+- **Leave requests**: the period's requests with status and approver. A request can be withdrawn
+  until it's decided (it's discarded, so it shows as Cancelled); approved leave is cancelled by
+  the approver.
+- **Holidays**: the employee's holiday list for the period, weekly offs left out.
+- Not built yet: the team's leave calendar, comp-off requests, and an estimated year-end
+  balance.
+
+## Who sees what
+
+`nav.js` items, sections and areas can carry `roles`; `composables/access.js` hides anything
+whose roles the user doesn't hold, on top of the read-permission check, and the router applies
+the same rules to typed URLs (shown as "doesn't exist", never "not allowed"). Employees get
+their own data; Inbox, Reports and Home's approvals list need an approver role; setup screens,
+Recruitment and overviews need HR. The server still checks every request.
+
 ## Stock and assets
 
 With ERPNext installed, briskrew has Stock and Assets areas next to the HR ones (main, Frappe

@@ -70,12 +70,8 @@ def subscription_updated(app: str, plan: str):
 
 
 def set_hrms_as_default_app(*args):
-	if is_hr_only_site() and not frappe.get_system_settings("default_app"):
+	if not frappe.get_system_settings("default_app"):
 		frappe.db.set_single_value("System Settings", "default_app", "hrms")
-
-
-def is_hr_only_site() -> bool:
-	return bool(frappe.conf.sk_hrms and not (frappe.conf.sk_erpnext_smb or frappe.conf.sk_erpnext))
 
 
 def update_erpnext_access(user_input: dict | None):
@@ -130,7 +126,7 @@ def update_erpnext_roles(disable: bool = True):
 
 
 def set_app_logo():
-	frappe.db.set_single_value("Navbar Settings", "app_logo", "/assets/hrms/images/frappe-hr-logo.svg")
+	frappe.db.set_single_value("Navbar Settings", "app_logo", "/assets/hrms/briskrew/mark.svg")
 
 
 def get_erpnext_roles() -> set:

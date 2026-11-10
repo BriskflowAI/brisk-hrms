@@ -1,6 +1,6 @@
 import frappe
 
-from hrms.briskrew.api import access, apps, unread_notifications
+from hrms.briskrew.api import access, unread_notifications
 from hrms.tests.utils import HRMSTestSuite
 
 
@@ -9,6 +9,7 @@ class TestBriskrewApi(HRMSTestSuite):
 		result = access()
 		self.assertIn("Employee", result["can_read"])
 		self.assertIn("Employee Leave Balance", result["reports"])
+		self.assertIn("HR Manager", result["roles"])
 
 	def test_access_is_limited_for_a_plain_user(self):
 		user = frappe.get_doc(
@@ -22,6 +23,7 @@ class TestBriskrewApi(HRMSTestSuite):
 		frappe.set_user(user.name)
 		try:
 			self.assertNotIn("Salary Structure", access()["can_read"])
+			self.assertNotIn("HR Manager", access()["roles"])
 		finally:
 			frappe.set_user("Administrator")
 
@@ -34,13 +36,3 @@ class TestBriskrewApi(HRMSTestSuite):
 			{"doctype": "Notification Log", "for_user": "Guest", "subject": "Hello", "type": "Alert"}
 		).insert(ignore_permissions=True)
 		self.assertEqual(unread_notifications(), before + 1)
-
-	def test_apps_lists_workspaces_by_app(self):
-		result = apps()
-		self.assertIn(result["desk"], ("/desk", "/app"))
-		by_app = {g["app"]: g for g in result["groups"]}
-		self.assertIn("hrms", by_app)
-		labels = [i["label"] for i in by_app["hrms"]["items"]]
-		self.assertIn("Leaves", labels)
-		for item in by_app["hrms"]["items"]:
-			self.assertTrue(item["route"].startswith(result["desk"] + "/"))

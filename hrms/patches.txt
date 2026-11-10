@@ -56,3 +56,6 @@ hrms.patches.v16_0.update_partially_paid_expense_claim_status
 hrms.patches.v16_0.set_job_offer_in_employee
 hrms.patches.v16_0.delete_old_salary_slip_print_formats
 hrms.patches.v16_0.apply_briskrew_branding
+hrms.patches.v16_0.rename_frappe_hr_desktop_icon
+hrms.patches.v16_0.set_briskrew_as_default_app
+hrms.patches.v16_0.delete_desk_onboarding
