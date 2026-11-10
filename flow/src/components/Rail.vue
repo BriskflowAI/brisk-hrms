@@ -152,7 +152,10 @@ onMounted(() => fetchInbox().catch(() => {}));
 
 function entryFor(area) {
 	if (area.to) return area.to;
-	const first = area.sections.flatMap((s) => s.items).find((i) => i.doctype);
-	return first ? { name: "List", params: { doctype: first.doctype } } : "/";
+	const items = area.sections.flatMap((s) => s.items);
+	const first = items.find((i) => i.doctype);
+	if (first) return { name: "List", params: { doctype: first.doctype } };
+	// An area that only has its own screens for this person (an employee's Leaves) opens the first.
+	return items.find((i) => i.route)?.route || "/";
 }
 </script>

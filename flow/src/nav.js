@@ -2,8 +2,13 @@
 // Every record type an HR, stock or assets user needs gets a named home here; anything not listed
 // is still reachable from the command palette (⌘K) and the classic desk.
 
+// `roles` on an area, section or item hides it from anyone holding none of them. Left off, it is for
+// every signed-in employee. This only shapes the menus; the server still checks every request.
+export const HR = ["HR Manager", "HR User", "System Manager"];
+const APPROVERS = [...HR, "Leave Approver", "Expense Approver"];
+
 const r = (label, doctype, extra = {}) => ({ label, doctype, ...extra });
-const report = (label) => ({ label, report: label });
+const report = (label, extra = {}) => ({ label, report: label, ...extra });
 
 export const areas = [
 	{
@@ -14,6 +19,7 @@ export const areas = [
 		sections: [
 			{
 				label: "Waiting on you",
+				roles: APPROVERS,
 				items: [
 					r("Leave requests", "Leave Application"),
 					r("Expense claims", "Expense Claim"),
@@ -24,7 +30,7 @@ export const areas = [
 			},
 		],
 	},
-	{ key: "inbox", label: "Inbox", icon: "inbox", to: "/inbox", sections: [] },
+	{ key: "inbox", label: "Inbox", icon: "inbox", to: "/inbox", roles: APPROVERS, sections: [] },
 	{
 		key: "people",
 		label: "HR Setup",
@@ -34,20 +40,21 @@ export const areas = [
 			{
 				label: "Directory",
 				items: [
-					{ label: "Overview", route: "/overview/people" },
+					{ label: "Overview", route: "/overview/people", roles: HR },
 					{ label: "People", route: "/people" },
 					{ label: "Org chart", route: "/org-chart" },
-					r("Employees (table)", "Employee"),
-					r("Departments", "Department"),
-					r("Designations", "Designation"),
-					r("Branches", "Branch"),
-					r("Grades", "Employee Grade"),
-					r("Groups", "Employee Group"),
-					r("Companies", "Company"),
+					r("Employees (table)", "Employee", { roles: HR }),
+					r("Departments", "Department", { roles: HR }),
+					r("Designations", "Designation", { roles: HR }),
+					r("Branches", "Branch", { roles: HR }),
+					r("Grades", "Employee Grade", { roles: HR }),
+					r("Groups", "Employee Group", { roles: HR }),
+					r("Companies", "Company", { roles: HR }),
 				],
 			},
 			{
 				label: "Lifecycle",
+				roles: HR,
 				items: [
 					r("Onboarding", "Employee Onboarding"),
 					r("Promotions", "Employee Promotion"),
@@ -60,6 +67,7 @@ export const areas = [
 			},
 			{
 				label: "Team",
+				roles: HR,
 				items: [
 					{ label: "Team updates", route: "/team-updates" },
 					r("Daily work summaries", "Daily Work Summary Group"),
@@ -75,19 +83,20 @@ export const areas = [
 			{
 				label: "Leave",
 				items: [
-					{ label: "Overview", route: "/overview/time" },
-					r("Requests", "Leave Application"),
-					{ label: "Policy builder", route: "/leave-policies" },
+					{ label: "My leave", route: "/leave" },
+					{ label: "Overview", route: "/overview/time", roles: HR },
+					r("Requests", "Leave Application", { roles: APPROVERS }),
+					{ label: "Policy builder", route: "/leave-policies", roles: HR },
 					r("Allocations", "Leave Allocation"),
-					r("Policies", "Leave Policy"),
-					r("Policy assignments", "Leave Policy Assignment"),
-					r("Leave control panel", "Leave Control Panel"),
-					r("Leave types", "Leave Type"),
-					r("Leave periods", "Leave Period"),
+					r("Policies", "Leave Policy", { roles: HR }),
+					r("Policy assignments", "Leave Policy Assignment", { roles: HR }),
+					r("Leave control panel", "Leave Control Panel", { roles: HR }),
+					r("Leave types", "Leave Type", { roles: HR }),
+					r("Leave periods", "Leave Period", { roles: HR }),
 					r("Holidays", "Holiday List"),
-					r("Holiday list assignments", "Holiday List Assignment"),
-					r("Block lists", "Leave Block List"),
-					r("Encashment", "Leave Encashment"),
+					r("Holiday list assignments", "Holiday List Assignment", { roles: HR }),
+					r("Block lists", "Leave Block List", { roles: HR }),
+					r("Encashment", "Leave Encashment", { roles: HR }),
 				],
 			},
 		],
@@ -100,21 +109,21 @@ export const areas = [
 			{
 				label: "Attendance",
 				items: [
-					{ label: "Overview", route: "/overview/attendance" },
+					{ label: "Overview", route: "/overview/attendance", roles: HR },
 					{ label: "Who's in", route: "/attendance" },
 					r("Attendance", "Attendance"),
-					r("Mark attendance", "Employee Attendance Tool"),
+					r("Mark attendance", "Employee Attendance Tool", { roles: HR }),
 					r("Check-ins", "Employee Checkin"),
-					r("Shift types", "Shift Type"),
+					r("Shift types", "Shift Type", { roles: HR }),
 					r("Shift assignments", "Shift Assignment"),
-					r("Assign shifts", "Shift Assignment Tool"),
-					r("Shift schedules", "Shift Schedule"),
-					r("Schedule assignments", "Shift Schedule Assignment"),
-					r("Shift locations", "Shift Location"),
+					r("Assign shifts", "Shift Assignment Tool", { roles: HR }),
+					r("Shift schedules", "Shift Schedule", { roles: HR }),
+					r("Schedule assignments", "Shift Schedule Assignment", { roles: HR }),
+					r("Shift locations", "Shift Location", { roles: HR }),
 					r("Shift requests", "Shift Request"),
 					r("Overtime slips", "Overtime Slip"),
-					r("Overtime types", "Overtime Type"),
-					{ label: "Roster", href: "/hr/roster" },
+					r("Overtime types", "Overtime Type", { roles: HR }),
+					{ label: "Roster", href: "/hr/roster", roles: HR },
 				],
 			},
 		],
@@ -127,34 +136,36 @@ export const areas = [
 			{
 				label: "Runs",
 				items: [
-					{ label: "Overview", route: "/overview/pay" },
-					r("Payroll runs", "Payroll Entry"),
+					{ label: "Overview", route: "/overview/pay", roles: HR },
+					r("Payroll runs", "Payroll Entry", { roles: HR }),
 					r("Salary slips", "Salary Slip"),
 				],
 			},
 			{
 				label: "Setup",
+				roles: HR,
 				items: [
-					r("Salary components", "Salary Component"),
-					r("Salary structures", "Salary Structure"),
-					r("Assignments", "Salary Structure Assignment"),
-					r("Tax slabs", "Income Tax Slab"),
-					r("Payroll periods", "Payroll Period"),
-					r("Additional salary", "Additional Salary"),
-					r("Incentives", "Employee Incentive"),
-					r("Retention bonus", "Retention Bonus"),
-					r("Benefit applications", "Employee Benefit Application"),
-					r("Tax declarations", "Employee Tax Exemption Declaration"),
-					r("Salary withholding", "Salary Withholding"),
-					r("Payroll settings", "Payroll Settings"),
+					r("Salary components", "Salary Component", { roles: HR }),
+					r("Salary structures", "Salary Structure", { roles: HR }),
+					r("Assignments", "Salary Structure Assignment", { roles: HR }),
+					r("Tax slabs", "Income Tax Slab", { roles: HR }),
+					r("Payroll periods", "Payroll Period", { roles: HR }),
+					r("Additional salary", "Additional Salary", { roles: HR }),
+					r("Incentives", "Employee Incentive", { roles: HR }),
+					r("Retention bonus", "Retention Bonus", { roles: HR }),
+					r("Benefit applications", "Employee Benefit Application", { roles: HR }),
+					r("Tax declarations", "Employee Tax Exemption Declaration", { roles: HR }),
+					r("Salary withholding", "Salary Withholding", { roles: HR }),
+					r("Payroll settings", "Payroll Settings", { roles: HR }),
 				],
 			},
 			{
 				label: "Reports",
+				roles: HR,
 				items: [
-					report("Salary Register"),
-					report("Bank Remittance"),
-					report("Income Tax Computation"),
+					report("Salary Register", { roles: HR }),
+					report("Bank Remittance", { roles: HR }),
+					report("Income Tax Computation", { roles: HR }),
 				],
 			},
 		],
@@ -167,12 +178,12 @@ export const areas = [
 			{
 				label: "Money out",
 				items: [
-					{ label: "Overview", route: "/overview/expenses" },
+					{ label: "Overview", route: "/overview/expenses", roles: HR },
 					r("Expense claims", "Expense Claim"),
 					r("Advances", "Employee Advance"),
 					r("Travel requests", "Travel Request"),
 					r("Vehicle logs", "Vehicle Log"),
-					r("Claim types", "Expense Claim Type"),
+					r("Claim types", "Expense Claim Type", { roles: HR }),
 				],
 			},
 		],
@@ -180,6 +191,7 @@ export const areas = [
 	{
 		key: "hiring",
 		label: "Recruitment",
+		roles: HR,
 		icon: "door",
 		sections: [
 			{
@@ -218,21 +230,21 @@ export const areas = [
 			{
 				label: "Performance",
 				items: [
-					{ label: "Overview", route: "/overview/growth" },
-					r("Appraisal cycles", "Appraisal Cycle"),
+					{ label: "Overview", route: "/overview/growth", roles: HR },
+					r("Appraisal cycles", "Appraisal Cycle", { roles: HR }),
 					r("Appraisals", "Appraisal"),
 					r("Feedback", "Employee Performance Feedback"),
 					r("Goals", "Goal"),
 					r("KRAs", "KRA"),
-					r("Appraisal templates", "Appraisal Template"),
-					r("Feedback criteria", "Employee Feedback Criteria"),
-					report("Appraisal Overview"),
+					r("Appraisal templates", "Appraisal Template", { roles: HR }),
+					r("Feedback criteria", "Employee Feedback Criteria", { roles: HR }),
+					report("Appraisal Overview", { roles: HR }),
 				],
 			},
 			{
 				label: "Learning",
 				items: [
-					r("Training programs", "Training Program"),
+					r("Training programs", "Training Program", { roles: HR }),
 					r("Training events", "Training Event"),
 					r("Skill maps", "Employee Skill Map"),
 				],
@@ -443,6 +455,7 @@ export const areas = [
 	{
 		key: "reports",
 		label: "Reports",
+		roles: APPROVERS,
 		icon: "chart",
 		sections: [
 			{
@@ -486,6 +499,13 @@ export function areaForDoctype(doctype) {
 
 export function allNavItems() {
 	return areas.flatMap((a) =>
-		a.sections.flatMap((s) => s.items.map((i) => ({ ...i, area: a.label, section: s.label }))),
+		a.sections.flatMap((s) =>
+			s.items.map((i) => ({
+				...i,
+				roles: i.roles || s.roles || a.roles,
+				area: a.label,
+				section: s.label,
+			})),
+		),
 	);
 }

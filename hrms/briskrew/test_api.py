@@ -9,6 +9,7 @@ class TestBriskrewApi(HRMSTestSuite):
 		result = access()
 		self.assertIn("Employee", result["can_read"])
 		self.assertIn("Employee Leave Balance", result["reports"])
+		self.assertIn("HR Manager", result["roles"])
 
 	def test_access_is_limited_for_a_plain_user(self):
 		user = frappe.get_doc(
@@ -22,6 +23,7 @@ class TestBriskrewApi(HRMSTestSuite):
 		frappe.set_user(user.name)
 		try:
 			self.assertNotIn("Salary Structure", access()["can_read"])
+			self.assertNotIn("HR Manager", access()["roles"])
 		finally:
 			frappe.set_user("Administrator")
 

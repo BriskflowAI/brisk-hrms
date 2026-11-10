@@ -110,6 +110,7 @@ def access() -> dict:
 	return {
 		"can_read": sorted(set(user.get_can_read())),
 		"reports": sorted(user.get_all_reports()),
+		"roles": sorted(frappe.get_roles()),
 		"lang": frappe.local.lang or "en",
 	}
 
