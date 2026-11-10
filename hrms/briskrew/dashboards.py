@@ -24,6 +24,9 @@ AREAS = {
 	"pay": {"title": "Payroll", "dashboards": ["Payroll"]},
 	"expenses": {"title": "Expenses", "dashboards": ["Expense Claims"]},
 	"hiring": {"title": "Recruitment", "dashboards": ["Recruitment"]},
+	# ERPNext's own Stock and Asset dashboards, card for card.
+	"stock": {"title": "Stock", "dashboards": ["Stock"]},
+	"assets": {"title": "Assets", "dashboards": ["Asset"]},
 	"growth": {
 		"title": "Performance",
 		"cards": ["Trainings (This Month)", "Promotions (This Month)"],

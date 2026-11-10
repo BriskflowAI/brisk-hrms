@@ -25,30 +25,18 @@ def _standard_icons() -> dict[str, dict]:
 
 
 class TestBriskrewScope(HRMSTestSuite):
-	def test_every_erpnext_module_is_kept_out_of_navigation(self):
+	def test_erpnext_modules_stay_in_navigation(self):
+		# ERPNext hides a few of its own modules; this app must not hide any more.
 		erpnext_modules = set(frappe.get_all("Module Def", filters={"app_name": "erpnext"}, pluck="name"))
-		code_only = set(frappe.get_hooks("code_only_modules"))
+		hidden_by_hrms = set(frappe.get_hooks("code_only_modules", app_name="hrms"))
 
-		self.assertEqual(
-			erpnext_modules - code_only,
-			set(),
-			"New ERPNext modules must be added to code_only_modules in hrms/hooks.py",
-		)
+		self.assertEqual(erpnext_modules & hidden_by_hrms, set())
 
 	def test_hr_modules_stay_in_navigation(self):
 		hr_modules = set(frappe.get_all("Module Def", filters={"app_name": "hrms"}, pluck="name"))
 		code_only = set(frappe.get_hooks("code_only_modules"))
 
 		self.assertEqual(hr_modules & code_only - {"HR"}, set())
-
-	def test_hidden_modules_hand_their_navigation_to_hr_setup(self):
-		# ERPNext names its own heirs for some modules; those are hidden too, so HR Setup is
-		# the only heir left that a user can navigate to.
-		code_only_modules = frappe.get_hooks("code_only_modules")
-		erpnext_modules = frappe.get_all("Module Def", filters={"app_name": "erpnext"}, pluck="name")
-		for module in erpnext_modules:
-			visible_heirs = [h for h in code_only_modules[module] if h not in code_only_modules]
-			self.assertEqual(visible_heirs, ["HR Setup"], module)
 
 	def test_sign_in_lands_on_briskrew(self):
 		from frappe.apps import get_default_path
@@ -114,10 +102,10 @@ class TestBriskrewScope(HRMSTestSuite):
 		self.assertFalse(frappe.db.exists("Module Onboarding", {"module": ["in", hr_modules]}))
 		self.assertFalse(frappe.db.exists("Onboarding Step", step.name))
 
-	def test_overviews_cover_hr_areas_only(self):
+	def test_overviews_include_stock_and_assets(self):
 		from hrms.briskrew.dashboards import AREAS
 
-		self.assertEqual(set(AREAS) & {"stock", "assets"}, set())
+		self.assertLessEqual({"stock", "assets"}, set(AREAS))
 
 	def test_briskrew_never_links_to_the_classic_desk(self):
 		offenders = []

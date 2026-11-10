@@ -120,6 +120,20 @@ def seed(company: str | None = None) -> dict:
 	_hiring(company, lead_user, today)
 	_checkins(team)
 
+	# Stock and assets, for the briskrew Stock and Assets areas.
+	from hrms.briskrew.demo_inventory import seed as seed_inventory
+
+	inventory = {}
+	if "erpnext" in frappe.get_installed_apps():
+		# A site whose company isn't fully set up for stock still gets the HR demo.
+		frappe.db.savepoint("briskrew_inventory_demo")
+		try:
+			inventory = seed_inventory(company)
+		except Exception as e:
+			frappe.db.rollback(save_point="briskrew_inventory_demo")
+			frappe.log_error(title="briskrew: stock and assets demo data")
+			inventory = {"error": str(e)}
+
 	# Run from the command line, not inside a request, so nothing else commits for it.
 	frappe.db.commit()  # nosemgrep
 	return {
@@ -127,6 +141,7 @@ def seed(company: str | None = None) -> dict:
 		"password": DEMO_PASSWORD,
 		"team": [e for e in team],
 		"requests": [r for r in requests if r],
+		"inventory": inventory,
 	}
 
 

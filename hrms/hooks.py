@@ -30,35 +30,7 @@ app_include_js = [
 	"hrms.bundle.js",
 ]
 app_include_css = "hrms.bundle.css"
-code_only_modules = {
-	"HR": ["HR Setup"],
-	**{
-		module: ["HR Setup"]
-		for module in (
-			"Accounts",
-			"Assets",
-			"Bulk Transaction",
-			"Buying",
-			"Communication",
-			"CRM",
-			"EDI",
-			"ERPNext Integrations",
-			"Maintenance",
-			"Manufacturing",
-			"Portal",
-			"Projects",
-			"Quality Management",
-			"Regional",
-			"Selling",
-			"Setup",
-			"Stock",
-			"Subcontracting",
-			"Support",
-			"Telephony",
-			"Utilities",
-		)
-	},
-}
+code_only_modules = {"HR": ["HR Setup"]}
 app_include_icons = ["/assets/hrms/icons/module-icons.svg"]
 
 # website

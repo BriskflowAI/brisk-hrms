@@ -122,9 +122,13 @@ done
 # Screen audit: opens every audited record type in briskrew (list, new record, an existing
 # record, report) and lists any desk script feature briskrew doesn't support yet.
 # Needs the site on http://127.0.0.1:8000 with Administrator / admin, and Playwright.
-for g in priority performance hiring shifts; do
+for g in priority performance hiring shifts stock assets; do
   AUDIT_OUT=/tmp/audit-$g.json node apps/hrms/flow/scripts/audit-priority-screens.cjs $g
 done
+
+# Which ERPNext stock and assets APIs briskrew reaches, and how (writes
+# flow/inventory/stock-assets-api.md; commit it if it changed).
+python apps/hrms/flow/scripts/stock-assets-api-map.py apps
 ```
 
 The audit should report **0 issues**. Anything it lists is usually a new desk API that upstream

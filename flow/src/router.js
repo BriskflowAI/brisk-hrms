@@ -22,6 +22,28 @@ const routes = [
 		component: () => import("@/views/LeavePolicies.vue"),
 	},
 	{
+		path: "/stock-levels",
+		name: "StockLevels",
+		component: () => import("@/views/StockLevels.vue"),
+	},
+	{
+		path: "/item/:name",
+		name: "ItemProfile",
+		component: () => import("@/views/ItemProfile.vue"),
+		props: true,
+	},
+	{
+		path: "/asset-register",
+		name: "AssetRegister",
+		component: () => import("@/views/AssetRegister.vue"),
+	},
+	{
+		path: "/asset/:name",
+		name: "AssetProfile",
+		component: () => import("@/views/AssetProfile.vue"),
+		props: true,
+	},
+	{
 		path: "/attendance",
 		name: "Attendance",
 		component: () => import("@/views/AttendanceView.vue"),
